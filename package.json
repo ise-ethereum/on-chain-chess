@@ -6,7 +6,8 @@
   "scripts": {
     "start": "webpack --watch",
     "build": "webpack",
-    "test": "mocha-webpack --growl"
+    "test": "mocha-webpack --growl",
+    "test-testrpc": "concurrently --kill-others -s first 'testrpc' 'npm run test'"
   },
   "repository": {
     "type": "git",
@@ -39,6 +40,7 @@
     "chai": "*",
     "mocha-webpack": "*",
     "source-map-support": "*",
-    "webpack-node-externals": "*"
+    "webpack-node-externals": "*",
+    "concurrently": "*"
   }
 }
