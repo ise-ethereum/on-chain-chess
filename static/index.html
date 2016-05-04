@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Sample Ethereum Dapp with Webpack</title>
+  </head>
+  <body>
+  	<h1>Sample Ethereum Dapp with Webpack</h1>
+    <p>Example The Coin Dapp with smart contract code from <a href="https://www.ethereum.org/token" target="_blank">https://www.ethereum.org/token</a></p>
+
+    <hr>
+    <h2>Web3</h2>
+    <p>Initialized <code>Web3</code> object for easy interfacing of Ethereum JavaScript API.</p>
+    <dl>
+      <dt>Connected Ethereum node (Web3 provider)</dt>
+      <dd id="provider"></dd>
+      <dt>Latest block</dt>
+      <dd id="latest-block"></dd>
+      <dt>Accounts</dt>
+      <dd id="list-accounts"></dd>
+    </dl>
+
+    <hr>
+    <h2>MyToken</h2>
+    <p>Instantiated (deployed) MyToken is available as <code>MyToken</code>.</p>
+    <dl>
+      <dt>Token name</dt>
+      <dd id="token-name"></dd>
+      <dt>Token symbol</dt>
+      <dd id="token-symbol"></dd>
+      <dt>Total supply of token</dt>
+      <dd id="total-supply"></dd>
+      <dt>Version</dt>
+      <dd id="version"></dd>
+    </dl>
+
+    <hr>
+    <h2>tokenRecipient</h2>
+    <p>If a <code>.sol</code> file contains more than one contracts, individual instantiated contracts are also available. See <code>console.log(tokenRecipient)</code>.</p>
+
+    <hr>
+    <h2>More info</h2>
+    <p>View <code>console.log()</code> for more information of each of the above components.</p>
+
+    <hr>
+    <p>You can find more information on this sample dapp at its <a href="https://github.com/uzyn/ethereum-webpack-example-dapp" target="_blank">GitHub repository</a> and <a href="https://twitter.com/uzyn" target="_blank">@uzyn</a>.</p>
+
+    <script src="bundles/main.js"></script>
+  </body>
+</html>
