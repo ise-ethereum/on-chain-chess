@@ -6,5 +6,6 @@ node {
     sh "npm install"
 
     stage 'Unit-Tests'
+    sh "testrpc"
     sh "npm run test"
 }
