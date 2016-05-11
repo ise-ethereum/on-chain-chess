@@ -12,7 +12,7 @@ module.exports = {
   },
   web3Loader: {
     constructorParams: {
-      MyToken: [ 500000, 'The Coin', 2, 'TC$', '1.0.0' ]
+      Chess: []
     }
   },
   module: {
