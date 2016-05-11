@@ -10,14 +10,14 @@
 # Story 
 
 
-## Description
+## User story
 <!--- Provide a detailed description of the change or addition you are proposing -->
 The user is able to create an issue using a pre-generated template.
 
 
-## Required tickets
-- (#9) here you can reference issues that are required for this issue to be completed 
-- (#xx) A Story would reference its tasks here including their issue number 
+## Required tasks
+- #9 here you can reference issues that are required for this issue to be completed 
+- #xx A Story would reference its tasks here including their issue number 
 
 ## Acceptance criteria
 <!--- What is required for the story to be completed -->
@@ -84,7 +84,7 @@ You can use this section for information and Text that didn't fit in the above c
 * Link to your project:
 
 ## Related issues
-Here you can reference related issues (#xx)
+Here you can reference related issues: #xx
 
 
 
