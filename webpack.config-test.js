@@ -1,5 +1,4 @@
 var nodeExternals = require('webpack-node-externals');
-var path = require("path");
 // Extends base config
 var config = require('./webpack.config.js');
 
@@ -8,9 +7,9 @@ config.output = {
   devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]?[hash]'
 };
 
-config.target = "node";
+config.target = 'node';
 
 config.externals = [nodeExternals()];
-config.devtool = "cheap-module-source-map";
+config.devtool = 'cheap-module-source-map';
 
 module.exports = config;

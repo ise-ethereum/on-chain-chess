@@ -32,6 +32,7 @@ describe('Chess', function() {
     });
     it('should accept a valid move', function(done) {
       this.timeout(10000);
+
       assert.doesNotThrow(function(){
         Chess.move(gameId, {from: player2, gas: 100000});
       }, Error);
