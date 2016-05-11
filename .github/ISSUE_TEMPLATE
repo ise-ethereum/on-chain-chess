@@ -15,7 +15,7 @@
 The user is able to create an issue using a pre-generated template.
 
 
-## Required tasks
+## Tasks
 - #9 here you can reference issues that are required for this issue to be completed 
 - #xx A Story would reference its tasks here including their issue number 
 
@@ -51,7 +51,7 @@ You can use this section for information and Text that didn't fit in the above c
 
 
 <!--- -------------------------------------------------------------- -->
-# Issue 
+# Bug Report 
 
 ## Context
 <!--- Provide a more detailed introduction to the issue itself, and why you consider it to be a bug -->
