@@ -1,0 +1,91 @@
+<!--- Provide a general summary of the issue in the Title above -->
+
+
+<!--- Delete all but either the Story, Task or Issue section -->
+
+<!--- Choose an according label (Story/Task/Issue)
+, as well as place it in the according column in waffle.io (preferably Backlog)-->
+
+<!--- -------------------------------------------------------------- -->
+# Story 
+
+
+## Description
+<!--- Provide a detailed description of the change or addition you are proposing -->
+The user is able to create an issue using a pre-generated template.
+
+
+## Required tickets
+- (#9) here you can reference issues that are required for this issue to be completed 
+- (#xx) A Story would reference its tasks here including their issue number 
+
+## Acceptance criteria
+<!--- What is required for the story to be completed -->
+- [ ] The user can choose between different templates
+- [ ] All templates are in the same file
+- [ ] The template includes story, task and issue examples
+
+## Notes
+<!--- Why is this change important to you? How would you use it? -->
+<!--- How can it benefit other users? -->
+This would allow our issues to be streamlined as their form resembles each other. It would also help in creating issues as the process requires less time.
+
+<!--- -------------------------------------------------------------- -->
+# Task 
+
+
+## Detailed Description
+<!--- Provide a detailed description of the change or addition you are proposing -->
+- Explain in a detail what the code needs to perform in order for the task to be completed
+- use many bullet points and split up the complexity
+
+
+## Associated story
+Story: #xx
+
+
+## Notes
+<!--- Why is this change important to you? How would you use it? -->
+<!--- How can it benefit other users? -->
+You can use this section for information and Text that didn't fit in the above categories
+
+
+<!--- -------------------------------------------------------------- -->
+# Issue 
+
+## Context
+<!--- Provide a more detailed introduction to the issue itself, and why you consider it to be a bug -->
+
+## Expected Behavior
+<!--- Tell us what should happen -->
+
+## Actual Behavior
+<!--- Tell us what happens instead -->
+
+## Possible Fix
+<!--- Not obligatory, but suggest a fix or reason for the bug -->
+
+## Steps to Reproduce
+<!--- Provide a link to a live example, or an unambiguous set of steps to -->
+<!--- reproduce this bug include code to reproduce, if relevant -->
+1.
+2.
+3.
+4.
+
+## Context
+<!--- How has this bug affected you? What were you trying to accomplish? -->
+
+## Your Environment
+<!--- Include as many relevant details about the environment you experienced the bug in -->
+* Version used:
+* Environment name and version (e.g. Chrome 39, node.js 5.4):
+* Operating System and version (desktop or mobile):
+* Link to your project:
+
+## Related issues
+Here you can reference related issues (#xx)
+
+
+
+<!--- source: https://www.talater.com/open-source-templates/#/ -->
