@@ -1,15 +1,9 @@
 import { tokenRecipient, MyToken, web3 } from '../contract/MyToken.sol';
 
-window.onload = () => {
-  renderWeb3Details();
-  renderTokenDetails();
-};
-
 function renderWeb3Details() {
   document.getElementById('provider').innerHTML = web3.currentProvider.host;
   document.getElementById('latest-block').innerHTML = web3.eth.blockNumber;
 
-  const accounts = web3.eth.accounts;
   let html = '';
   for (let account of web3.eth.accounts) {
     var balance = MyToken.balanceOf(account);
@@ -25,12 +19,21 @@ function renderTokenDetails() {
   document.getElementById('version').innerHTML = MyToken.version();
 }
 
-var transfer_form = document.getElementById('transfer');
-transfer_form.addEventListener('submit', function(event) {
-  event.preventDefault();
-  console.log('transferring', transfer_form.from.value, transfer_form.to.value, transfer_form.amount.value);
+window.onload = () => {
+  renderWeb3Details();
+  renderTokenDetails();
+};
 
-  MyToken.transfer(transfer_form.to.value, transfer_form.amount.value, {from: transfer_form.from.value, gas:100000});
+var transferForm = document.getElementById('transfer');
+transferForm.addEventListener('submit', function(event) {
+  event.preventDefault();
+  console.log('transferring',
+              transferForm.from.value,
+              transferForm.to.value,
+              transferForm.amount.value);
+
+  MyToken.transfer(transferForm.to.value, transferForm.amount.value,
+                  {from: transferForm.from.value, gas:100000});
 
   renderWeb3Details();
 });
