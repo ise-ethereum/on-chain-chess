@@ -1,3 +1,4 @@
+/* global describe, it */
 import { Chess, web3 } from '../contract/Chess.sol';
 
 var assert = require('chai').assert;
@@ -11,7 +12,7 @@ describe('Chess', function() {
     it('should initialize a game between two players', function (done) {
       this.timeout(10000);
 
-      var transaction = Chess.initGame(player2, {from: player1, gas: 1000000});
+      Chess.initGame(player2, {from: player1, gas: 1000000});
 
       var filter = Chess.GameInitialized({});
       filter.watch(function(error, result){
