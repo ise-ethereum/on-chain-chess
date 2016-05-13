@@ -1,5 +1,7 @@
 var path = require('path');
 
+var web3provider = process.env.WEB3_PROVIDER || 'http://localhost:8545';
+
 module.exports = {
   entry: [
     './index',
@@ -10,6 +12,7 @@ module.exports = {
     filename: '[name].js',
   },
   web3Loader: {
+    provider: web3provider,
     constructorParams: {
       Chess: []
     }
