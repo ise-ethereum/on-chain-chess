@@ -1,4 +1,4 @@
-import { tokenRecipient, MyToken, web3 } from '../contract/MyToken.sol';
+import { tokenRecipient, MyToken, web3 } from '../../contract/MyToken.sol';
 
 function renderWeb3Details() {
   document.getElementById('provider').innerHTML = web3.currentProvider.host;
