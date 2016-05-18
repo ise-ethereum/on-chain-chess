@@ -12,6 +12,8 @@ contract Chess {
     struct Game {
         address player1;
         address player2;
+        string player1Alias;
+        string player2Alias;
         address nextPlayer;
         address winner;
         int[64] state;
@@ -27,28 +29,40 @@ contract Chess {
         defaultState[0x39] = -1;
     }
 
-    event GameInitialized(address indexed player1, address indexed player2, bytes32 indexed gameId);
+    event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias);
+    event GameJoined(bytes32 indexed gameId, address indexed player2, string player2Alias);
     event GameStateChanged(bytes32 indexed gameId, int[64] state);
     event Move(bytes32 indexed gameId, bool indexed moveSuccesful);
 
     /* Initialize a game */
-    function initGame(address withPlayer) public {
-        // Generate game id based on two players' addresses and current timestamp
-        bytes32 gameId = sha3(msg.sender, withPlayer, now);
+    function initGame(string player1Alias) public {
+        // Generate game id based on player's addresses and current timestamp
+        bytes32 gameId = sha3(msg.sender, now);
 
         // Initialize participants
         games[gameId].player1 = msg.sender;
-        games[gameId].player2 = withPlayer;
+        games[gameId].player1Alias = player1Alias;
 
         // Initialize state
         games[gameId].state = defaultState;
 
         // Game starts with P2
-        games[gameId].nextPlayer = withPlayer;
+        games[gameId].nextPlayer = games[gameId].player1;
 
         // Sent notification events
-        GameInitialized(games[gameId].player1, games[gameId].player2, gameId);
+        GameInitialized(gameId, games[gameId].player1, player1Alias);
         GameStateChanged(gameId, games[gameId].state);
+    }
+
+    /* Join a game */
+    function joinGame(bytes32 gameId, string player2Alias) public {
+      if (games[gameId].player2 != 0) {
+        throw;
+      }
+
+      games[gameId].player2 = msg.sender;
+      games[gameId].player2Alias = player2Alias;
+      GameJoined(gameId, games[gameId].player2, player2Alias);
     }
 
     /* Move a figure */
