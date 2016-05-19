@@ -45,29 +45,38 @@
       </aside>
 
       <!-- content-->
-      <main class="dapp-content" data-ng-view>
-
+      <main class="dapp-content">
+        <div id="messages" data-ng-controller="MessagesCtrl">
+          <div class="messageContainer" data-ng-repeat="message in messages">
+            <div class="message" data-ng-class="message.type + ' animate-repeat'">
+              {{message.message}}
+            </div>
+          </div>
+        </div>
+        <div id="view" data-ng-view></div>
       </main>
 
       <!-- actionbar -->
-      <aside class="dapp-actionbar">
+      <aside class="dapp-actionbar" data-ng-show="isActivePage('playGame')">
 
       </aside>
 
     </div>
 
     <!-- footer -->
-    <footer class="dapp-footer">
+    <!--<footer class="dapp-footer">
 
-    </footer>
+    </footer>-->
 
     <!--
     For production use
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-route.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-animate.min.js"></script>
     -->
     <script type="text/javascript" src="../app/javascript/angular.js"></script>
     <script type="text/javascript" src="../app/javascript/angular-route.js"></script>
+    <script type="text/javascript" src="../app/javascript/angular-animate.js"></script>
     <script type="text/javascript" src="bundles/main.js"></script>
   </body>
 </html>

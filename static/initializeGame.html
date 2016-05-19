@@ -1,29 +1,42 @@
 <h1>Start new chess game</h1>
 <div class="row clear">
   <div class="col col-4 mobile-full">
-    <ul class="dapp-account-list">
-      <li data-ng-repeat="account in availableAccounts">
-        <button data-ng-class="{
+    <form name="form" novalidate>
+      <label>Account for betting</label>
+      <ul class="dapp-account-list">
+        <li data-ng-repeat="account in availableAccounts">
+          <button data-ng-class="{
               selected: isSelectedAccount(account)
             }" data-ng-click="selectAccount(account)">
-          <a class="dapp-identicon dapp-small"></a>
-          <h3>Account {{$index}}</h3>
-          <span>{{account}}</span>
-          <figure class="icon-check" data-ng-show="isSelectedAccount(account)"></figure>
-        </button>
-      </li>
-    </ul>
-    <label>Account for betting</label>
+            <a class="dapp-identicon dapp-small"></a>
+            <h3>Account {{$index}}</h3>
+            <span>{{account}}</span>
+            <figure class="icon-check" data-ng-show="isSelectedAccount(account)"></figure>
+          </button>
+        </li>
+      </ul>
+      <input name="selectedAccount" type="hidden" data-ng-model="selectedAccount" required />
+      <div data-ng-show="form.$submitted || form.selectedAccount.$touched">
+        <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>
+      </div>
 
-    <input id="username" type="text" name="username" data-ng-model="username">
-    <label for="username">Username</label>
+      <label for="username">Username</label>
+      <input id="username" type="text" name="username" data-ng-model="username" required>
+      <div data-ng-show="form.$submitted || form.username.$touched">
+        <div class="error" data-ng-show="form.username.$error.required">Please enter a username.</div>
+      </div>
 
-    <select id="startcolor" name="startcolor" data-ng-model="startcolor">
-      <option value="white">White</option>
-      <option value="black">Black</option>
-    </select>
-    <label for="startcolor">Start color</label>
-    <input type="submit" value="Start game" data-ng-click="initializeGame()" />
+      <label for="startcolor">Start color</label>
+      <select id="startcolor" name="startcolor" data-ng-model="startcolor" required>
+        <option value="white" selected>White</option>
+        <option value="black">Black</option>
+      </select>
+      <div data-ng-show="form.$submitted || form.startcolor.$touched">
+        <div class="error" data-ng-show="form.startcolor.$error.required">Please select a start color.</div>
+      </div>
+
+      <input type="submit" value="Start game" data-ng-click="initializeGame()" />
+    </form>
   </div>
   <div class="col col-8 mobile-full">
     Insert image here

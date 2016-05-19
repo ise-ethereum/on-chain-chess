@@ -1,6 +1,6 @@
 /* global angular */
 angular.module('dappChess', [
-  'ngRoute'
+  'ngRoute', 'ngAnimate'
 ])
         .config(['$routeProvider', function ($routeProvider) {
             $routeProvider

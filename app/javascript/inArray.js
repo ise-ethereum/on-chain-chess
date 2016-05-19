@@ -4,7 +4,7 @@ if(typeof(inArray) === 'undefined') {
 			needle = needle.toLowerCase();
 		}
 		
-		for(var i = 0; i < haystack.length; i ++) {
+		for(let i = 0; i < haystack.length; i ++) {
 			if(ignoreCase) {
 				if(checkNeedleContainsHaystack) {
 					if(needle.indexOf(haystack[i].toLowerCase()) !== -1) {

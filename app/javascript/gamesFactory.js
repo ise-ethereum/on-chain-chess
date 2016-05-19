@@ -1,6 +1,6 @@
 /* global angular inArray */
 import { web3, Chess } from '../../contract/Chess.sol';
-angular.module('dappChess').factory('games', function () {
+angular.module('dappChess').factory('games', function ($rootScope) {
   let games = {list: []};
   // mock
   games.list = [
@@ -34,7 +34,9 @@ angular.module('dappChess').factory('games', function () {
   games.initializeGameEvent = function (err, data) {
     console.log('initializeGameEvent', err, data);
     if (err) {
-      // TODO
+      $rootScope.$broadcast('message',
+        'Your game could not be created, the following error occures: ' + err,
+        'error', 'startgame');
     }
     else {
       var gameid = data.args.gameId;
@@ -50,9 +52,13 @@ angular.module('dappChess').factory('games', function () {
         },
         gameid: gameid
       });
+      
+      $rootScope.$broadcast('message',
+        'Your game has successfully been created and has the id ' + gameid,
+        'success', 'startgame');
+      
+      $rootScope.$apply();
     }
-    
-    console.log(games.list);
   };
   Chess.GameInitialized({}, games.initializeGameEvent);
   return games;
