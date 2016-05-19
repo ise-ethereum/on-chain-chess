@@ -47,9 +47,7 @@ module.exports = {
       },
       {
         test: /\.less$/,
-        //loaders: ['style', 'css', 'less'] //< -- Use this for inline CSS
-        loader: ExtractTextPlugin.extract(// <-- Used for separate file CSS
-                // activate source maps via loader query
+        loader: ExtractTextPlugin.extract(
                 'css?sourceMap!' +
                 'less?sourceMap'
                 )
@@ -61,7 +59,6 @@ module.exports = {
     failOnHint: false
   },
   plugins: [
-    // extract inline css into separate 'styles.css'
     new ExtractTextPlugin('styles.css')
   ]
 };
