@@ -1,14 +1,5 @@
-'use strict';
-
-angular.module('dappChess.welcome', ['ngRoute'])
-
-        .config(['$routeProvider', function ($routeProvider) {
-            $routeProvider.when('/welcome', {
-              templateUrl: 'welcome.html',
-              controller: 'WelcomeCtrl'
-            });
-          }])
-
+/* global angular */
+angular.module('dappChess')
         .controller('WelcomeCtrl', [function () {
 
           }]);

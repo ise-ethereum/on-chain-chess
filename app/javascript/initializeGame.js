@@ -1,18 +1,10 @@
-'use strict';
+/* global angular */
 import {
-  initGame, move, web3
+  web3
 }
 from
 '../../contract/Chess.sol';
-angular.module('dappChess.initializeGame', ['ngRoute'])
-
-        .config(['$routeProvider', function ($routeProvider) {
-            $routeProvider.when('/initializeGame', {
-              templateUrl: 'initializeGame.html',
-              controller: 'InitializeGameCtrl'
-            });
-          }])
-
+angular.module('dappChess')
         .controller('InitializeGameCtrl', ['$scope', function ($scope) {
             $scope.availableAccounts = web3.eth.accounts;
             $scope.selectedAccount = null;
@@ -20,7 +12,7 @@ angular.module('dappChess.initializeGame', ['ngRoute'])
             $scope.username = null;
 
             $scope.isSelectedAccount = function (account) {
-              return $scope.selectedAccount == account;
+              return $scope.selectedAccount === account;
             };
             $scope.selectAccount = function (account) {
               $scope.selectedAccount = account;

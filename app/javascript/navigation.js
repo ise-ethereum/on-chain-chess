@@ -1,6 +1,5 @@
-'use strict';
-
-angular.module('dappChess.navigation', ['ngRoute'])
+/* global angular */
+angular.module('dappChess')
         .controller('NavigationCtrl', ['$scope', function ($scope) {
             $scope.activePage = null;
 
@@ -23,11 +22,11 @@ angular.module('dappChess.navigation', ['ngRoute'])
             $scope.mock();
 
             $scope.isActivePage = function (page) {
-              return page == $scope.activePage;
+              return page === $scope.activePage;
             };
 
             $scope.isActiveGame = function (game) {
-              return game.gameid == $scope.activePage;
+              return game.gameid === $scope.activePage;
             };
 
             $scope.setActiveGame = function (game) {

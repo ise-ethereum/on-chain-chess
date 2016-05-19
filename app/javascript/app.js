@@ -1,11 +1,17 @@
-'use strict';
-
+/* global angular */
 angular.module('dappChess', [
-  'ngRoute',
-  'dappChess.navigation',
-  'dappChess.initializeGame',
-  'dappChess.welcome'
+  'ngRoute'
 ])
         .config(['$routeProvider', function ($routeProvider) {
-            $routeProvider.otherwise({redirectTo: '/welcome'});
-          }]);
+            $routeProvider
+                    .when('/welcome', {
+                      templateUrl: 'welcome.html',
+                      controller: 'WelcomeCtrl'
+                    })
+                    .when('/initializeGame', {
+                      templateUrl: 'initializeGame.html',
+                      controller: 'InitializeGameCtrl'
+                    })
+                    .otherwise({redirectTo: '/welcome'});
+          }])
+        ;
