@@ -34,7 +34,7 @@
             </li>
 
             <li data-ng-repeat="game in games">
-              <a href="#/playGame" data-ng-click="setActiveGame(game)" data-ng-class="{
+              <a href="#" data-ng-href="#/playGame/{{game.gameid}}" data-ng-class="{
                     active: isActiveGame(game)
                   }">
                 <span>{{game.username}}</span>

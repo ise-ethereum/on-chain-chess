@@ -6,11 +6,18 @@ angular.module('dappChess', [
             $routeProvider
                     .when('/welcome', {
                       templateUrl: 'welcome.html',
-                      controller: 'WelcomeCtrl'
+                      controller: 'WelcomeCtrl',
+                      activePage: 'welcome'
                     })
                     .when('/initializeGame', {
                       templateUrl: 'initializeGame.html',
-                      controller: 'InitializeGameCtrl'
+                      controller: 'InitializeGameCtrl',
+                      activePage: 'initializeGame'
+                    })
+                    .when('/playGame/:id', {
+                      templateUrl: 'playGame.html',
+                      controller: 'PlayGameCtrl',
+                      activePage: 'playGame'
                     })
                     .otherwise({redirectTo: '/welcome'});
           }])

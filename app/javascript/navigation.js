@@ -1,9 +1,8 @@
 /* global angular */
 angular.module('dappChess')
-        .controller('NavigationCtrl', ['$scope', function ($scope) {
-            $scope.activePage = null;
-
+        .controller('NavigationCtrl', ['$scope', '$route', function ($scope, $route) {
             $scope.games = [];
+            $scope.activeGame = null;
 
             $scope.mock = function () {
               $scope.games = [
@@ -22,14 +21,20 @@ angular.module('dappChess')
             $scope.mock();
 
             $scope.isActivePage = function (page) {
-              return page === $scope.activePage;
+              if(typeof ($route.current) !== 'undefined') {
+                return page === $route.current.activePage;
+              }
             };
 
             $scope.isActiveGame = function (game) {
-              return game.gameid === $scope.activePage;
+              if(typeof ($route.current) !== 'undefined' &&
+                      typeof ($route.current.params.id) !== 'undefined') {
+                return $route.current.activePage === 'playGame' &&
+                        game.gameid === $route.current.params.id;
+              }
             };
 
             $scope.setActiveGame = function (game) {
-              $scope.activePage = game.gameid;
+              $scope.activeGame = game.gameid;
             };
           }]);

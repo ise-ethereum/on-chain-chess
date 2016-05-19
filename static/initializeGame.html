@@ -7,8 +7,9 @@
               selected: isSelectedAccount(account)
             }" data-ng-click="selectAccount(account)">
           <a class="dapp-identicon dapp-small"></a>
-          <h3>My clickable account</h3>
+          <h3>Account {{$index}}</h3>
           <span>{{account}}</span>
+          <figure class="icon-check" data-ng-show="isSelectedAccount(account)"></figure>
         </button>
       </li>
     </ul>
@@ -22,6 +23,7 @@
       <option value="black">Black</option>
     </select>
     <label for="startcolor">Start color</label>
+    <input type="submit" value="Start game" data-ng-click="initializeGame()" />
   </div>
   <div class="col col-8 mobile-full">
     Insert image here
