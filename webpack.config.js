@@ -53,7 +53,7 @@ module.exports = {
 		]
 	},
 	jshint: {
-		emitErrors: true,
+		emitErrors: false,
 		failOnHint: false
 	},
 	plugins: [
