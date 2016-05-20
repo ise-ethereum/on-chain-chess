@@ -3,36 +3,6 @@ import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('games', function ($rootScope) {
   const games = {list: []};
 
-  // mock
-  games.list.push(
-    {
-      self: {
-        username: 'chessmouse72',
-        accountId: web3.eth.accounts[0],
-        color: 'white'
-      },
-      opponent: {
-        username: 'mops23',
-        accountId: '0x567890',
-        color: 'black'
-      },
-      gameId: '123456789'
-    },
-    {
-      self: {
-        username: 'chessmouse72',
-        accountId: web3.eth.accounts[0],
-        color: 'black'
-      },
-      opponent: {
-        username: 'mickey53',
-        accountId: '0x67890',
-        color: 'white'
-      },
-      gameId: '987654321'
-    }
-  );
-
   games.eventGameInitialized = function (err, data) {
     console.log('eventGameInitialized', err, data);
     if (err) {
@@ -79,6 +49,36 @@ angular.module('dappChess').factory('games', function ($rootScope) {
   Chess.GameJoined({}, games.eventGameJoined);
   Chess.GameStateChanged({}, games.eventGameStateChanged);
   Chess.Move({}, games.eventMove);
+
+  // mock
+  games.list.push(
+    {
+      self: {
+        username: 'chessmouse72',
+        accountId: web3.eth.accounts[0],
+        color: 'white'
+      },
+      opponent: {
+        username: 'mops23',
+        accountId: '0x567890',
+        color: 'black'
+      },
+      gameId: '123456789'
+    },
+    {
+      self: {
+        username: 'chessmouse72',
+        accountId: web3.eth.accounts[0],
+        color: 'black'
+      },
+      opponent: {
+        username: 'mickey53',
+        accountId: '0x67890',
+        color: 'white'
+      },
+      gameId: '987654321'
+    }
+  );
 
   return games;
 }).filter('ownGames', function () {

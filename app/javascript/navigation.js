@@ -13,11 +13,11 @@ angular.module('dappChess').controller('NavigationCtrl', function (games, $scope
     if(typeof ($route.current) !== 'undefined' &&
             typeof ($route.current.params.id) !== 'undefined') {
       return $route.current.activePage === 'playGame' &&
-              game.gameid === $route.current.params.id;
+              game.gameId === $route.current.params.id;
     }
   };
 
   $scope.setActiveGame = function (game) {
-    $scope.activeGame = game.gameid;
+    $scope.activeGame = game.gameId;
   };
 });
