@@ -1,16 +1,17 @@
 if(typeof(inArray) === 'undefined') {
-	window.inArray = function (needle, haystack, ignoreCase, checkNeedleContainsHaystack, checkHaystackContainsNeedle) {
+	window.inArray = function (needle, haystack, ignoreCase, checkNeedleContainsHaystack,
+                             checkHaystackContainsNeedle) {
 		if(ignoreCase) {
 			needle = needle.toLowerCase();
 		}
-		
+
 		for(let i = 0; i < haystack.length; i ++) {
 			if(ignoreCase) {
 				if(checkNeedleContainsHaystack) {
 					if(needle.indexOf(haystack[i].toLowerCase()) !== -1) {
 						return true;
 					}
-						
+
 				}
 				if(checkHaystackContainsNeedle) {
 					if(haystack[i].toLowerCase().indexOf(needle) !== -1) {
@@ -26,7 +27,7 @@ if(typeof(inArray) === 'undefined') {
 					if(needle.indexOf(haystack[i]) !== -1) {
 						return true;
 					}
-						
+
 				}
 				if(checkHaystackContainsNeedle) {
 					if(haystack[i].indexOf(needle) !== -1) {
@@ -39,5 +40,5 @@ if(typeof(inArray) === 'undefined') {
 			}
 		}
 		return false;
-	}
+	};
 }

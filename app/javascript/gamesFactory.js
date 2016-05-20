@@ -1,9 +1,10 @@
-/* global angular inArray */
-import { web3, Chess } from '../../contract/Chess.sol';
+/* global angular, inArray */
+import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('games', function ($rootScope) {
-  let games = {list: []};
+  const games = {list: []};
+
   // mock
-  games.list = [
+  games.list.push(
     {
       self: {
         username: 'chessmouse72',
@@ -15,7 +16,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
         accountId: '0x567890',
         color: 'black'
       },
-      gameid: '123456789'
+      gameId: '123456789'
     },
     {
       self: {
@@ -28,21 +29,22 @@ angular.module('dappChess').factory('games', function ($rootScope) {
         accountId: '0x67890',
         color: 'white'
       },
-      gameid: '987654321'
+      gameId: '987654321'
     }
-  ];
-  games.initializeGameEvent = function (err, data) {
-    console.log('initializeGameEvent', err, data);
+  );
+
+  games.eventGameInitialized = function (err, data) {
+    console.log('eventGameInitialized', err, data);
     if (err) {
       $rootScope.$broadcast('message',
         'Your game could not be created, the following error occures: ' + err,
         'error', 'startgame');
     }
     else {
-      var gameid = data.args.gameId;
-      var accountId = data.args.player1;
-      var username = data.args.player1Alias;
-      var color = 'white';
+      const gameId = data.args.gameId;
+      const accountId = data.args.player1;
+      const username = data.args.player1Alias;
+      const color = 'white';
 
       games.list.push({
         self: {
@@ -50,22 +52,40 @@ angular.module('dappChess').factory('games', function ($rootScope) {
           accountId: accountId,
           color: color
         },
-        gameid: gameid
+        gameId: gameId
       });
-      
+
       $rootScope.$broadcast('message',
-        'Your game has successfully been created and has the id ' + gameid,
+        'Your game has successfully been created and has the id ' + gameId,
         'success', 'startgame');
-      
       $rootScope.$apply();
     }
   };
-  Chess.GameInitialized({}, games.initializeGameEvent);
+
+  games.eventGameJoined = function (err, data) {
+    console.log('eventGameJoined', err, data);
+  };
+
+  games.eventGameStateChanged = function (err, data) {
+    console.log('eventGameStateChanged', err, data);
+  };
+
+  games.eventMove = function (err, data) {
+    console.log('eventMove', err, data);
+  };
+
+  // Event listeners
+  Chess.GameInitialized({}, games.eventGameInitialized);
+  Chess.GameJoined({}, games.eventGameJoined);
+  Chess.GameStateChanged({}, games.eventGameStateChanged);
+  Chess.Move({}, games.eventMove);
+
   return games;
-}).filter('ownGames', function() {
-  return function(games) {
-    return games.filter(function (game) {
-      return inArray(game.self.accountId, web3.eth.accounts);
-    });
-  }
+}).filter('ownGames', function () {
+  return function (games) {
+    if (typeof games !== 'undefined')
+      return games.filter(function (game) {
+        return inArray(game.self.accountId, web3.eth.accounts);
+      });
+  };
 });

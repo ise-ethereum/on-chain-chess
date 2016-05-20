@@ -33,7 +33,7 @@
               </a>
             </li>
 
-            <li data-ng-repeat="game in games| ownGames">
+            <li data-ng-repeat="game in games | ownGames">
               <a href="#" data-ng-href="#/playGame/{{game.gameid}}" data-ng-class="{
                     active: isActiveGame(game)
                   }">

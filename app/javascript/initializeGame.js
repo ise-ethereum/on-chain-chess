@@ -6,7 +6,7 @@ angular.module('dappChess').controller('InitializeGameCtrl',
     $scope.selectedAccount = web3.eth.defaultAccount;
     $scope.startcolor = 'white';
     $scope.username = null;
-    
+
     $scope.isSelectedAccount = function (account) {
       return $scope.selectedAccount === account;
     };
@@ -15,11 +15,12 @@ angular.module('dappChess').controller('InitializeGameCtrl',
     };
 
     function initializeGame() {
-      $rootScope.$broadcast('message', 'Your game is being created, please wait a moment...', 'loading', 'startgame');
+      $rootScope.$broadcast('message', 'Your game is being created, please wait a moment...',
+                            'loading', 'startgame');
       window.setTimeout(() => {
         Chess.initGame($scope.username, /*$scope.startcolor, */{from: $scope.selectedAccount});
       }, 3000);
-      
+
     }
 
     $scope.initializeGame = function () {
