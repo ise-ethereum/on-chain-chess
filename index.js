@@ -1,1 +1,2 @@
-require('./app/app.js');
+require('./app/less/base.less');
+require('./app/javascript/app.js');
