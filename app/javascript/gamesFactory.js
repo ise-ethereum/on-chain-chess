@@ -25,7 +25,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
     console.log('eventGameInitialized', err, data);
     if (err) {
       $rootScope.$broadcast('message',
-        'Your game could not be created, the following error occures: ' + err,
+        'Your game could not be created, the following error occured: ' + err,
         'error', 'startgame');
     }
     else {
@@ -52,6 +52,63 @@ angular.module('dappChess').factory('games', function ($rootScope) {
 
   games.eventGameJoined = function (err, data) {
     console.log('eventGameJoined', err, data);
+    if (err) {
+      $rootScope.$broadcast('message',
+        'It was not possible to join the game, the following error occured: ' + err,
+        'error', 'joingame');
+    }
+    else {
+      const gameId = data.args.gameId;
+      const p1accountId = data.args.player1;
+      const p1username = data.args.player1Alias;
+      const p1color = 'white';
+      const p2accountId = data.args.player2;
+      const p2username = data.args.player2Alias;
+      const p2color = 'black';
+
+      let opponentName;
+
+      if(inArray(p1accountId, web3.eth.accounts) {
+        opponentName = p2username;
+        
+        games.list.push({
+          self: {
+            username: p1username,
+            accountId: p1accountId,
+            color: p1color
+          },
+          opponent: {
+            username: p2username,
+            accountId: p2accountId,
+            color: p2color
+          },
+          gameId: gameId
+        });
+      }
+      else {
+        opponentName = p1username;
+        
+        games.list.push({
+          opponent: {
+            username: p1username,
+            accountId: p1accountId,
+            color: p1color
+          },
+          self: {
+            username: p2username,
+            accountId: p2accountId,
+            color: p2color
+          },
+          gameId: gameId
+        });
+      }
+      
+
+      $rootScope.$broadcast('message',
+        'Your game against ' + escape(opponentName) + ' has started',
+        'success', 'joingame');
+      $rootScope.$apply();
+    }
   };
 
   games.eventGameStateChanged = function (err, data) {

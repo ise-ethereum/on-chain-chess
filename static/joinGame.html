@@ -1,0 +1,49 @@
+<h1>Join a chess game</h1>
+<div class="row clear">
+  <div class="col col-4 mobile-full">
+    <form name="form" novalidate data-ng-submit="initializeGame(form)">
+      <label>Account for betting</label>
+      <ul class="dapp-account-list">
+        <li data-ng-repeat="account in availableAccounts">
+          <button type="button" data-ng-class="{
+              selected: isSelectedAccount(account)
+            }" data-ng-click="selectAccount(account)">
+            <a class="dapp-identicon dapp-small"></a>
+            <h3>Account {{$index}}</h3>
+            <span>{{account}}</span>
+            <figure class="icon-check" data-ng-show="isSelectedAccount(account)"></figure>
+          </button>
+        </li>
+      </ul>
+      <input name="selectedAccount" type="hidden" data-ng-model="selectedAccount" required />
+      <div data-ng-show="form.$submitted || form.selectedAccount.$touched">
+        <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>
+      </div>
+
+      <label for="username">Username</label>
+      <input id="username" type="text" name="username" data-ng-model="username" required>
+      <div data-ng-show="form.$submitted || form.username.$touched">
+        <div class="error" data-ng-show="form.username.$error.required">Please enter a username.</div>
+      </div>
+
+      <label for="gameId">Game ID</label>
+      <input id="gameId" type="text" name="gameId" data-ng-model="username" required>
+      <div data-ng-show="form.$submitted || form.gameId.$touched">
+        <div class="error" data-ng-show="form.gameId.$error.required">Please enter the game id.</div>
+      </div>
+
+      <input type="submit" value="Join game" />
+    </form>
+  </div>
+  <div class="col col-8 mobile-full">
+    <img src="img/chess.jpg" style="width:100%" alt="chess board">
+    <p><strong>Join a running chess game by following these simple steps:</strong></p>
+    <ul>
+      <li>Select the account to use, enter your username and select the start color</li>
+      <li>Enter the game id that you have received and start the game</li>
+      <li>Your request is being submitted to the blockchain. When the join was successful,
+        the game will appear with the opponents username in the nav bar.</li>
+      <li>Start playing by selecting the game</li>
+    </ul>
+  </div>
+</div>
