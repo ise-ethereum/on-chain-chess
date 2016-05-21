@@ -19,7 +19,9 @@ contract Chess {
         int[64] state;
     }
 
-    mapping (bytes32 => Game) games;
+    mapping (bytes32 => Game) public games;
+    mapping (address => mapping (int => bytes32)) public gamesOfPlayers;
+    mapping (address => int) public numberGamesOfPlayers;
 
     function Chess() {
         // Just a test to see some output, this should be more storage/cost efficient
@@ -49,6 +51,10 @@ contract Chess {
         // Game starts with P2
         games[gameId].nextPlayer = games[gameId].player1;
 
+        // Add game to gamesOfPlayer
+        gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
+        numberGamesOfPlayers[msg.sender]++;
+    
         // Sent notification events
         GameInitialized(gameId, games[gameId].player1, player1Alias);
         GameStateChanged(gameId, games[gameId].state);
@@ -82,6 +88,10 @@ contract Chess {
         Move(gameId, true);
     }
 
+
+    function getGameId(address player, int index) constant returns (bytes32) {
+      return gamesOfPlayers[player][index];
+    }
     /* This unnamed function is called whenever someone tries to send ether to it */
     function () {
         throw;     // Prevents accidental sending of ether

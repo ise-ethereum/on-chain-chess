@@ -5,6 +5,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
   /*
    * Structure of games list:
    * [
+   *  gameId: <string>,
    *  {
    *    self: {
    *      username: <string>,
@@ -16,14 +17,74 @@ angular.module('dappChess').factory('games', function ($rootScope) {
    *      accountId: <string>,
    *      color: <string>
    *    },
-   *    gameId: <string>
    *  }
    * ]
    */
+
   games.getGame = function (id) {
     return games.list.find(function (game) {
       return game.gameId === id;
     });
+  };
+
+  /**
+   * Convert an array to a game object as seen in the contract with the given gameId.
+   * @param gameId of the game
+   * @param array containing the data
+   * @returns object as seen in the contract
+   */
+  games.convertArrayToGame = function (gameId, array) {
+    return {
+      gameId: gameId,
+      player1: array[0],
+      player2: array[1],
+      player1Alias: array[2],
+      player2Alias: array[3],
+      nextPlayer: array[4],
+      winner: array[5],
+      state: array[6]
+    };
+  };
+
+  /**
+   * Add a game to the list, if there is no game with the same id.
+   * @param contractGameObject An object with the structure of a Game in the contract<br>
+   *     { player1: "<address>", player2: "<address>", ... }
+   * @returns the new created game or undefined, if the gameId is already in the list
+   */
+  games.add = function (contractGameObject) {
+    if (typeof games.getGame(contractGameObject.gameId) !== 'undefined') {
+      return;
+    }
+    var game = { gameId: contractGameObject.gameId };
+
+    if (inArray(contractGameObject.p2accountId, web3.eth.accounts)) {
+      game.self = {
+        username: contractGameObject.player2Alias,
+        accountId: contractGameObject.player2,
+        color: 'black'
+      };
+      game.opponent = {
+        username: contractGameObject.player1Alias,
+        accountId: contractGameObject.player1,
+        color: 'white'
+      };
+    } else {
+      game.self = {
+        username: contractGameObject.player1Alias,
+        accountId: contractGameObject.player1,
+        color: 'white'
+      };
+      if (contractGameObject.player2 !== '0x0000000000000000000000000000000000000000') {
+        game.opponent = {
+          username: contractGameObject.player2Alias,
+          accountId: contractGameObject.player2,
+          color: 'black'
+        };
+      }
+    }
+    games.list.push(game);
+    return game;
   };
 
   games.eventGameInitialized = function (err, data) {
@@ -32,26 +93,15 @@ angular.module('dappChess').factory('games', function ($rootScope) {
       $rootScope.$broadcast('message',
         'Your game could not be created, the following error occured: ' + err,
         'error', 'startgame');
-    }
-    else {
-      const gameId = data.args.gameId;
-      const accountId = data.args.player1;
-      const username = data.args.player1Alias;
-      const color = 'white';
+    } else {
+      let game = games.add(data.args);
 
-      games.list.push({
-        self: {
-          username: username,
-          accountId: accountId,
-          color: color
-        },
-        gameId: gameId
-      });
-
-      $rootScope.$broadcast('message',
-        'Your game has successfully been created and has the id ' + gameId,
-        'success', 'startgame');
-      $rootScope.$apply();
+      if (inArray(game.self.accountId, web3.eth.accounts)) {
+        $rootScope.$broadcast('message',
+          'Your game has successfully been created and has the id ' + game.gameId,
+          'success', 'startgame');
+        $rootScope.$apply();
+      }
     }
   };
 
@@ -72,11 +122,19 @@ angular.module('dappChess').factory('games', function ($rootScope) {
 
       let game = games.getGame(gameId);
       if (typeof game === 'undefined') {
-        game = { gameId: gameId };
-        games.list.push(game);
-      }
-
-      if (inArray(p1accountId, web3.eth.accounts)) {
+        game = games.add(data.args);
+      } else if (inArray(p2accountId, web3.eth.accounts)) {
+        game.self = {
+          username: p2username,
+          accountId: p2accountId,
+          color: p2color
+        };
+        game.opponent = {
+          username: p1username,
+          accountId: p1accountId,
+          color: p1color
+        };
+      } else {
         game.self = {
           username: p1username,
           accountId: p1accountId,
@@ -87,19 +145,6 @@ angular.module('dappChess').factory('games', function ($rootScope) {
           accountId: p2accountId,
           color: p2color
         };
-      } else {
-        games.list.push({
-          opponent: {
-            username: p1username,
-            accountId: p1accountId,
-            color: p1color
-          },
-          self: {
-            username: p2username,
-            accountId: p2accountId,
-            color: p2color
-          }
-        });
       }
 
       if (inArray(game.self.accountId, web3.eth.accounts)) {
@@ -119,7 +164,18 @@ angular.module('dappChess').factory('games', function ($rootScope) {
     console.log('eventMove', err, data);
   };
 
-  // Event listeners
+  for (let accountId of web3.eth.accounts) {
+    const numberGames = Chess.numberGamesOfPlayers(accountId);
+    if (numberGames === 0) {
+      return;
+    }
+    for (let i = 0; i < numberGames; i++) {
+      let gameId = Chess.gamesOfPlayers(accountId, i);
+      games.add(games.convertArrayToGame(gameId, Chess.games(gameId)));
+    }
+  }
+
+    // Event listeners
   Chess.GameInitialized({}, games.eventGameInitialized);
   Chess.GameJoined({}, games.eventGameJoined);
   Chess.GameStateChanged({}, games.eventGameStateChanged);
