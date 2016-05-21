@@ -1,7 +1,7 @@
 <h1>Join a chess game</h1>
 <div class="row clear">
   <div class="col col-4 mobile-full">
-    <form name="form" novalidate data-ng-submit="initializeGame(form)">
+    <form name="form" novalidate data-ng-submit="joinGame(form)">
       <label>Account for betting</label>
       <ul class="dapp-account-list">
         <li data-ng-repeat="account in availableAccounts">
@@ -27,7 +27,7 @@
       </div>
 
       <label for="gameId">Game ID</label>
-      <input id="gameId" type="text" name="gameId" data-ng-model="username" required>
+      <input id="gameId" type="text" name="gameId" data-ng-model="gameId" required>
       <div data-ng-show="form.$submitted || form.gameId.$touched">
         <div class="error" data-ng-show="form.gameId.$error.required">Please enter the game id.</div>
       </div>

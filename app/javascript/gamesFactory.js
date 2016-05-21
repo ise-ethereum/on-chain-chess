@@ -20,6 +20,11 @@ angular.module('dappChess').factory('games', function ($rootScope) {
    *  }
    * ]
    */
+  games.getGame = function (id) {
+    return games.list.find(function (game) {
+      return game.gameId === id;
+    });
+  };
 
   games.eventGameInitialized = function (err, data) {
     console.log('eventGameInitialized', err, data);
@@ -65,27 +70,24 @@ angular.module('dappChess').factory('games', function ($rootScope) {
       const p2username = data.args.player2Alias;
       const p2color = 'black';
 
-      let opponentName;
+      let game = games.getGame(gameId);
+      if (typeof game === 'undefined') {
+        game = { gameId: gameId };
+        games.list.push(game);
+      }
 
       if (inArray(p1accountId, web3.eth.accounts)) {
-        opponentName = p2username;
-
-        games.list.push({
-          self: {
-            username: p1username,
-            accountId: p1accountId,
-            color: p1color
-          },
-          opponent: {
-            username: p2username,
-            accountId: p2accountId,
-            color: p2color
-          },
-          gameId: gameId
-        });
+        game.self = {
+          username: p1username,
+          accountId: p1accountId,
+          color: p1color
+        };
+        game.opponent = {
+          username: p2username,
+          accountId: p2accountId,
+          color: p2color
+        };
       } else {
-        opponentName = p1username;
-
         games.list.push({
           opponent: {
             username: p1username,
@@ -96,16 +98,16 @@ angular.module('dappChess').factory('games', function ($rootScope) {
             username: p2username,
             accountId: p2accountId,
             color: p2color
-          },
-          gameId: gameId
+          }
         });
       }
 
-
-      $rootScope.$broadcast('message',
-        'Your game against ' + escape(opponentName) + ' has started',
-        'success', 'joingame');
-      $rootScope.$apply();
+      if (inArray(game.self.accountId, web3.eth.accounts)) {
+        $rootScope.$broadcast('message',
+          'Your game against ' + escape(game.opponent.username) + ' has started',
+          'success', 'joingame');
+        $rootScope.$apply();
+      }
     }
   };
 
