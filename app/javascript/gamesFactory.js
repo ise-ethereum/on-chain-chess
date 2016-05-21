@@ -1,4 +1,4 @@
-/* global angular, inArray */
+/* global angular, inArray, escape */
 import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('games', function ($rootScope) {
   const games = {list: []};
@@ -56,8 +56,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
       $rootScope.$broadcast('message',
         'It was not possible to join the game, the following error occured: ' + err,
         'error', 'joingame');
-    }
-    else {
+    } else {
       const gameId = data.args.gameId;
       const p1accountId = data.args.player1;
       const p1username = data.args.player1Alias;
@@ -68,9 +67,9 @@ angular.module('dappChess').factory('games', function ($rootScope) {
 
       let opponentName;
 
-      if(inArray(p1accountId, web3.eth.accounts) {
+      if (inArray(p1accountId, web3.eth.accounts)) {
         opponentName = p2username;
-        
+
         games.list.push({
           self: {
             username: p1username,
@@ -84,10 +83,9 @@ angular.module('dappChess').factory('games', function ($rootScope) {
           },
           gameId: gameId
         });
-      }
-      else {
+      } else {
         opponentName = p1username;
-        
+
         games.list.push({
           opponent: {
             username: p1username,
@@ -102,7 +100,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
           gameId: gameId
         });
       }
-      
+
 
       $rootScope.$broadcast('message',
         'Your game against ' + escape(opponentName) + ' has started',
