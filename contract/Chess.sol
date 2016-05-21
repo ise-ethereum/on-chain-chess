@@ -30,7 +30,7 @@ contract Chess {
     }
 
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias);
-    event GameJoined(bytes32 indexed gameId, address indexed player2, string player2Alias);
+    event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias);
     event GameStateChanged(bytes32 indexed gameId, int[64] state);
     event Move(bytes32 indexed gameId, bool indexed moveSuccesful);
 
@@ -62,7 +62,7 @@ contract Chess {
 
       games[gameId].player2 = msg.sender;
       games[gameId].player2Alias = player2Alias;
-      GameJoined(gameId, games[gameId].player2, player2Alias);
+      GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias);
     }
 
     /* Move a figure */
