@@ -1,11 +1,11 @@
 <h1>Start new chess game</h1>
 <div class="row clear">
   <div class="col col-4 mobile-full">
-    <form name="form" novalidate>
+    <form name="form" novalidate data-ng-submit="initializeGame(form)">
       <label>Account for betting</label>
       <ul class="dapp-account-list">
         <li data-ng-repeat="account in availableAccounts">
-          <button data-ng-class="{
+          <button type="button" data-ng-class="{
               selected: isSelectedAccount(account)
             }" data-ng-click="selectAccount(account)">
             <a class="dapp-identicon dapp-small"></a>
@@ -35,11 +35,20 @@
         <div class="error" data-ng-show="form.startcolor.$error.required">Please select a start color.</div>
       </div>
 
-      <input type="submit" value="Start game" data-ng-click="initializeGame()" />
+      <input type="submit" value="Start game" />
     </form>
   </div>
   <div class="col col-8 mobile-full">
-    Insert image here
-    <p>Bla bla bla</p>
+    <img src="img/chess.jpg" style="width:100%" alt="chess board">
+    <p><strong>Start off with a new chess game by following these simple steps:</strong></p>
+    <ul>
+      <li>Select the account to use, enter your username and select the start color to start a game</li>
+      <li>Your game is being created in the blockchain. Once your game is ready,
+        it will appear as &quot;Open game&quot; in the navigation</li>
+      <li>Invite friends to join your game by sending the game id to them.
+        You can find the game ID on the games page.</li>
+      <li>Once another player has joined, the game begins.
+        You will also receive a notification about this.</li>
+    </ul>
   </div>
 </div>

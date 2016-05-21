@@ -17,13 +17,13 @@ angular.module('dappChess').controller('InitializeGameCtrl',
     function initializeGame() {
       $rootScope.$broadcast('message', 'Your game is being created, please wait a moment...',
                             'loading', 'startgame');
-      window.setTimeout(() => {
-        Chess.initGame($scope.username, /*$scope.startcolor, */{from: $scope.selectedAccount});
-      }, 3000);
+      Chess.initGame($scope.username, /*$scope.startcolor, */{from: $scope.selectedAccount});
 
     }
 
-    $scope.initializeGame = function () {
-      initializeGame();
+    $scope.initializeGame = function (form) {
+      if(form.$valid) {
+        initializeGame();
+      }
     };
   });
