@@ -30,7 +30,7 @@ describe('Chess', function() {
       this.timeout(10000);
 
       assert.doesNotThrow(function(){
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 100000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 1000000});
       }, Error);
 
       var filter = Chess.GameJoined({});
