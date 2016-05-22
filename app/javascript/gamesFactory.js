@@ -175,6 +175,15 @@ angular.module('dappChess').factory('games', function ($rootScope) {
     }
   }
 
+  const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
+  let counter = 0;
+  console.log('list of open games:');
+  for (let x = Chess.head(); x !== end && counter < 25; x = Chess.openGames(x)) {
+    console.log('=>', x);
+    counter++;
+  }
+
+
     // Event listeners
   Chess.GameInitialized({}, games.eventGameInitialized);
   Chess.GameJoined({}, games.eventGameJoined);

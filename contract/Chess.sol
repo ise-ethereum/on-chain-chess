@@ -22,8 +22,11 @@ contract Chess {
     mapping (bytes32 => Game) public games;
     mapping (address => mapping (int => bytes32)) public gamesOfPlayers;
     mapping (address => int) public numberGamesOfPlayers;
+    mapping (bytes32 => bytes32) public openGames;
+    bytes32 public head;
 
     function Chess() {
+        head = 'end';
         // Just a test to see some output, this should be more storage/cost efficient
         defaultState[0] = 1;
         defaultState[1] = 1;
@@ -51,9 +54,13 @@ contract Chess {
         // Game starts with P2
         games[gameId].nextPlayer = games[gameId].player1;
 
-        // Add game to gamesOfPlayer
+        // Add game to gamesOfPlayers
         gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
         numberGamesOfPlayers[msg.sender]++;
+
+        // Add to openGames
+        openGames[gameId] = head;
+        head = gameId;
 
         // Sent notification events
         GameInitialized(gameId, games[gameId].player1, player1Alias);
@@ -62,15 +69,32 @@ contract Chess {
 
     /* Join a game */
     function joinGame(bytes32 gameId, string player2Alias) public {
-      if (games[gameId].player2 != 0) {
-        throw;
-      }
+        if (games[gameId].player2 != 0) {
+            throw;
+        }
 
-      games[gameId].player2 = msg.sender;
-      games[gameId].player2Alias = player2Alias;
-      gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
-      numberGamesOfPlayers[msg.sender]++;
-      GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias);
+        games[gameId].player2 = msg.sender;
+        games[gameId].player2Alias = player2Alias;
+
+        // Add game to gamesOfPlayers
+        gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
+        numberGamesOfPlayers[msg.sender]++;
+
+        // Remove from openGames
+        if (head == gameId) {
+            head = openGames[head];
+            openGames[gameId] = 0;
+        } else {
+            for (var g = head; g != 'end' && openGames[g] != 'end'; g = openGames[g]) {
+                if (openGames[g] == gameId) {
+                    openGames[g] = openGames[gameId];
+                    openGames[gameId] = 0;
+                    break;
+                }
+            }
+        }
+
+        GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias);
     }
 
     /* Move a figure */
