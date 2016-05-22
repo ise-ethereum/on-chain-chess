@@ -54,7 +54,7 @@ contract Chess {
         // Add game to gamesOfPlayer
         gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
         numberGamesOfPlayers[msg.sender]++;
-    
+
         // Sent notification events
         GameInitialized(gameId, games[gameId].player1, player1Alias);
         GameStateChanged(gameId, games[gameId].state);
@@ -68,6 +68,8 @@ contract Chess {
 
       games[gameId].player2 = msg.sender;
       games[gameId].player2Alias = player2Alias;
+      gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
+      numberGamesOfPlayers[msg.sender]++;
       GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias);
     }
 
