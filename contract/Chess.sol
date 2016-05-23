@@ -22,7 +22,9 @@ contract Chess {
     mapping (bytes32 => Game) public games;
     mapping (address => mapping (int => bytes32)) public gamesOfPlayers;
     mapping (address => int) public numberGamesOfPlayers;
-    mapping (bytes32 => bytes32) public openGames;
+
+    // stack of open game ids
+    mapping (bytes32 => bytes32) public openGameIds;
     bytes32 public head;
 
     function Chess() {
@@ -58,8 +60,8 @@ contract Chess {
         gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
         numberGamesOfPlayers[msg.sender]++;
 
-        // Add to openGames
-        openGames[gameId] = head;
+        // Add to openGameIds
+        openGameIds[gameId] = head;
         head = gameId;
 
         // Sent notification events
@@ -80,15 +82,15 @@ contract Chess {
         gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
         numberGamesOfPlayers[msg.sender]++;
 
-        // Remove from openGames
+        // Remove from openGameIds
         if (head == gameId) {
-            head = openGames[head];
-            openGames[gameId] = 0;
+            head = openGameIds[head];
+            openGameIds[gameId] = 0;
         } else {
-            for (var g = head; g != 'end' && openGames[g] != 'end'; g = openGames[g]) {
-                if (openGames[g] == gameId) {
-                    openGames[g] = openGames[gameId];
-                    openGames[gameId] = 0;
+            for (var g = head; g != 'end' && openGameIds[g] != 'end'; g = openGameIds[g]) {
+                if (openGameIds[g] == gameId) {
+                    openGameIds[g] = openGameIds[gameId];
+                    openGameIds[gameId] = 0;
                     break;
                 }
             }

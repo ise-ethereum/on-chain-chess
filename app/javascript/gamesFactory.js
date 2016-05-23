@@ -1,7 +1,10 @@
 /* global angular, inArray, escape */
 import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('games', function ($rootScope) {
-  const games = {list: []};
+  const games = {
+    list: [],
+    openGames: []
+  };
   /*
    * Structure of games list:
    * [
@@ -96,6 +99,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
         'error', 'startgame');
     } else {
       let game = games.add(data.args);
+      games.openGames.push(game);
 
       if (inArray(game.self.accountId, web3.eth.accounts)) {
         $rootScope.$broadcast('message',
@@ -125,28 +129,36 @@ angular.module('dappChess').factory('games', function ($rootScope) {
       let game = games.getGame(gameId);
       if (typeof game === 'undefined') {
         game = games.add(data.args);
-      } else if (inArray(p2accountId, web3.eth.accounts)) {
-        game.self = {
-          username: p2username,
-          accountId: p2accountId,
-          color: p2color
-        };
-        game.opponent = {
-          username: p1username,
-          accountId: p1accountId,
-          color: p1color
-        };
       } else {
-        game.self = {
-          username: p1username,
-          accountId: p1accountId,
-          color: p1color
-        };
-        game.opponent = {
-          username: p2username,
-          accountId: p2accountId,
-          color: p2color
-        };
+        for (let i in games.openGames) {
+          if (games.openGames[i].gameId === gameId) {
+            games.openGames.splice(i, 1);
+            break;
+          }
+        }
+        if (inArray(p2accountId, web3.eth.accounts)) {
+          game.self = {
+            username: p2username,
+            accountId: p2accountId,
+            color: p2color
+          };
+          game.opponent = {
+            username: p1username,
+            accountId: p1accountId,
+            color: p1color
+          };
+        } else {
+          game.self = {
+            username: p1username,
+            accountId: p1accountId,
+            color: p1color
+          };
+          game.opponent = {
+            username: p2username,
+            accountId: p2accountId,
+            color: p2color
+          };
+        }
       }
 
       if (inArray(game.self.accountId, web3.eth.accounts)) {
@@ -178,16 +190,17 @@ angular.module('dappChess').factory('games', function ($rootScope) {
     }
   }
 
+  // Fetches open games
   const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
-  let counter = 0;
-  console.log('list of open games:');
-  for (let x = Chess.head(); x !== end && counter < 25; x = Chess.openGames(x)) {
-    console.log('=>', x);
-    counter++;
+  for (let x = Chess.head(); x !== end; x = Chess.openGameIds(x)) {
+    let g = Chess.games(x);
+    if (typeof g !== 'undefined') {
+      games.openGames.push(g);
+    }
   }
 
 
-    // Event listeners
+  // Event listeners
   Chess.GameInitialized({}, games.eventGameInitialized);
   Chess.GameJoined({}, games.eventGameJoined);
   Chess.GameStateChanged({}, games.eventGameStateChanged);
