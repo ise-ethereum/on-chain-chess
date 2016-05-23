@@ -16,7 +16,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
    *      username: <string>,
    *      accountId: <string>,
    *      color: <string>
-   *    },
+   *    }
    *  }
    * ]
    */
@@ -56,7 +56,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
     if (typeof games.getGame(contractGameObject.gameId) !== 'undefined') {
       return;
     }
-    var game = { gameId: contractGameObject.gameId };
+    let game = { gameId: contractGameObject.gameId };
 
     if (inArray(contractGameObject.p2accountId, web3.eth.accounts)) {
       game.self = {
@@ -90,6 +90,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
   games.eventGameInitialized = function (err, data) {
     console.log('eventGameInitialized', err, data);
     if (err) {
+      console.log('error occured', err);
       $rootScope.$broadcast('message',
         'Your game could not be created, the following error occured: ' + err,
         'error', 'startgame');
@@ -108,17 +109,18 @@ angular.module('dappChess').factory('games', function ($rootScope) {
   games.eventGameJoined = function (err, data) {
     console.log('eventGameJoined', err, data);
     if (err) {
+      console.log('error occured', err);
       $rootScope.$broadcast('message',
         'It was not possible to join the game, the following error occured: ' + err,
         'error', 'joingame');
     } else {
-      const gameId = data.args.gameId;
-      const p1accountId = data.args.player1;
-      const p1username = data.args.player1Alias;
-      const p1color = 'white';
-      const p2accountId = data.args.player2;
-      const p2username = data.args.player2Alias;
-      const p2color = 'black';
+      let gameId = data.args.gameId;
+      let p1accountId = data.args.player1;
+      let p1username = data.args.player1Alias;
+      let p1color = 'white';
+      let p2accountId = data.args.player2;
+      let p2username = data.args.player2Alias;
+      let p2color = 'black';
 
       let game = games.getGame(gameId);
       if (typeof game === 'undefined') {
@@ -164,8 +166,9 @@ angular.module('dappChess').factory('games', function ($rootScope) {
     console.log('eventMove', err, data);
   };
 
+  // Fetches games of player
   for (let accountId of web3.eth.accounts) {
-    const numberGames = Chess.numberGamesOfPlayers(accountId);
+    let numberGames = Chess.numberGamesOfPlayers(accountId);
     if (numberGames === 0) {
       return;
     }
