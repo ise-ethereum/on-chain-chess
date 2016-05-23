@@ -14,6 +14,7 @@ describe('Chess', function() {
 
       Chess.initGame('Alice', {from: player1, gas: 1000000});
 
+      // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
       filter.watch(function(error, result){
         gameId = result.args.gameId;
@@ -33,6 +34,7 @@ describe('Chess', function() {
         Chess.joinGame(gameId, 'Bob', {from: player2, gas: 100000});
       }, Error);
 
+      // Watch for event from contract to check if it worked
       var filter = Chess.GameJoined({});
       filter.watch(function(error, result){
         assert.equal(gameId, result.args.gameId);
@@ -53,6 +55,7 @@ describe('Chess', function() {
 
   describe('move()', function () {
     it('should throw an exception on an invalid move', function() {
+      // player1 is not the next player, so this should throw an error
       assert.throws(function(){
         Chess.move(gameId, {from: player2, gas: 100000});
       }, Error);
@@ -60,10 +63,12 @@ describe('Chess', function() {
     it('should accept a valid move', function(done) {
       this.timeout(10000);
 
+      // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
         Chess.move(gameId, {from: player1, gas: 100000});
       }, Error);
 
+      // Watch for event from contract to check if it worked
       var filter = Chess.Move({});
       filter.watch(function(error, result){
         assert.isTrue(result.args.moveSuccesful);
