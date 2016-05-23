@@ -44,8 +44,9 @@ angular.module('dappChess').factory('games', function ($rootScope) {
       player1Alias: array[2],
       player2Alias: array[3],
       nextPlayer: array[4],
-      winner: array[5],
-      state: array[6]
+      playerWhite: array[5],
+      winner: array[6],
+      state: array[7]
     };
   };
 
@@ -65,24 +66,25 @@ angular.module('dappChess').factory('games', function ($rootScope) {
       game.self = {
         username: contractGameObject.player2Alias,
         accountId: contractGameObject.player2,
-        color: 'black'
+        color: (contractGameObject.playerWhite === contractGameObject.player2 ? 'white' : 'black')
       };
       game.opponent = {
         username: contractGameObject.player1Alias,
         accountId: contractGameObject.player1,
-        color: 'white'
+        color: (contractGameObject.playerWhite === contractGameObject.player1 ? 'white' : 'black')
       };
     } else {
       game.self = {
         username: contractGameObject.player1Alias,
         accountId: contractGameObject.player1,
-        color: 'white'
+        color: (contractGameObject.playerWhite === contractGameObject.player1 ? 'white' : 'black')
       };
-      if (contractGameObject.player2 !== '0x0000000000000000000000000000000000000000') {
+      if (typeof contractGameObject.player2 !== 'undefined' &&
+          contractGameObject.player2 !== '0x0000000000000000000000000000000000000000') {
         game.opponent = {
           username: contractGameObject.player2Alias,
           accountId: contractGameObject.player2,
-          color: 'black'
+          color: (contractGameObject.playerWhite === contractGameObject.player2 ? 'white' : 'black')
         };
       }
     }
@@ -121,10 +123,10 @@ angular.module('dappChess').factory('games', function ($rootScope) {
       let gameId = data.args.gameId;
       let p1accountId = data.args.player1;
       let p1username = data.args.player1Alias;
-      let p1color = 'white';
+      let p1color = (data.args.playerWhite === data.args.player1 ? 'white' : 'black');
       let p2accountId = data.args.player2;
       let p2username = data.args.player2Alias;
-      let p2color = 'black';
+      let p2color = (data.args.playerWhite === data.args.player2 ? 'white' : 'black');
 
       let game = games.getGame(gameId);
       if (typeof game === 'undefined') {
@@ -178,7 +180,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
     console.log('eventMove', err, data);
   };
 
-  // Fetches games of player
+  // Fetch games of player
   for (let accountId of web3.eth.accounts) {
     let numberGames = Chess.numberGamesOfPlayers(accountId);
     if (numberGames === 0) {
@@ -190,7 +192,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
     }
   }
 
-  // Fetches open games
+  // Fetch open games
   const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
   for (let x = Chess.head(); x !== end; x = Chess.openGameIds(x)) {
     let g = Chess.games(x);

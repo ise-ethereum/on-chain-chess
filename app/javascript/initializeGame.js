@@ -17,7 +17,8 @@ angular.module('dappChess').controller('InitializeGameCtrl',
     function initializeGame() {
       $rootScope.$broadcast('message', 'Your game is being created, please wait a moment...',
                             'loading', 'startgame');
-      Chess.initGame($scope.username, /*$scope.startcolor, */{from: $scope.selectedAccount});
+      Chess.initGame($scope.username, $scope.startcolor === 'white',
+                     { from: $scope.selectedAccount });
 
     }
 
