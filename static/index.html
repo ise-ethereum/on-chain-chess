@@ -11,14 +11,13 @@
     </header>
 
     <div class="dapp-flex-content">
-
       <!-- aside -->
       <aside class="dapp-aside">
-        <nav data-ng-controller="NavigationCtrl">
+        <nav data-ng-controller="MenuCtrl">
           <ul>
             <li>
               <a href="#/initializeGame" data-ng-class="{
-                    active: isActivePage('initializeGame')
+                    active: navigation.isActivePage(navigation.initializeGamePage)
                   }">
                 <i class="icon-plus"></i>
                 <span>Start a new game</span>
@@ -26,16 +25,16 @@
             </li>
             <li>
               <a href="#/joinGame" data-ng-class="{
-                    active: isActivePage('joinGame')
+                    active: navigation.isActivePage(navigation.joinGamePage)
                   }">
                 <i class="icon-login"></i>
                 <span>Join a new game</span>
               </a>
             </li>
 
-            <li data-ng-repeat="game in games | ownGames">
-              <a href="#" data-ng-href="#/playGame/{{game.gameId}}" data-ng-class="{
-                    active: isActiveGame(game)
+            <li data-ng-repeat="game in games| ownGames">
+              <a href="#" data-ng-href="#/{{navigation.playGamePage}}/{{game.gameId}}" data-ng-class="{
+                    active: navigation.isActiveGame(game)
                   }">
                 <span>{{game.opponent.username|| "Open game"}}</span>
               </a>
