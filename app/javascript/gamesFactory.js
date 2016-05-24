@@ -1,4 +1,4 @@
-/* global angular, inArray, escape */
+/* global angular, escape */
 import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('games', function (navigation, $rootScope, $route) {
   const games = {
@@ -62,7 +62,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
     }
     let game = { gameId: contractGameObject.gameId };
 
-    if (inArray(contractGameObject.p2accountId, web3.eth.accounts)) {
+    if (web3.eth.accounts.indexOf(contractGameObject.p2accountId) !== -1) {
       game.self = {
         username: contractGameObject.player2Alias,
         accountId: contractGameObject.player2,
@@ -103,7 +103,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
       let game = games.add(data.args);
       games.openGames.push(game.gameId);
 
-      if (inArray(game.self.accountId, web3.eth.accounts)) {
+      if (web3.eth.accounts.indexOf(game.self.accountId) !== -1) {
         $rootScope.$broadcast('message',
           'Your game has successfully been created and has the id ' + game.gameId,
           'success', 'startgame');
@@ -135,7 +135,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
         // remove game from openGames
         let gameIndex = games.openGames.indexOf(gameId);
         games.openGames.splice(gameIndex, 1);
-        if (inArray(p2accountId, web3.eth.accounts)) {
+        if (web3.eth.accounts.indexOf(p2accountId) !== -1) {
           game.self = {
             username: p2username,
             accountId: p2accountId,
@@ -160,7 +160,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
         }
       }
 
-      if (inArray(game.self.accountId, web3.eth.accounts)) {
+      if (web3.eth.accounts.indexOf(game.self.accountId) !== -1) {
         $rootScope.$broadcast('message',
             'Your game against ' + escape(game.opponent.username) + ' has started',
             'success', 'joingame');
@@ -220,7 +220,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
   return function (games) {
     if (typeof games !== 'undefined')
       return games.filter(function (game) {
-        return inArray(game.self.accountId, web3.eth.accounts);
+        return web3.eth.accounts.indexOf(game.self.accountId) !== -1;
       });
   };
 });

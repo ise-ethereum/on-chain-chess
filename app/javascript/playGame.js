@@ -1,7 +1,7 @@
-/* global angular, inArray */
+/* global angular */
 angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, $scope) {
   function checkOpenGame(gameId) {
-    return inArray(gameId, games.openGames);
+    return games.openGames.indexOf(gameId) !== -1;
   }
   
   $scope.getGameId = function() {

@@ -1,5 +1,4 @@
 require('./app/less/base.less');
-require('./app/javascript/inArray.js');
 require('./app/javascript/scrolled.js');
 require('./app/javascript/app.js');
 require('./app/javascript/navigation.js');
