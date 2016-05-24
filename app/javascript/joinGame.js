@@ -17,7 +17,12 @@ angular.module('dappChess').controller('JoinGameCtrl',
     function joinGame() {
       $rootScope.$broadcast('message', 'Trying to join the game, please wait a moment...',
                             'loading', 'joingame');
-      Chess.joinGame($scope.gameId, $scope.username, {from: $scope.selectedAccount});
+      try {
+        Chess.joinGame($scope.gameId, $scope.username, {from: $scope.selectedAccount});
+      }
+      catch(e) {
+        $rootScope.$broadcast('message', 'Could not join the game', 'loading', 'joingame');
+      }
     }
 
     $scope.joinGame = function (form) {
