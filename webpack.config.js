@@ -47,7 +47,7 @@ module.exports = {
       },
       {
         test: /\.less$/,
-        loader: ExtractTextPlugin.extract(
+        loader: ExtractTextPlugin.extract('style-loader',
                 'css?sourceMap!' +
                 'less?sourceMap'
                 )
