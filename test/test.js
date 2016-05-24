@@ -94,6 +94,12 @@ describe('Chess contract', function() {
       }, Error);
     });
 
+    it('should throw an exception when player with color black starts', function() {
+      assert.throws(function(){
+        Chess.move(testGames[1], {from: player1, gas: 100000});
+      }, Error);
+    });
+
     it('should accept a valid move', function(done) {
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
