@@ -132,12 +132,9 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
       if (typeof game === 'undefined') {
         game = games.add(data.args);
       } else {
-        for (let i in games.openGames) {
-          if (games.openGames[i] === gameId) {
-            games.openGames.splice(i, 1);
-            break;
-          }
-        }
+        // remove game from openGames
+        let gameIndex = games.openGames.indexOf(gameId);
+        games.openGames.splice(gameIndex, 1);
         if (inArray(p2accountId, web3.eth.accounts)) {
           game.self = {
             username: p2username,
@@ -167,7 +164,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
         $rootScope.$broadcast('message',
             'Your game against ' + escape(game.opponent.username) + ' has started',
             'success', 'joingame');
-        
+
         if($route.current.activePage === navigation.joinGamePage) {
           navigation.goto(navigation.playGamePage, gameId);
         }
@@ -200,16 +197,15 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
 
   // Fetch open games
   const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
-  for (let currentGameId = Chess.head();
-        currentGameId !== end;
-        currentGameId = Chess.openGameIds(currentGameId)) {
-    // Check if the open game also exists in the games list
-    let game = Chess.games(currentGameId);
-    if (typeof game !== 'undefined') {
-      games.openGames.push(currentGameId);
+  for (let currentGameId = Chess.head(); currentGameId !== end; currentGameId = Chess.openGameIds(currentGameId)) {
+    // Check if the open game already exists in the games list
+    let game = games.getGame(currentGameId);
+    if (typeof game === 'undefined') {
+      games.add(games.convertArrayToGame(currentGameId, Chess.games(currentGameId)));
     }
+    games.openGames.push(currentGameId);
   }
-  
+
 
   // Event listeners
   Chess.GameInitialized({}, games.eventGameInitialized);
