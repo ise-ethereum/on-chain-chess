@@ -1,6 +1,6 @@
 /* global angular, inArray, escape */
 import {web3, Chess} from '../../contract/Chess.sol';
-angular.module('dappChess').factory('games', function ($rootScope) {
+angular.module('dappChess').factory('games', function (navigation, $rootScope, $route) {
   const games = {
     list: [],
     openGames: []
@@ -101,7 +101,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
         'error', 'startgame');
     } else {
       let game = games.add(data.args);
-      games.openGames.push(game);
+      games.openGames.push(game.gameId);
 
       if (inArray(game.self.accountId, web3.eth.accounts)) {
         $rootScope.$broadcast('message',
@@ -133,7 +133,7 @@ angular.module('dappChess').factory('games', function ($rootScope) {
         game = games.add(data.args);
       } else {
         for (let i in games.openGames) {
-          if (games.openGames[i].gameId === gameId) {
+          if (games.openGames[i] === gameId) {
             games.openGames.splice(i, 1);
             break;
           }
@@ -165,9 +165,15 @@ angular.module('dappChess').factory('games', function ($rootScope) {
 
       if (inArray(game.self.accountId, web3.eth.accounts)) {
         $rootScope.$broadcast('message',
-          'Your game against ' + escape(game.opponent.username) + ' has started',
-          'success', 'joingame');
-        $rootScope.$apply();
+            'Your game against ' + escape(game.opponent.username) + ' has started',
+            'success', 'joingame');
+        
+        if($route.current.activePage === navigation.joinGamePage) {
+          navigation.goto(navigation.playGamePage, gameId);
+        }
+        else {
+          $rootScope.$apply();
+        }
       }
     }
   };
@@ -194,13 +200,16 @@ angular.module('dappChess').factory('games', function ($rootScope) {
 
   // Fetch open games
   const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
-  for (let x = Chess.head(); x !== end; x = Chess.openGameIds(x)) {
-    let g = Chess.games(x);
-    if (typeof g !== 'undefined') {
-      games.openGames.push(g);
+  for (let currentGameId = Chess.head();
+        currentGameId !== end;
+        currentGameId = Chess.openGameIds(currentGameId)) {
+    // Check if the open game also exists in the games list
+    let game = Chess.games(currentGameId);
+    if (typeof game !== 'undefined') {
+      games.openGames.push(currentGameId);
     }
   }
-
+  
 
   // Event listeners
   Chess.GameInitialized({}, games.eventGameInitialized);
