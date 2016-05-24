@@ -1,4 +1,4 @@
-/* global angular, escape */
+/* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('games', function (navigation, $rootScope, $route) {
   const games = {
@@ -161,8 +161,9 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
       }
 
       if (web3.eth.accounts.indexOf(game.self.accountId) !== -1) {
-        $rootScope.$broadcast('message',
-            'Your game against ' + escape(game.opponent.username) + ' has started',
+        $rootScope.$broadcast('message', 'Your game against ' +
+                game.opponent.username.replace(/<(?:.|\n)*?>/gm, '') +
+                ' has started',
             'success', 'joingame');
 
         if($route.current.activePage === navigation.joinGamePage) {
@@ -222,5 +223,19 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
       return games.filter(function (game) {
         return web3.eth.accounts.indexOf(game.self.accountId) !== -1;
       });
+  };
+}).filter('othersOpenGames', function () {
+  return function (games, openGames) {
+    if (typeof games !== 'undefined') {
+      return games.filter(function (game) {
+        // We can not filter out "our own games yet",
+        // course otherwise we would not see any games at all
+        // with the current test setup
+        // Remove the true part for live function
+        return web3.eth.accounts.indexOf(game.self.accountId) === -1 || true;
+      }).filter(function(game) {
+        return openGames.indexOf(game.gameId) !== -1;
+      });
+    }
   };
 });

@@ -36,11 +36,27 @@
     </form>
   </div>
   <div class="col col-8 mobile-full">
-    <img src="img/chess.jpg" style="width:100%" alt="chess board">
+    <table class="dapp-zebra">
+      <thead>
+        <tr>
+          <th>Opponent</th>
+          <th>Color</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-ng-repeat="game in games | othersOpenGames:openGames"
+            data-ng-class="{selected: isSelectedGame(game)}">
+          <td>{{game.self.username}}</td>
+          <td>{{game.self.color}}</td>
+          <td><a href="#" data-ng-click="setSelectedGame($event, game)">Select</a></td>
+        </tr><!-- | orderBy:predicate:reverse-->
+      </tbody>
+    </table>
     <p><strong>Join a running chess game by following these simple steps:</strong></p>
     <ul>
       <li>Select the account to use, enter your username and select the start color</li>
-      <li>Enter the game id that you have received and start the game</li>
+      <li>Enter the game id that you have received or choose a game from the list to start the game</li>
       <li>Your request is being submitted to the blockchain. When the join was successful,
         the game will appear with the opponents username in the nav bar.</li>
       <li>Start playing by selecting the game</li>

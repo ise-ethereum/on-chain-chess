@@ -1,17 +1,27 @@
 /* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('JoinGameCtrl',
-  function ($rootScope, $scope) {
+  function ($rootScope, $scope, games) {
     $scope.availableAccounts = web3.eth.accounts;
     $scope.selectedAccount = web3.eth.defaultAccount;
     $scope.username = null;
     $scope.gameId = null;
+    $scope.games = games.list;
+    $scope.openGames = games.openGames;
 
     $scope.isSelectedAccount = function (account) {
       return $scope.selectedAccount === account;
     };
     $scope.selectAccount = function (account) {
       $scope.selectedAccount = account;
+    };
+    $scope.setSelectedGame = function($event, game) {
+      $scope.gameId = game.gameId;
+      
+      $event.preventDefault();
+    };
+    $scope.isSelectedGame = function(game) {
+      return $scope.gameId === game.gameId;
     };
 
     function joinGame() {
