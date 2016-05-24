@@ -1,7 +1,7 @@
 /* global angular */
 const MESSAGE_TIMEOUTS = {message: 7000, success: 6000, error: 14000};
 
-angular.module('dappChess').controller('MessagesCtrl', function ($scope) {
+angular.module('dappChess').controller('MessagesCtrl', function ($scope, $timeout) {
   $scope.messages = [];
 
   $scope.$on('message', function(event, message, type = message, topic = null) {
@@ -16,14 +16,13 @@ angular.module('dappChess').controller('MessagesCtrl', function ($scope) {
       });
     }
     if(type === 'success' || type === 'error') {
-      setTimeout(function() {
+      $timeout(function() {
         $scope.messages = $scope.messages.filter(function(message) {
           if(id === message.id) {
             return false;
           }
           return true;
         });
-        $scope.$apply();
       }, MESSAGE_TIMEOUTS[type]);
     }
 
