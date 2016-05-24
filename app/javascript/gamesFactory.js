@@ -197,7 +197,9 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
 
   // Fetch open games
   const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
-  for (let currentGameId = Chess.head(); currentGameId !== end; currentGameId = Chess.openGameIds(currentGameId)) {
+  for (let currentGameId = Chess.head();
+       currentGameId !== end;
+       currentGameId = Chess.openGameIds(currentGameId)) {
     // Check if the open game already exists in the games list
     let game = games.getGame(currentGameId);
     if (typeof game === 'undefined') {
