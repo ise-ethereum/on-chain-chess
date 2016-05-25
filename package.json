@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack --watch",
-    "build": "webpack",
+    "build": "webpack --bail",
     "test": "mocha-webpack --growl",
     "test-testrpc": "concurrently --kill-others -s first 'testrpc' 'npm run test'",
     "lint": "jshint app/javascript/*.js"
@@ -36,6 +36,7 @@
     "concurrently": "*",
     "css-loader": "^0.23.1",
     "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.8.5",
     "jshint": "^2.9.2",
     "jshint-loader": "^0.8.3",
     "json-loader": "^0.5.4",

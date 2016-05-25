@@ -48,7 +48,7 @@ describe('Chess contract', function() {
   describe('joinGame()', function () {
     it('should join player2 as black if player1 is white', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 100000});
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 200000});
       }, Error);
 
       // Watch for event from contract to check if it worked
@@ -73,7 +73,7 @@ describe('Chess contract', function() {
 
     it('should join player2 as white if player1 is black', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[1], 'Bob', {from: player2, gas: 120000});
+        Chess.joinGame(testGames[1], 'Bob', {from: player2, gas: 200000});
       }, Error);
 
       // Watch for event from contract to check if it worked

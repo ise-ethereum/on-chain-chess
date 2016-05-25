@@ -20,9 +20,16 @@ contract Chess {
         int[64] state;
     }
 
-    mapping (bytes32 => Game) games;
+    mapping (bytes32 => Game) public games;
+    mapping (address => mapping (int => bytes32)) public gamesOfPlayers;
+    mapping (address => int) public numberGamesOfPlayers;
+
+    // stack of open game ids
+    mapping (bytes32 => bytes32) public openGameIds;
+    bytes32 public head;
 
     function Chess() {
+        head = 'end';
         // Just a test to see some output, this should be more storage/cost efficient
         defaultState[0] = 1;
         defaultState[1] = 1;
@@ -60,6 +67,14 @@ contract Chess {
             games[gameId].nextPlayer = games[gameId].player1;
         }
 
+        // Add game to gamesOfPlayers
+        gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
+        numberGamesOfPlayers[msg.sender]++;
+
+        // Add to openGameIds
+        openGameIds[gameId] = head;
+        head = gameId;
+
         // Sent notification events
         GameInitialized(gameId, games[gameId].player1, player1Alias, games[gameId].playerWhite);
         GameStateChanged(gameId, games[gameId].state);
@@ -87,6 +102,24 @@ contract Chess {
 
       }
 
+      // Add game to gamesOfPlayers
+      gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
+      numberGamesOfPlayers[msg.sender]++;
+  
+      // Remove from openGameIds
+      if (head == gameId) {
+        head = openGameIds[head];
+        openGameIds[gameId] = 0;
+      } else {
+        for (var g = head; g != 'end' && openGameIds[g] != 'end'; g = openGameIds[g]) {
+          if (openGameIds[g] == gameId) {
+            openGameIds[g] = openGameIds[gameId];
+            openGameIds[gameId] = 0;
+            break;
+          }
+        }
+      }
+
       GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, games[gameId].playerWhite);
     }
 
@@ -107,6 +140,11 @@ contract Chess {
         Move(gameId, true);
     }
 
+
+    function getGameId(address player, int index) constant returns (bytes32) {
+      return gamesOfPlayers[player][index];
+    }
+    
     /* This unnamed function is called whenever someone tries to send ether to it */
     function () {
         throw;     // Prevents accidental sending of ether

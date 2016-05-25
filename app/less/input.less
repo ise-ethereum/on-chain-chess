@@ -1,0 +1,19 @@
+label {
+	display:block;
+	margin-top:@gridHeight
+}
+label + input, label + select, label + .dapp-account-list {
+	margin-top:0
+}
+input:invalid.ng-untouched, select:invalid.ng-untouched {
+	color:inherit;
+	background-color:inherit;
+	border-color:inherit;
+	border: 0;
+    border-bottom: solid 2px @colorGray;
+    background-color: @colorGrayLight;
+    color: @colorLink;
+}
+input + div > div.error {
+	color: @colorError;
+}
