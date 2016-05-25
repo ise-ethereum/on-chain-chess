@@ -58,12 +58,13 @@ contract Chess {
         // Initialize state
         games[gameId].state = defaultState;
 
-        // Game starts with P2
-        games[gameId].nextPlayer = games[gameId].player1;
 
         if (playAsWhite) {
             // Player 1 will play as white
             games[gameId].playerWhite = msg.sender;
+
+            // Game starts with White, so here P1
+            games[gameId].nextPlayer = games[gameId].player1;
         }
 
         // Add game to gamesOfPlayers
@@ -89,13 +90,16 @@ contract Chess {
       if (games[gameId].player2 != 0) {
         throw;
       }
-
+            
       games[gameId].player2 = msg.sender;
       games[gameId].player2Alias = player2Alias;
 
       // If the other player isn't white, player2 will play as white
       if (games[gameId].playerWhite == 0) {
         games[gameId].playerWhite = msg.sender;
+        // Game starts with White, so here P2  
+        games[gameId].nextPlayer = games[gameId].player2;
+
       }
 
       // Add game to gamesOfPlayers
