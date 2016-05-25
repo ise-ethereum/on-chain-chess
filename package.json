@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack --watch",
-    "build": "webpack",
+    "build": "webpack --bail",
     "test": "mocha-webpack --growl",
     "test-testrpc": "concurrently --kill-others -s first 'testrpc' 'npm run test'",
     "lint": "jshint app/javascript/*.js"
