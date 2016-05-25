@@ -12,7 +12,10 @@ contract Chess {
     struct Game {
         address player1;
         address player2;
+        string player1Alias;
+        string player2Alias;
         address nextPlayer;
+        address playerWhite; // Player that is white in this game
         address winner;
         int[64] state;
     }
@@ -27,28 +30,64 @@ contract Chess {
         defaultState[0x39] = -1;
     }
 
-    event GameInitialized(address indexed player1, address indexed player2, bytes32 indexed gameId);
+    event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite);
+    event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite);
     event GameStateChanged(bytes32 indexed gameId, int[64] state);
     event Move(bytes32 indexed gameId, bool indexed moveSuccesful);
 
-    /* Initialize a game */
-    function initGame(address withPlayer) public {
-        // Generate game id based on two players' addresses and current timestamp
-        bytes32 gameId = sha3(msg.sender, withPlayer, now);
+    /**
+     * Initialize a new game
+     * string player1Alias: Alias of the player creating the game
+     * bool playAsWhite: Pass true or false depending on if the creator will play as white
+     */
+    function initGame(string player1Alias, bool playAsWhite) public {
+        // Generate game id based on player's addresses and current timestamp
+        bytes32 gameId = sha3(msg.sender, now);
 
         // Initialize participants
         games[gameId].player1 = msg.sender;
-        games[gameId].player2 = withPlayer;
+        games[gameId].player1Alias = player1Alias;
 
         // Initialize state
         games[gameId].state = defaultState;
 
-        // Game starts with P2
-        games[gameId].nextPlayer = withPlayer;
+
+        if (playAsWhite) {
+            // Player 1 will play as white
+            games[gameId].playerWhite = msg.sender;
+
+            // Game starts with White, so here P1
+            games[gameId].nextPlayer = games[gameId].player1;
+        }
 
         // Sent notification events
-        GameInitialized(games[gameId].player1, games[gameId].player2, gameId);
+        GameInitialized(gameId, games[gameId].player1, player1Alias, games[gameId].playerWhite);
         GameStateChanged(gameId, games[gameId].state);
+    }
+
+    /**
+     * Join an initialized game
+     * bytes32 gameId: ID of the game to join
+     * string player2Alias: Alias of the player that is joining
+     */
+    function joinGame(bytes32 gameId, string player2Alias) public {
+      // Check that this game does not have a second player yet
+      if (games[gameId].player2 != 0) {
+        throw;
+      }
+            
+      games[gameId].player2 = msg.sender;
+      games[gameId].player2Alias = player2Alias;
+
+      // If the other player isn't white, player2 will play as white
+      if (games[gameId].playerWhite == 0) {
+        games[gameId].playerWhite = msg.sender;
+        // Game starts with White, so here P2  
+        games[gameId].nextPlayer = games[gameId].player2;
+
+      }
+
+      GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, games[gameId].playerWhite);
     }
 
     /* Move a figure */
