@@ -22,8 +22,8 @@ angular.module('dappChess').controller('InitializeGameCtrl',
                      { from: $scope.selectedAccount });
       }
       catch(e) {
-        $rootScope.$broadcast('message', 'Could not initialize the game', 'loading', 'joingame');
-      } 
+        $rootScope.$broadcast('message', 'Could not initialize the game', 'loading', 'startgame');
+      }
 
     }
 
