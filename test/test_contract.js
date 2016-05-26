@@ -19,6 +19,7 @@ describe('Chess contract', function() {
   var testGames = [];
   const player1 = web3.eth.accounts[0];
   const player2 = web3.eth.accounts[1];
+  const player3 = web3.eth.accounts[2];
 
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
@@ -142,6 +143,48 @@ describe('Chess contract', function() {
       assert.throws(function(){
         // Cannot move again from player1 because nextPlayer will be player2
         Chess.move(testGames[0], 0, 0, {from: player1, gas: 100000});
+      }, Error);
+    });
+  });
+
+  describe('surrender()', function () {
+    // Setup a new game for this test
+    let gameId;
+    it('should initialize a new game and join both players', function(done) {
+      Chess.initGame('Bob', true, {from: player1, gas: 2000000});
+      var filter = Chess.GameInitialized({});
+      filter.watch(function(error, result){
+        gameId = result.args.gameId;
+        filter.stopWatching();
+
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 200000});
+        var filter2 = Chess.GameJoined({gameId: gameId});
+        filter2.watch(function(){
+          filter2.stopWatching();
+          done();
+        });
+      });
+    });
+
+    it('should throw an exception for message from non-participant', function() {
+      assert.throws(function(){
+        Chess.surrender(gameId, {from: player3, gas: 100000});
+      }, Error);
+    });
+
+    it('should allow surrender from P1 and declare P2 as winner', function(done) {
+      Chess.surrender(gameId, {from: player1, gas: 100000});
+      var filter = Chess.GameEnded({gameId: gameId});
+      filter.watch(function(error, result){
+        assert.equal(player2, result.args.winner);
+        filter.stopWatching();
+        done();
+      });
+    });
+
+    it('should throw an exception when surrendering a game that already ended', function() {
+      assert.throws(function(){
+        Chess.surrender(gameId, {from: player2, gas: 100000});
       }, Error);
     });
   });

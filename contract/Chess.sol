@@ -37,6 +37,7 @@ contract Chess {
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite);
     event GameStateChanged(bytes32 indexed gameId, int[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
+    event GameEnded(bytes32 indexed gameId, address indexed winner);
 
     /**
      * Initialize a new game
@@ -139,6 +140,25 @@ contract Chess {
         }
 
         Move(gameId, msg.sender, fromIndex, toIndex);
+    }
+
+    function surrender(bytes32 gameId) public {
+        if (games[gameId].winner != 0) {
+            // Game already ended
+            throw;
+        }
+        if (games[gameId].player1 == msg.sender) {
+            // Player 1 surrendered, player 2 won
+            games[gameId].winner = games[gameId].player2;
+        } else if(games[gameId].player2 == msg.sender) {
+            // Player 2 surrendered, player 1 won
+            games[gameId].winner = games[gameId].player1;
+        } else {
+            // Sender is not a participant of this game
+            throw;
+        }
+
+        GameEnded(gameId, games[gameId].winner);
     }
 
 
