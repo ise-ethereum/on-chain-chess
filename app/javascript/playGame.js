@@ -26,85 +26,105 @@ angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, 
     return false;
   };
 
+  //--- init Chessboard ---
   var init = function() {
 
-//--- Chessboard ---
 
-  let chess = new Chess();
+    // init chess validation
+    let chess = new Chess();
 
-  let myboard = new Chessboard('my-board', {
-    position: ChessUtils.FEN.startId,
-    eventHandlers: {
-      onPieceSelected: pieceSelected,
-      onMove: pieceMove
-    }
-  });
+    // init chessboard
+    let board = new Chessboard('my-board', {
+      position: ChessUtils.FEN.startId,
+      eventHandlers: {
+        onPieceSelected: pieceSelected,
+        onMove: pieceMove
+      }
+    });
 
-  resetGame();
+    // set all chess pieces in start position
+    function resetGame() {
+      board.setPosition(ChessUtils.FEN.startId);
+      chess.reset();
 
-  function resetGame() {
-    myboard.setPosition(ChessUtils.FEN.startId);
-    chess.reset();
-
-    updateGameInfo('Next player is white.');
-  }
-
-  function updateGameInfo(status) {
-    $('#info-status').html(status);
-    $('#info-fen').html(chess.fen());
-    $('#info-pgn').html(chess.pgn());
-  }
-
-  function pieceMove(move) {
-
-    let nextPlayer,
-      status,
-      chessMove = chess.move({
-        from: move.from,
-        to: move.to,
-        promotion: 'q'
-      });
-    console.log(chessMove);
-    
-
-    nextPlayer = 'white';
-    if (chess.turn() === 'b') {
-      nextPlayer = 'black';
+      updateGameInfo('Next player is white.');
     }
 
-    if (chessMove !== null) {
-      if (chess.in_checkmate() === true) {
-        status = 'CHECKMATE! Player ' + nextPlayer + ' lost.';
-      } else if (chess.in_draw() === true) {
-        status = 'DRAW!';
-      } else {
-        status = 'Next player is ' + nextPlayer + '.';
+    resetGame();
 
-        if (chess.in_check() === true) {
-          status = 'CHECK! ' + status;
-          console.log('css ändern')
-        }
+    // Update game information to user
+    function updateGameInfo(status) {
+      $('#info-status').html(status);
+      $('#info-fen').html(chess.fen());
+      $('#info-pgn').html(chess.pgn());
+    }
+
+    // move chess piece if valid
+    function pieceMove(move) {
+
+      let nextPlayer, status;
+
+      // if valid: move chess piece from a to b
+      // else: return null
+      let chessMove = chess.move({
+            from: move.from,
+            to: move.to,
+            promotion: 'q'
+          });
+      console.log(chessMove);
+      // ToDo send information to server
+
+      // define next player
+      nextPlayer = 'white';
+      if (chess.turn() === 'b') {
+        nextPlayer = 'black';
       }
 
-      updateGameInfo(status);
+      // check situation
+      if (chessMove !== null) {
+        
+        // game over?
+        if (chess.in_checkmate() === true) {
+          status = 'CHECKMATE! Player ' + nextPlayer + ' lost.';
+        }
+          
+        // draw?
+        else if (chess.in_draw() === true) {
+          status = 'DRAW!';
+        }
+          
+        // game is still on 
+        else {
+          status = 'Next player is ' + nextPlayer + '.';
+          
+          // plaver in check?
+          if (chess.in_check() === true) {
+            status = 'CHECK! ' + status;
+            // ToDo: set 'danger' color for king 
+            console.log('css')
+          }
+        }
+
+        updateGameInfo(status);
+      }
+
+      return chess.fen();
     }
 
-    return chess.fen();
-  }
-
-  function pieceSelected(notationSquare) {
-    var i,
-      movesNotation,
-      movesPosition = [];
-    console.log('haha');
-    movesNotation = chess.moves({square: notationSquare, verbose: true});
-    for (i = 0; i < movesNotation.length; i++) {
-      movesPosition.push(ChessUtils.convertNotationSquareToIndex(movesNotation[i].to));
+    // player clicked on chess piece
+    function pieceSelected(notationSquare) {
+      var i,
+        movesNotation,
+        movesPosition = [];
+      
+      movesNotation = chess.moves({square: notationSquare, verbose: true});
+      for (i = 0; i < movesNotation.length; i++) {
+        movesPosition.push(ChessUtils.convertNotationSquareToIndex(movesNotation[i].to));
+      }
+      return movesPosition;
     }
-    return movesPosition;
-  }
 
-  }; // end init()
+  }; 
   $(document).ready(init);
 
 });
