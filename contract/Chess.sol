@@ -44,8 +44,8 @@ contract Chess {
      * bool playAsWhite: Pass true or false depending on if the creator will play as white
      */
     function initGame(string player1Alias, bool playAsWhite) public {
-        // Generate game id based on player's addresses and current timestamp
-        bytes32 gameId = sha3(msg.sender, now);
+        // Generate game id based on player's addresses and current block number
+        bytes32 gameId = sha3(msg.sender, block.number);
 
         // Initialize participants
         games[gameId].player1 = msg.sender;
