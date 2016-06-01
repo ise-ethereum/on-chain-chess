@@ -8,7 +8,7 @@
  */
 
 contract Chess {
-    int8[128] defaultState = [int8(-4),int8(-2),int8(-3),int8(-5),int8(-6),int8(-3),int8(-2),int8(-4),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(4),int8(2),int8(3),int8(5),int8(6),int8(3),int8(2),int8(4),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0)];
+    int8[128] defaultState = [int8(-4),int8(-2),int8(-3),int8(-5),int8(-6),int8(-3),int8(-2),int8(-4),int8(0),int8(0),int8(0),int8(4),int8(0),int8(0),int8(0),int8(0),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(4),int8(2),int8(3),int8(5),int8(6),int8(3),int8(2),int8(4),int8(0),int8(0),int8(0),int8(116),int8(0),int8(0),int8(0),int8(0)];
 
     struct Game {
         address player1;
@@ -29,6 +29,18 @@ contract Chess {
     mapping (bytes32 => bytes32) public openGameIds;
     bytes32 public head;
 
+    /* Flags needed for validation
+     * Usage e.g. Flags[uint(Flag.FLAG_NAME)]
+     */
+    enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
+    int8[8] Directions = [int8(-16), int8(-15), int8(1), int8(17), int8(16), int8(15), int8(-1), int8(-17)];
+    enum Piece { WHITE_KING, WHITE_QUEEN, WHITE_ROOK, WHITE_BISHOP, WHITE_KNIGHT, WHITE_PAWN, EMPTY, BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN }
+    int8[13] Pieces = [int8(-6), int8(-5), int8(-4), int8(-3), int8(-2), int8(-1), int8(0), int8(6), int8(5), int8(4), int8(3), int8(2), int8(1)];
+    enum Player { WHITE, BLACK }
+    int8[2] Players = [int8(1), int8(-1)];
+    enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
+    int8[9] Flags = [int8(123), int8(11), int8(16), int8(78), int8(79), int8(62), int8(63), int8(61), int8(77)];
+
     function Chess() {
         head = 'end';
     }
@@ -38,6 +50,14 @@ contract Chess {
     event GameStateChanged(bytes32 indexed gameId, int[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
     event GameEnded(bytes32 indexed gameId, address indexed winner);
+
+    /**
+     * Convenience function to set a flag
+     * Usage: setFlag(gameId, Flag.BLACK_KING_POS, 4);
+     */
+    function setFlag(bytes32 gameId, Flag flag, uint value) internal {
+        games[gameId].state[uint(Flags[uint(flag)])] = int8(value);
+    }
 
     /**
      * Initialize a new game
@@ -54,7 +74,6 @@ contract Chess {
 
         // Initialize state
         games[gameId].state = defaultState;
-
 
         if (playAsWhite) {
             // Player 1 will play as white
