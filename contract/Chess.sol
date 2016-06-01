@@ -133,7 +133,7 @@ contract Chess {
         int8 movingPlayerColor  = 1 // todo: set this to the actual color and set the datatype!
 
         //sanity check
-
+        sanityCheck(fromIndex, toIndex, fromFigure, toFigure, movingPlayerColor)
         //isValid
 
         //makeTemporaryMove
@@ -165,11 +165,68 @@ contract Chess {
 
         function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor){
 
+            // check if the move actually fits the data structure
+            if (fromIndex & 0x88){
+                throw;
+            }
+
+            // check if the move actually fits the data structure
+            if (toIndex & 0x88){
+                throw;
+            }
+
+            // check if the move tries to move a figure onto it self
+            if (fromIndex == toIndex){
+                throw;
+            }
+
+            // check if the toIndex is empty (= is 0) or contains an enemy figure ("positive" * "negative" = "negative")
+            // --> this only allows captures ( negative results ) or moves to empty fields ( = 0)
+            if (fromFigure * toFigure > 0){
+                throw;
+            }
+
+            // check if mover of the figure is the owner of the figure
+            //todo: fix color to enum
+            if (color of current player * fromFigure > 0){
+                throw;
+            }
         }
 
-        function isValid(){
+        function isValid(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool){
+
+            // check if the move actually fits the data structure
+            if (fromIndex & 0x88){
+                throw;
+            }
 
         }
+        function getDirection(uint256 fromIndex, uint256 toIndex){
+
+            // check if the figure is moved up or left of its origin
+            isAboveLeft = fromIndex > toindex
+
+            // check if the figure is moved in an horizontal plane
+            // this code works because there is an eight square difference between the horizontal panes (the offboard)
+            isSameHorizontal = abs(fromIndex - toindex) < 8
+
+            // check if the figure is moved in a vertical line
+            isSameVertical = (fromIndex%8 == toIndex%8)
+
+            // check if the figure is moved to the left of its origin
+            isLeftSide = (fromIndex%8 > toIndex%8)
+
+            /*Check directions*/
+
+            if (isAboveLeft){
+
+
+            }
+
+
+
+        }
+
 
         function makeTemporaryMove(){
 
@@ -205,6 +262,15 @@ contract Chess {
 
     function getGameId(address player, int index) constant returns (bytes32) {
       return gamesOfPlayers[player][index];
+    }
+
+
+    /*------------------------HELPER FUNCTIONS------------------------*/
+
+    // This returns the absolute value of an integer
+    function abs(int256 value){
+        if (value>=0)return value
+        else return -1*value
     }
 
     /* This unnamed function is called whenever someone tries to send ether to it */
