@@ -31,6 +31,7 @@ contract Chess {
 
     /* Flags needed for validation
      * Usage e.g. Flags[uint(Flag.FLAG_NAME)]
+     * Directions[Direction.UP]
      */
     enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
     int8[8] Directions = [int8(-16), int8(-15), int8(1), int8(17), int8(16), int8(15), int8(-1), int8(-17)];
@@ -145,14 +146,22 @@ contract Chess {
             throw;
         }
 
+
+        int8 currentPlayerColor;
+        if (msg.sender == games[gameId].playerWhite) {
+            currentPlayerColor = Players[Player.WHITE];
+        } else {
+            currentPlayerColor = Players[Player.BLACK];
+        }
+
         // TODO: Validate move
 
-        int8 fromFigure = state[fromIndex]
-        int8 toFigure = state[toIndex]
-        int8 movingPlayerColor  = 1 // todo: set this to the actual color and set the datatype!
+        int8 fromFigure = state[fromIndex];
+        int8 toFigure = state[toIndex];
+        int8 movingPlayerColor  = 1; // todo: set this to the actual color and set the datatype!
 
         //sanity check
-        sanityCheck(fromIndex, toIndex, fromFigure, toFigure, movingPlayerColor)
+        sanityCheck(fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
         //isValid
 
         //makeTemporaryMove
@@ -162,8 +171,7 @@ contract Chess {
         //testIfCheck
 
 
-
-
+        }
 
 
         // Update state
@@ -182,7 +190,7 @@ contract Chess {
 
 
 
-        function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor){
+        function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor){
 
             // check if the move actually fits the data structure
             if (fromIndex & 0x88){
@@ -238,7 +246,7 @@ contract Chess {
             /*Check directions*/
 
             if (isAboveLeft){
-
+                return Directions[Direction.UP]
 
             }
 
