@@ -184,6 +184,19 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
     console.log('eventMove', err, data);
   };
 
+  games.eventGameEnded = function(err, data) {
+    console.log('eventGameEnded', err, data);
+    if (err) {
+      console.log('error occured', err);
+      $rootScope.$broadcast('message',
+        'The surrender could not be saved, the following error occurred: ' + err,
+        'error', 'playgame');
+    } else {
+      // TODO
+
+    }
+  };
+
   // Fetch games of player
   for (let accountId of web3.eth.accounts) {
     let numberGames = Chess.numberGamesOfPlayers(accountId);
@@ -215,6 +228,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
   Chess.GameJoined({}, games.eventGameJoined);
   Chess.GameStateChanged({}, games.eventGameStateChanged);
   Chess.Move({}, games.eventMove);
+  //Chess.GameEnded({}, games.eventGameEnded);
 
   return games;
 }).filter('ownGames', function () {

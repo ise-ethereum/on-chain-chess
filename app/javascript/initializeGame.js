@@ -1,4 +1,4 @@
-/* global angular */
+/* global angular, mist */
 import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('InitializeGameCtrl',
   function ($rootScope, $scope) {
@@ -9,9 +9,6 @@ angular.module('dappChess').controller('InitializeGameCtrl',
 
     $scope.isSelectedAccount = function (account) {
       return $scope.selectedAccount === account;
-    };
-    $scope.selectAccount = function (account) {
-      $scope.selectedAccount = account;
     };
 
     function initializeGame() {
@@ -24,8 +21,15 @@ angular.module('dappChess').controller('InitializeGameCtrl',
       catch(e) {
         $rootScope.$broadcast('message', 'Could not initialize the game', 'loading', 'startgame');
       }
-
     }
+
+    $scope.selectOrCreateAccount = function($event) {
+      $event.preventDefault();
+
+      mist.requestAccount(function(e, address){
+        $scope.selectedAccount = address;
+      });
+    };
 
     $scope.initializeGame = function (form) {
       if(form.$valid) {
