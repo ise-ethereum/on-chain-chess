@@ -191,13 +191,9 @@ contract Chess {
 
         function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor){
 
-            // check if the move actually fits the data structure
-            if (fromIndex & 0x88){
-                throw;
-            }
 
             // check if the move actually fits the data structure
-            if (toIndex & 0x88){
+            if ((toIndex & 0x88) != 0){
                 throw;
             }
 
@@ -221,20 +217,19 @@ contract Chess {
 
         function isValid(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool){
 
-            // check if the move actually fits the data structure
-            if (fromIndex & 0x88){
-                throw;
-            }
+
 
         }
-        function getDirection(uint256 fromIndex, uint256 toIndex){
+
+
+        function getDirection(uint256 fromIndex, uint256 toIndex) returns (int8){
 
             // check if the figure is moved up or left of its origin
             bool isAboveLeft = fromIndex > toIndex;
 
             // check if the figure is moved in an horizontal plane
             // this code works because there is an eight square difference between the horizontal panes (the offboard)
-            bool isSameHorizontal = abs(fromIndex - toIndex) < 8;
+            bool isSameHorizontal = (abs(int256(fromIndex) - int256(toIndex)) < (8));
 
             // check if the figure is moved in a vertical line
             bool isSameVertical = (fromIndex%8 == toIndex%8);
@@ -245,7 +240,7 @@ contract Chess {
             /*Check directions*/
 
             if (isAboveLeft){
-                return Directions[Direction.UP];
+                return Directions[uint(Direction.UP)];
 
             }
 
@@ -294,9 +289,9 @@ contract Chess {
     /*------------------------HELPER FUNCTIONS------------------------*/
 
     // This returns the absolute value of an integer
-    function abs(int256 value){
-        if (value>=0)return value;
-        else return -1*value;
+    function abs(int256 value) returns (uint256){
+        if (value>=0)return uint256(value);
+        else return uint256(-1*value);
     }
 
     /* This unnamed function is called whenever someone tries to send ether to it */
