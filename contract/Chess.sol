@@ -119,7 +119,7 @@ contract Chess {
       GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, games[gameId].playerWhite);
     }
 
-    /* Move a figure */
+    /* validates a move and executes it */
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) public {
         // Check that it is this player's turn
         if (games[gameId].nextPlayer != msg.sender) {
@@ -127,6 +127,25 @@ contract Chess {
         }
 
         // TODO: Validate move
+
+        int8 fromFigure = state[fromIndex]
+        int8 toFigure = state[toIndex]
+        int8 movingPlayerColor  = 1 // todo: set this to the actual color and set the datatype!
+
+        //sanity check
+
+        //isValid
+
+        //makeTemporaryMove
+
+        //isLegal
+
+        //testIfCheck
+
+
+
+
+
 
         // Update state
         games[gameId].state[toIndex] = games[gameId].state[fromIndex];
@@ -141,6 +160,28 @@ contract Chess {
 
         Move(gameId, msg.sender, fromIndex, toIndex);
     }
+
+
+
+        function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor){
+
+        }
+
+        function isValid(){
+
+        }
+
+        function makeTemporaryMove(){
+
+        }
+
+        function isLegal(){
+
+        }
+
+        function testIfCheck(){
+
+        }
 
     function surrender(bytes32 gameId) public {
         if (games[gameId].winner != 0) {
