@@ -240,8 +240,32 @@ contract Chess {
             /*Check directions*/
 
             if (isAboveLeft){
-                return Directions[uint(Direction.UP)];
-
+                if (isSameVertical){
+                    return Directions[uint(Direction.UP)];
+                }
+                if (isSameHorizontal){
+                    return Directions[uint(Direction.LEFT)];
+                }
+                if (isLeftSide){
+                    return Directions[uint(Direction.UP_LEFT)];
+                }
+                else{
+                    return Directions[uint(Direction.UP_RIGHT)];
+                }
+            }
+            else {
+                if (isSameVertical){
+                    return Directions[uint(Direction.DOWN)];
+                }
+                if (isSameHorizontal){
+                    return Directions[uint(Direction.RIGHT)];
+                }
+                if (isLeftSide){
+                    return Directions[uint(Direction.DOWN_LEFT)];
+                }
+                else{
+                    return Directions[uint(Direction.DOWN_RIGHT)];
+                }
             }
 
 
