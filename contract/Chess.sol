@@ -41,6 +41,21 @@ contract Chess {
     enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
     int8[9] Flags = [int8(123), int8(11), int8(16), int8(78), int8(79), int8(62), int8(63), int8(61), int8(77)];
 
+     function abs(int8 a) internal returns (int8){
+       if(a < 0 )
+        return -a;
+       else 
+        return a;
+   }
+   
+    function is_diagonal(Direction dir) internal returns (bool){
+      if(abs(Directions[uint(dir)]) == 16)
+        return false;
+      if(abs(Directions[uint(dir)]) == 1)
+        return false;
+      return true;
+    }
+
     function Chess() {
         head = 'end';
     }
