@@ -18,7 +18,7 @@ contract Chess {
         address nextPlayer;
         address playerWhite; // Player that is white in this game
         address winner;
-        int[128] state;
+        int8[128] state;
     }
 
     mapping (bytes32 => Game) public games;
@@ -48,7 +48,7 @@ contract Chess {
 
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite);
-    event GameStateChanged(bytes32 indexed gameId, int[128] state);
+    event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
     event GameEnded(bytes32 indexed gameId, address indexed winner);
 
@@ -149,16 +149,15 @@ contract Chess {
 
         int8 currentPlayerColor;
         if (msg.sender == games[gameId].playerWhite) {
-            currentPlayerColor = Players[Player.WHITE];
+            currentPlayerColor = Players[uint(Player.WHITE)];
         } else {
-            currentPlayerColor = Players[Player.BLACK];
+            currentPlayerColor = Players[uint(Player.BLACK)];
         }
 
         // TODO: Validate move
 
-        int8 fromFigure = state[fromIndex];
-        int8 toFigure = state[toIndex];
-        int8 movingPlayerColor  = 1; // todo: set this to the actual color and set the datatype!
+        int8 fromFigure = games[gameId].state[fromIndex];
+        int8 toFigure = games[gameId].state[toIndex];
 
         //sanity check
         sanityCheck(fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
@@ -171,7 +170,7 @@ contract Chess {
         //testIfCheck
 
 
-        }
+
 
 
         // Update state
@@ -215,7 +214,7 @@ contract Chess {
 
             // check if mover of the figure is the owner of the figure
             //todo: fix color to enum
-            if (color of current player * fromFigure > 0){
+            if (currentPlayerColor * fromFigure > 0){
                 throw;
             }
         }
@@ -231,22 +230,22 @@ contract Chess {
         function getDirection(uint256 fromIndex, uint256 toIndex){
 
             // check if the figure is moved up or left of its origin
-            isAboveLeft = fromIndex > toindex
+            bool isAboveLeft = fromIndex > toIndex;
 
             // check if the figure is moved in an horizontal plane
             // this code works because there is an eight square difference between the horizontal panes (the offboard)
-            isSameHorizontal = abs(fromIndex - toindex) < 8
+            bool isSameHorizontal = abs(fromIndex - toIndex) < 8;
 
             // check if the figure is moved in a vertical line
-            isSameVertical = (fromIndex%8 == toIndex%8)
+            bool isSameVertical = (fromIndex%8 == toIndex%8);
 
             // check if the figure is moved to the left of its origin
-            isLeftSide = (fromIndex%8 > toIndex%8)
+            bool isLeftSide = (fromIndex%8 > toIndex%8);
 
             /*Check directions*/
 
             if (isAboveLeft){
-                return Directions[Direction.UP]
+                return Directions[Direction.UP];
 
             }
 
@@ -296,8 +295,8 @@ contract Chess {
 
     // This returns the absolute value of an integer
     function abs(int256 value){
-        if (value>=0)return value
-        else return -1*value
+        if (value>=0)return value;
+        else return -1*value;
     }
 
     /* This unnamed function is called whenever someone tries to send ether to it */
