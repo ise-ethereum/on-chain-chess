@@ -18,6 +18,10 @@ fs.readFile('default_state.txt', 'utf8', function (err, data) {
     arr = arr.concat(elements);
     arr = arr.concat([0,0,0,0,0,0,0,0]);
   }
+  // Set Flags
+  arr[123] = 116;
+  arr[11] = 4;
+
   var out = arr.map(function(item) {
     return 'int8(' + item + ')';
   }).join(',');
