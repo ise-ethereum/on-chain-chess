@@ -7,7 +7,7 @@
  *    https://github.com/ise-ethereum/on-chain-chess/wiki/Chess-board-representation
  */
 
-contract Chess {
+ contract Chess {
     int8[128] defaultState = [int8(-4),int8(-2),int8(-3),int8(-5),int8(-6),int8(-3),int8(-2),int8(-4),int8(0),int8(0),int8(0),int8(4),int8(0),int8(0),int8(0),int8(0),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(4),int8(2),int8(3),int8(5),int8(6),int8(3),int8(2),int8(4),int8(0),int8(0),int8(0),int8(116),int8(0),int8(0),int8(0),int8(0)];
 
     struct Game {
@@ -103,40 +103,40 @@ contract Chess {
      * string player2Alias: Alias of the player that is joining
      */
     function joinGame(bytes32 gameId, string player2Alias) public {
-      // Check that this game does not have a second player yet
-      if (games[gameId].player2 != 0) {
-        throw;
-      }
-
-      games[gameId].player2 = msg.sender;
-      games[gameId].player2Alias = player2Alias;
-
-      // If the other player isn't white, player2 will play as white
-      if (games[gameId].playerWhite == 0) {
-        games[gameId].playerWhite = msg.sender;
-        // Game starts with White, so here P2
-        games[gameId].nextPlayer = games[gameId].player2;
-      }
-
-      // Add game to gamesOfPlayers
-      gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
-      numberGamesOfPlayers[msg.sender]++;
-
-      // Remove from openGameIds
-      if (head == gameId) {
-        head = openGameIds[head];
-        openGameIds[gameId] = 0;
-      } else {
-        for (var g = head; g != 'end' && openGameIds[g] != 'end'; g = openGameIds[g]) {
-          if (openGameIds[g] == gameId) {
-            openGameIds[g] = openGameIds[gameId];
-            openGameIds[gameId] = 0;
-            break;
-          }
+        // Check that this game does not have a second player yet
+        if (games[gameId].player2 != 0) {
+            throw;
         }
-      }
 
-      GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, games[gameId].playerWhite);
+        games[gameId].player2 = msg.sender;
+        games[gameId].player2Alias = player2Alias;
+
+        // If the other player isn't white, player2 will play as white
+        if (games[gameId].playerWhite == 0) {
+            games[gameId].playerWhite = msg.sender;
+            // Game starts with White, so here P2
+            games[gameId].nextPlayer = games[gameId].player2;
+        }
+
+        // Add game to gamesOfPlayers
+        gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
+        numberGamesOfPlayers[msg.sender]++;
+
+        // Remove from openGameIds
+        if (head == gameId) {
+            head = openGameIds[head];
+            openGameIds[gameId] = 0;
+        } else {
+            for (var g = head; g != 'end' && openGameIds[g] != 'end'; g = openGameIds[g]) {
+                if (openGameIds[g] == gameId) {
+                    openGameIds[g] = openGameIds[gameId];
+                    openGameIds[gameId] = 0;
+                    break;
+                }
+            }
+        }
+
+        GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, games[gameId].playerWhite);
     }
 
     /* validates a move and executes it */
@@ -145,7 +145,6 @@ contract Chess {
         if (games[gameId].nextPlayer != msg.sender) {
             throw;
         }
-
 
         int8 currentPlayerColor;
         if (msg.sender == games[gameId].playerWhite) {
@@ -169,10 +168,6 @@ contract Chess {
 
         //testIfCheck
 
-
-
-
-
         // Update state
         games[gameId].state[toIndex] = games[gameId].state[fromIndex];
         games[gameId].state[fromIndex] = 0;
@@ -187,103 +182,89 @@ contract Chess {
         Move(gameId, msg.sender, fromIndex, toIndex);
     }
 
+    function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) {
 
-
-        function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor){
-
-
-            // check if the move actually fits the data structure
-            if ((toIndex & 0x88) != 0){
-                throw;
-            }
-
-            // check if the move tries to move a figure onto it self
-            if (fromIndex == toIndex){
-                throw;
-            }
-
-            // check if the toIndex is empty (= is 0) or contains an enemy figure ("positive" * "negative" = "negative")
-            // --> this only allows captures ( negative results ) or moves to empty fields ( = 0)
-            if (fromFigure * toFigure > 0){
-                throw;
-            }
-
-            // check if mover of the figure is the owner of the figure
-            //todo: fix color to enum
-            if (currentPlayerColor * fromFigure > 0){
-                throw;
-            }
+        // check if the move actually fits the data structure
+        if ((toIndex & 0x88) != 0){
+            throw;
         }
 
-        function isValid(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool){
-
-
-
+        // check if the move tries to move a figure onto it self
+        if (fromIndex == toIndex){
+            throw;
         }
 
+        // check if the toIndex is empty (= is 0) or contains an enemy figure ("positive" * "negative" = "negative")
+        // --> this only allows captures ( negative results ) or moves to empty fields ( = 0)
+        if (fromFigure * toFigure > 0){
+            throw;
+        }
 
-        function getDirection(uint256 fromIndex, uint256 toIndex) returns (int8){
+        // check if mover of the figure is the owner of the figure
+        // todo: fix color to enum
+        if (currentPlayerColor * fromFigure > 0){
+            throw;
+        }
+    }
 
-            // check if the figure is moved up or left of its origin
-            bool isAboveLeft = fromIndex > toIndex;
+    function isValid(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool) {
 
-            // check if the figure is moved in an horizontal plane
-            // this code works because there is an eight square difference between the horizontal panes (the offboard)
-            bool isSameHorizontal = (abs(int256(fromIndex) - int256(toIndex)) < (8));
+    }
 
-            // check if the figure is moved in a vertical line
-            bool isSameVertical = (fromIndex%8 == toIndex%8);
 
-            // check if the figure is moved to the left of its origin
-            bool isLeftSide = (fromIndex%8 > toIndex%8);
+    function getDirection(uint256 fromIndex, uint256 toIndex) returns (int8) {
+        // check if the figure is moved up or left of its origin
+        bool isAboveLeft = fromIndex > toIndex;
 
-            /*Check directions*/
+        // check if the figure is moved in an horizontal plane
+        // this code works because there is an eight square difference between the horizontal panes (the offboard)
+        bool isSameHorizontal = (abs(int256(fromIndex) - int256(toIndex)) < (8));
 
-            if (isAboveLeft){
-                if (isSameVertical){
-                    return Directions[uint(Direction.UP)];
-                }
-                if (isSameHorizontal){
-                    return Directions[uint(Direction.LEFT)];
-                }
-                if (isLeftSide){
-                    return Directions[uint(Direction.UP_LEFT)];
-                }
-                else{
-                    return Directions[uint(Direction.UP_RIGHT)];
-                }
+        // check if the figure is moved in a vertical line
+        bool isSameVertical = (fromIndex%8 == toIndex%8);
+
+        // check if the figure is moved to the left of its origin
+        bool isLeftSide = (fromIndex%8 > toIndex%8);
+
+        /*Check directions*/
+        if (isAboveLeft){
+            if (isSameVertical){
+                return Directions[uint(Direction.UP)];
             }
-            else {
-                if (isSameVertical){
-                    return Directions[uint(Direction.DOWN)];
-                }
-                if (isSameHorizontal){
-                    return Directions[uint(Direction.RIGHT)];
-                }
-                if (isLeftSide){
-                    return Directions[uint(Direction.DOWN_LEFT)];
-                }
-                else{
-                    return Directions[uint(Direction.DOWN_RIGHT)];
-                }
+            if (isSameHorizontal){
+                return Directions[uint(Direction.LEFT)];
             }
-
-
-
+            if (isLeftSide){
+                return Directions[uint(Direction.UP_LEFT)];
+            } else {
+                return Directions[uint(Direction.UP_RIGHT)];
+            }
+        } else {
+            if (isSameVertical){
+                return Directions[uint(Direction.DOWN)];
+            }
+            if (isSameHorizontal){
+                return Directions[uint(Direction.RIGHT)];
+            }
+            if (isLeftSide){
+                return Directions[uint(Direction.DOWN_LEFT)];
+            } else{
+                return Directions[uint(Direction.DOWN_RIGHT)];
+            }
         }
+    }
 
+    function makeTemporaryMove() {
 
-        function makeTemporaryMove(){
+    }
 
-        }
+    function isLegal() {
 
-        function isLegal(){
+    }
 
-        }
+    function testIfCheck() {
 
-        function testIfCheck(){
-
-        }
+    }
 
     function surrender(bytes32 gameId) public {
         if (games[gameId].winner != 0) {
@@ -306,7 +287,7 @@ contract Chess {
 
 
     function getGameId(address player, int index) constant returns (bytes32) {
-      return gamesOfPlayers[player][index];
+        return gamesOfPlayers[player][index];
     }
 
 
@@ -314,7 +295,7 @@ contract Chess {
 
     // This returns the absolute value of an integer
     function abs(int256 value) returns (uint256){
-        if (value>=0)return uint256(value);
+        if (value>=0) return uint256(value);
         else return uint256(-1*value);
     }
 
