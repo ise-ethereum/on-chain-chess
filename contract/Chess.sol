@@ -42,6 +42,8 @@
     enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
     int8[9] Flags = [int8(123), int8(11), int8(16), int8(78), int8(79), int8(62), int8(63), int8(61), int8(77)];
 
+    int8[8] knight_moves = [int8(-33), int8(-31), int8(-18), int8(-14), int8(14), int8(18), int8(31), int8(33)];
+
     function Chess() {
         head = 'end';
     }
@@ -58,6 +60,14 @@
      */
     function setFlag(bytes32 gameId, Flag flag, uint value) internal {
         games[gameId].state[uint(Flags[uint(flag)])] = int8(value);
+    }
+
+    /**
+     * Convenience function to set a flag
+     * Usage: setFlag(gameId, Flag.BLACK_KING_POS, 4);
+     */
+    function getFlag(bytes32 gameId, Flag flag) internal returns (int8) {
+        return games[gameId].state[uint(Flags[uint(flag)])];
     }
 
     /**
@@ -160,7 +170,8 @@
 
         //sanity check
         sanityCheck(fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
-        //isValid
+
+        validateMove(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
 
         //makeTemporaryMove
 
@@ -183,32 +194,146 @@
     }
 
     function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) {
-
         // check if the move actually fits the data structure
-        if ((toIndex & 0x88) != 0){
+        if ((toIndex & 0x88) != 0) {
             throw;
         }
 
         // check if the move tries to move a figure onto it self
-        if (fromIndex == toIndex){
+        if (fromIndex == toIndex) {
             throw;
         }
 
         // check if the toIndex is empty (= is 0) or contains an enemy figure ("positive" * "negative" = "negative")
-        // --> this only allows captures ( negative results ) or moves to empty fields ( = 0)
-        if (fromFigure * toFigure > 0){
+        // --> this only allows captures (negative results  or moves to empty fields ( = 0)
+        if (fromFigure * toFigure > 0) {
             throw;
         }
 
         // check if mover of the figure is the owner of the figure
         // todo: fix color to enum
-        if (currentPlayerColor * fromFigure > 0){
+        if (currentPlayerColor * fromFigure > 0) {
             throw;
         }
     }
 
-    function isValid(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool) {
+    /**
+     * Validates if a move is technically (not legally) possible
+     */
+    function validateMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) {
+        // Validate if piece is capable to make this move
+        int8 direction = getDirection(fromIndex, toIndex);
+        bool isDiagonal = !(abs(direction) == 16 || abs(direction) == 1);
 
+        // Kings
+        if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_KING)])) {
+            if (int(fromIndex) + direction == int(toIndex)) {
+                return;
+            }
+            if (fromFigure == Pieces[uint(Piece.BLACK_KING)]) {
+                if (4 == fromIndex && toFigure == 0) {
+                    if (toIndex == 1 && getFlag(gameId, Flag.BLACK_LEFT_CASTLING) >= 0) {
+                        return;
+                    }
+                    if (toIndex == 6 && getFlag(gameId, Flag.BLACK_RIGHT_CASTLING) >= 0) {
+                        return;
+                    }
+                }
+            }
+            if (fromFigure == Pieces[uint(Piece.WHITE_KING)]) {
+                if (116 == fromIndex && toFigure == 0) {
+                    if (toIndex == 113 && getFlag(gameId, Flag.WHITE_LEFT_CASTLING) >= 0) {
+                        return;
+                    }
+                    if (toIndex == 118 && getFlag(gameId, Flag.WHITE_RIGHT_CASTLING) >= 0) {
+                        return;
+                    }
+                }
+            }
+
+            throw;
+        }
+
+        // Bishops, Queens, Rooks
+        if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_BISHOP)]) ||
+            abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_QUEEN)]) ||
+            abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_ROOK)])) {
+
+            if (!isDiagonal && abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_BISHOP)]) ||
+                isDiagonal && abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_ROOK)])) {
+                return;
+            }
+
+            // Traverse all fields in direction
+            int temp = int(fromIndex);
+            while (temp & 0x88 != 0) {
+                if (uint(temp) == toIndex) {
+                    return;
+                }
+                temp += direction;
+            }
+
+            throw;
+        }
+
+        // Pawns
+        if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_PAWN)])) {
+            // Black can only move in positive, White negative direction
+            if (fromFigure == Pieces[uint(Piece.BLACK_PAWN)] && direction < 0 ||
+                fromFigure == Pieces[uint(Piece.WHITE_PAWN)] && direction > 0) {
+                throw;
+            }
+            // Forward move
+            if (!isDiagonal) {
+                if (abs(direction) < 2) {
+                    throw;
+                }
+                // simple move
+                if (int(fromIndex) + direction == int(toIndex)) {
+                    return;
+                }
+                // double move
+                if (int(fromIndex) + direction + direction == int(toIndex)) {
+                    // Can only do double move starting form specific ranks
+                    int rank = int(fromIndex/16);
+                    if (1 == rank || 6 == rank) {
+                        return;
+                    }
+                }
+                throw;
+            }
+            // diagonal move
+            if (int(fromIndex) + direction == int(toIndex)) {
+                // if empty, the en passant flag needs to be set
+                if (toFigure * fromFigure == 0) {
+                    if (fromFigure == Pieces[uint(Piece.BLACK_PAWN)] &&
+                        getFlag(gameId, Flag.WHITE_EN_PASSANT) == int(toIndex) ||
+                        fromFigure == Pieces[uint(Piece.WHITE_PAWN)] &&
+                        getFlag(gameId, Flag.BLACK_EN_PASSANT) == int(toIndex)) {
+                        return;
+                    }
+                }
+                // If not empty
+                return;
+            }
+
+            throw;
+        }
+
+        // Knights
+        if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_KNIGHT)])) {
+            for (uint i; i < knight_moves.length; i++) {
+                if (int(fromIndex) + knight_moves[i] == int(toIndex)) {
+                    return;
+                }
+            }
+            throw;
+        }
+
+        // For castling, validate that all fields the King moves over are not in check
+        // TODO
+
+        throw;
     }
 
 
