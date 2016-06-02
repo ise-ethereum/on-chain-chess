@@ -3,11 +3,12 @@
  * Stores any amount of games with two players and current state.
  * State encoding:
  *    positive numbers for white, negative numbers for black
- *    <TODO>
+ *    for details, see
+ *    https://github.com/ise-ethereum/on-chain-chess/wiki/Chess-board-representation
  */
 
 contract Chess {
-    int8[64] defaultState; // this should be constant if possible
+    int8[128] defaultState = [int8(-4),int8(-2),int8(-3),int8(-5),int8(-6),int8(-3),int8(-2),int8(-4),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(-1),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(1),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(4),int8(2),int8(3),int8(5),int8(6),int8(3),int8(2),int8(4),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0),int8(0)];
 
     struct Game {
         address player1;
@@ -17,7 +18,7 @@ contract Chess {
         address nextPlayer;
         address playerWhite; // Player that is white in this game
         address winner;
-        int[64] state;
+        int[128] state;
     }
 
     mapping (bytes32 => Game) public games;
@@ -30,17 +31,13 @@ contract Chess {
 
     function Chess() {
         head = 'end';
-        // Just a test to see some output, this should be more storage/cost efficient
-        defaultState[0] = 1;
-        defaultState[1] = 1;
-        defaultState[0x38] = -1;
-        defaultState[0x39] = -1;
     }
 
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite);
-    event GameStateChanged(bytes32 indexed gameId, int[64] state);
-    event Move(bytes32 indexed gameId, bool indexed moveSuccesful);
+    event GameStateChanged(bytes32 indexed gameId, int[128] state);
+    event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
+    event GameEnded(bytes32 indexed gameId, address indexed winner);
 
     /**
      * Initialize a new game
@@ -48,8 +45,8 @@ contract Chess {
      * bool playAsWhite: Pass true or false depending on if the creator will play as white
      */
     function initGame(string player1Alias, bool playAsWhite) public {
-        // Generate game id based on player's addresses and current timestamp
-        bytes32 gameId = sha3(msg.sender, now);
+        // Generate game id based on player's addresses and current block number
+        bytes32 gameId = sha3(msg.sender, block.number);
 
         // Initialize participants
         games[gameId].player1 = msg.sender;
@@ -63,7 +60,7 @@ contract Chess {
             // Player 1 will play as white
             games[gameId].playerWhite = msg.sender;
 
-            // Game starts with White, so here P1
+            // Game starts with White, so here player 1
             games[gameId].nextPlayer = games[gameId].player1;
         }
 
@@ -90,22 +87,21 @@ contract Chess {
       if (games[gameId].player2 != 0) {
         throw;
       }
-            
+
       games[gameId].player2 = msg.sender;
       games[gameId].player2Alias = player2Alias;
 
       // If the other player isn't white, player2 will play as white
       if (games[gameId].playerWhite == 0) {
         games[gameId].playerWhite = msg.sender;
-        // Game starts with White, so here P2  
+        // Game starts with White, so here P2
         games[gameId].nextPlayer = games[gameId].player2;
-
       }
 
       // Add game to gamesOfPlayers
       gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
       numberGamesOfPlayers[msg.sender]++;
-  
+
       // Remove from openGameIds
       if (head == gameId) {
         head = openGameIds[head];
@@ -124,7 +120,7 @@ contract Chess {
     }
 
     /* Move a figure */
-    function move(bytes32 gameId) public {
+    function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) public {
         // Check that it is this player's turn
         if (games[gameId].nextPlayer != msg.sender) {
             throw;
@@ -132,19 +128,44 @@ contract Chess {
 
         // TODO: Validate move
 
-        // TODO: Update state
+        // Update state
+        games[gameId].state[toIndex] = games[gameId].state[fromIndex];
+        games[gameId].state[fromIndex] = 0;
 
-        // TODO: Set nextPlayer
+        // Set nextPlayer
+        if (msg.sender == games[gameId].player1) {
+            games[gameId].nextPlayer = games[gameId].player2;
+        } else {
+            games[gameId].nextPlayer = games[gameId].player1;
+        }
 
-        // GameStateChanged(gameId, games[gameId].state);
-        Move(gameId, true);
+        Move(gameId, msg.sender, fromIndex, toIndex);
+    }
+
+    function surrender(bytes32 gameId) public {
+        if (games[gameId].winner != 0) {
+            // Game already ended
+            throw;
+        }
+        if (games[gameId].player1 == msg.sender) {
+            // Player 1 surrendered, player 2 won
+            games[gameId].winner = games[gameId].player2;
+        } else if(games[gameId].player2 == msg.sender) {
+            // Player 2 surrendered, player 1 won
+            games[gameId].winner = games[gameId].player1;
+        } else {
+            // Sender is not a participant of this game
+            throw;
+        }
+
+        GameEnded(gameId, games[gameId].winner);
     }
 
 
     function getGameId(address player, int index) constant returns (bytes32) {
       return gamesOfPlayers[player][index];
     }
-    
+
     /* This unnamed function is called whenever someone tries to send ether to it */
     function () {
         throw;     // Prevents accidental sending of ether
