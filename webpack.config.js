@@ -1,6 +1,8 @@
 var path = require('path');
 
-var web3provider = process.env.WEB3_PROVIDER || 'http://localhost:8545';
+var rpcport = process.env.TESTRPC_PORT || '8545';
+var web3provider = process.env.WEB3_PROVIDER || 'http://localhost:' + rpcport;
+console.log('Building with web3 provider: ', web3provider);
 
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 

@@ -464,6 +464,14 @@
         else return uint256(-1*value);
     }
 
+	function is_diagonal(Direction dir) internal returns (bool){
+      if(abs(Directions[uint(dir)]) == 16)
+        return false;
+      if(abs(Directions[uint(dir)]) == 1)
+        return false;
+      return true;
+    }
+
     /* This unnamed function is called whenever someone tries to send ether to it */
     function () {
         throw;     // Prevents accidental sending of ether
