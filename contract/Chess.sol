@@ -163,15 +163,21 @@
             currentPlayerColor = Players[uint(Player.BLACK)];
         }
 
-        // TODO: Validate move
-
         int8 fromFigure = games[gameId].state[fromIndex];
         int8 toFigure = games[gameId].state[toIndex];
 
-        //sanity check
+        // Simple sanity checks
         sanityCheck(fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
 
+        // Check if move is technically possible
         validateMove(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
+
+        // For all pieces except knight, check if way is free
+        if (abs(fromFigure) != uint(Pieces[uint(Piece.BLACK_KNIGHT)])) {
+            checkWayFree(gameId, fromIndex, toIndex);
+        }
+
+        // TODO: In case of castling, check that king is not in check on any of the fields on the way
 
         //makeTemporaryMove
 
@@ -330,12 +336,33 @@
             throw;
         }
 
-        // For castling, validate that all fields the King moves over are not in check
-        // TODO
-
         throw;
     }
 
+
+    /**
+     * Checks if the way between fromIndex and toIndex is unblocked
+     */
+    function checkWayFree(bytes32 gameId, uint256 fromIndex, uint256 toIndex) {
+        // Validate if piece is capable to make this move
+        int8 direction = getDirection(fromIndex, toIndex);
+
+        int currentIndex = int(fromIndex) + direction;
+
+        // as long as we do not reach the desired position
+        while (int(toIndex) != currentIndex) {
+            // we reached the end of the field
+            if (currentIndex & 0x88 != 0) {
+                throw;
+            }
+            // the path is blocked
+            if (games[gameId].state[uint(currentIndex)] != 0) {
+                throw;
+            }
+            currentIndex = currentIndex + direction;
+        }
+        return;
+    }
 
     function getDirection(uint256 fromIndex, uint256 toIndex) returns (int8) {
         // check if the figure is moved up or left of its origin
