@@ -173,11 +173,11 @@
         validateMove(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
 
         // For all pieces except knight, check if way is free
+        // In case of king, it will check that he is not in check on any of the fields
         if (abs(fromFigure) != uint(Pieces[uint(Piece.BLACK_KNIGHT)])) {
-            checkWayFree(gameId, fromIndex, toIndex);
+            bool checkForCheck = abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_KING)]);
+            checkWayFree(gameId, fromIndex, toIndex, currentPlayerColor, checkForCheck);
         }
-
-        // TODO: In case of castling, check that king is not in check on any of the fields on the way
 
         //makeTemporaryMove
 
@@ -224,17 +224,23 @@
     }
 
     /**
-     * Validates if a move is technically (not legally) possible
+     * Validates if a move is technically (not legally) possible,
+     * i.e. if piece is capable to move this way
      */
     function validateMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) {
-        // Validate if piece is capable to make this move
         int8 direction = getDirection(fromIndex, toIndex);
         bool isDiagonal = !(abs(direction) == 16 || abs(direction) == 1);
 
         // Kings
         if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_KING)])) {
+            // Normal move
             if (int(fromIndex) + direction == int(toIndex)) {
                 return;
+            }
+            // Castling
+            if (checkForCheck(gameId, fromIndex, movingPlayerColor)) {
+                // Cannot move if already in check
+                throw;
             }
             if (fromFigure == Pieces[uint(Piece.BLACK_KING)]) {
                 if (4 == fromIndex && toFigure == 0) {
@@ -343,10 +349,8 @@
     /**
      * Checks if the way between fromIndex and toIndex is unblocked
      */
-    function checkWayFree(bytes32 gameId, uint256 fromIndex, uint256 toIndex) {
-        // Validate if piece is capable to make this move
+    function checkWayFree(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 currentPlayerColor, bool shouldCheckForCheck) {
         int8 direction = getDirection(fromIndex, toIndex);
-
         int currentIndex = int(fromIndex) + direction;
 
         // as long as we do not reach the desired position
@@ -359,9 +363,18 @@
             if (games[gameId].state[uint(currentIndex)] != 0) {
                 throw;
             }
+            // Check for check in case of kind
+            if (shouldCheckForCheck && checkForCheck(gameId, uint(currentIndex), currentPlayerColor)) {
+                throw;
+            }
             currentIndex = currentIndex + direction;
         }
         return;
+    }
+
+    function checkForCheck(bytes32 gameId, uint256 kingAtIndex, int8 currentPlayerColor) returns (bool) {
+        // TODO
+        return true;
     }
 
     function getDirection(uint256 fromIndex, uint256 toIndex) returns (int8) {
