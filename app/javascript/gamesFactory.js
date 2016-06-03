@@ -96,9 +96,9 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
     console.log('eventGameInitialized', err, data);
     if (err) {
       console.log('error occured', err);
-      $rootScope.$broadcast('message',
+      /*$rootScope.$broadcast('message',
         'Your game could not be created, the following error occured: ' + err,
-        'error', 'startgame');
+        'error', 'startgame');*/
     } else {
       let game = games.add(data.args);
       games.openGames.push(game.gameId);
@@ -116,9 +116,9 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
     console.log('eventGameJoined', err, data);
     if (err) {
       console.log('error occured', err);
-      $rootScope.$broadcast('message',
+      /*$rootScope.$broadcast('message',
         'It was not possible to join the game, the following error occured: ' + err,
-        'error', 'joingame');
+        'error', 'joingame');*/
     } else {
       let gameId = data.args.gameId;
       let p1accountId = data.args.player1;
@@ -188,9 +188,9 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
     console.log('eventGameEnded', err, data);
     if (err) {
       console.log('error occured', err);
-      $rootScope.$broadcast('message',
+      /*$rootScope.$broadcast('message',
         'The surrender could not be saved, the following error occurred: ' + err,
-        'error', 'playgame');
+        'error', 'playgame');*/
     } else {
       // TODO
 
