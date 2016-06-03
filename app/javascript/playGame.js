@@ -31,6 +31,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       $rootScope.$broadcast('message', 'Submitting your surrender, please wait...',
         'loading', 'playgame');
       try {
+        console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
         Chess.surrender($scope.getGameId());
       }
       catch(e) {

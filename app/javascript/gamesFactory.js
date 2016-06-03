@@ -88,8 +88,44 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
         };
       }
     }
+    if(contractGameObject.winner) {
+      if(game.self.accountId === contractGameObject.winner) {
+        game.winner = 'self';
+      }
+      else if(game.opponent.accountId === contractGameObject.winner) {
+        game.winner = 'opponent';
+      }
+    }
+
     games.list.push(game);
     return game;
+  };
+
+  games.setWinner = function(gameId, winnerAccountId) {
+    for(let i in games) {
+      if(games[i].gameId === gameId) {
+        if(games[i].self.accountId === winnerAccountId) {
+          games[i].winner = 'self';
+
+          if (web3.eth.availableAccounts.indexOf(winnerAccountId) !== -1) {
+            $rootScope.$broadcast('message',
+              'You have won the game against ' + games[i].opponent.username,
+              'message', 'playgame');
+          }
+        }
+        else if(games[i].opponent.accountId === winnerAccountId) {
+          games[i].winner = 'opponent';
+
+          if (web3.eth.availableAccounts.indexOf(games[i].self.accountId) !== -1) {
+            $rootScope.$broadcast('message',
+              'You have lost the game against ' + games[i].opponent.username,
+              'message', 'playgame');
+          }
+        }
+
+        break;
+      }
+    }
   };
 
   games.eventGameInitialized = function (err, data) {
@@ -192,8 +228,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
         'The surrender could not be saved, the following error occurred: ' + err,
         'error', 'playgame');*/
     } else {
-      // TODO
-
+      games.setWinner(data.args.gameId, data.args.winner);
     }
   };
 
