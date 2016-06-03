@@ -1,9 +1,9 @@
-/* global angular, mist */
-import {web3, Chess} from '../../contract/Chess.sol';
+/* global angular */
+import {Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('InitializeGameCtrl',
-  function ($rootScope, $scope) {
-    $scope.availableAccounts = web3.eth.accounts;
-    $scope.selectedAccount = web3.eth.defaultAccount;
+  function ($rootScope, $scope, accounts) {
+    $scope.availableAccounts = accounts.availableAccounts;
+    $scope.selectedAccount = accounts.defaultAccount;
     $scope.startcolor = 'white';
     $scope.username = null;
 
@@ -26,7 +26,7 @@ angular.module('dappChess').controller('InitializeGameCtrl',
     $scope.selectOrCreateAccount = function($event) {
       $event.preventDefault();
 
-      mist.requestAccount(function(e, address){
+      accounts.requestAccount(function(e, address) {
         $scope.selectedAccount = address;
       });
     };
@@ -36,4 +36,6 @@ angular.module('dappChess').controller('InitializeGameCtrl',
         initializeGame();
       }
     };
+
+    console.log(accounts.availableAccounts);
   });

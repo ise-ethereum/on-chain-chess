@@ -10,7 +10,9 @@
 </div>
 <div class="container" data-ng-show="!isOpenGame()">
   <div class="eight columns">
-    <p>Hooray, you are now in a chess game.</p>
+    <p data-ng-show="gameIsActive()">Hooray, you are now in an ongoing chess game.</p>
+    <p data-ng-show="gameIsWon()">You have won this game</p>
+    <p data-ng-show="gameIsLost()">You have lost this game</p>
     <p>Game data:</p>
     <ul>
       <li>Your account ID: {{getGame().self.accountId}}</li>

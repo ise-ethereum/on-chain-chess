@@ -32,11 +32,25 @@ angular.module('dappChess').controller('PlayGameCtrl',
         'loading', 'playgame');
       try {
         console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
-        Chess.surrender($scope.getGameId());
+        Chess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
       }
       catch(e) {
         $rootScope.$broadcast('message', 'Could not submit your surrender', 'loading', 'playgame');
       }
+    };
+
+    $scope.gameIsWon = function() {
+      let game = $scope.getGame();
+      return typeof(game.winner) !== 'undefined' && game.winner === 'self';
+    };
+
+    $scope.gameIsLost = function() {
+      let game = $scope.getGame();
+      return typeof(game.winner) !== 'undefined' && game.winner === 'opponent';
+    };
+
+    $scope.gameIsActive = function() {
+      return typeof($scope.getGame().winner) === 'undefined';
     };
   }
 );

@@ -65,9 +65,12 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
 
   $scope.isMist = false;
 
+  console.log(typeof(mist) === 'undefined' ? 'No mist browser' : 'Mist browser');
+
   if(typeof(mist) !== 'undefined') {
     $scope.isMist = true;
 
+    console.log('Clearing mist menu');
     mist.menu.clear();
 
     mist.menu.add(
@@ -93,6 +96,8 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
     );
 
     $scope.$watchCollection('games', function(newGames, oldGames) {
+      console.log('games changed');
+
       let oldGameIds = [];
 
       for(let i in oldGames) {
@@ -106,13 +111,13 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
           oldGameIds.splice(oldGameIndex, 1);
         }
 
-        console.log(newGames[i].gameId);
-
 
         let menuName =
           (typeof(newGames[i].opponent) !== 'undefined') ?
             newGames[i].opponent.username : 'Open game';
 
+        console.log('Adding menu entry for game with id ' +
+          newGames[i].gameId + ' (' + menuName + ')');
         // Since mist menu callbacks don't provide the clicked element, we need to
         // create the callbacks in a loop; thus the JSHint error has to be suppressed
         /*jshint -W083 */
@@ -126,6 +131,7 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
       }
 
       for(let i in oldGameIds) {
+        console.log('Removing menu entry for game with id ' + oldGameIds[i]);
         mist.menu.remove(oldGameIds[i]);
       }
     });
