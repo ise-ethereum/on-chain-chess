@@ -290,13 +290,15 @@
             abs(fromFigure) == uint(Pieces(Piece.BLACK_QUEEN)) ||
             abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
 
-            if (isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
-                !isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
-                return;
+            // Bishop can only walk diagonally, Rook only non-diagonally
+            if (!isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
+                isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
+                throw;
             }
 
             // Traverse all fields in direction
             int temp = int(fromIndex);
+            // walk in direction while inside board to find toIndex
             while (temp & 0x88 != 0) {
                 if (uint(temp) == toIndex) {
                     return;
