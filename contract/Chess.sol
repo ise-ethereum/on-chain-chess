@@ -199,6 +199,7 @@
         makeTemporaryMove(gameId, fromIndex, toIndex, fromFigure, toFigure);
 
         //isLegal
+        isLegal(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
 
         //testIfCheck
 
@@ -549,8 +550,19 @@
 
     }
 
-    function isLegal() {
+    // checks whether movingPlayerColor's king gets checked by move 
+   function isLegal(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool){
+        // the king already gets tested when he moves
+        if(abs(fromFigure) == uint(Pieces(Piece.BLACK_KING)))
+            return true; 
+        
+        int8 kingIndex = getOwnKing(gameId, movingPlayerColor);
+        int8 kingDangerDirection = getDirection(uint256(kingIndex), fromIndex);
 
+        int8 firstFigureIndex = getFirstFigure(gameId, kingDangerDirection,kingIndex);
+
+
+        return false;
     }
 
     function testIfCheck() {
@@ -577,6 +589,24 @@
     }
 
 
+    // gets the first figure in direction from start, not including start
+    function getFirstFigure(bytes32 gameId, int8 direction, int8 start) returns (int8){
+        int currentIndex = start + direction;
+
+        // as long as we do not reach the end of the board walk in direction
+        while(currentIndex & 0x88 == 0){
+
+            // if there is a figure at current field return it
+            if(games[gameId].state[uint(currentIndex)] != Pieces(Piece.EMPTY))
+                return int8(currentIndex);
+
+            //otherwise move to the next field in that direction
+            currentIndex = currentIndex + direction;
+        }
+
+        return -1;
+    }
+
     function getGameId(address player, int index) constant returns (bytes32) {
         return gamesOfPlayers[player][index];
     }
@@ -592,6 +622,13 @@
 
     function is_diagonal(int8 direction) internal returns (bool){
       return !(abs(direction) == 16 || abs(direction) == 1);
+    }
+
+    function getOwnKing(bytes32 gameId, int8 movingPlayerColor) returns (int8){
+        if(movingPlayerColor == Players(Player.WHITE))
+            return getFlag(gameId, Flag.BLACK_KING_POS);
+        else
+            return getFlag(gameId, Flag.WHITE_KING_POS);
     }
 
     /* This unnamed function is called whenever someone tries to send ether to it */
