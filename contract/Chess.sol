@@ -30,23 +30,33 @@
     bytes32 public head;
 
     /* Flags needed for validation
-     * Usage e.g. Flags[uint(Flag.FLAG_NAME)]
-     * Directions[Direction.UP]
+     * Usage e.g. Flags(Flag.FLAG_NAME)
+     * Directions(Direction.UP)
      */
-    enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
-    int8[8] Directions = [int8(-16), int8(-15), int8(1), int8(17), int8(16), int8(15), int8(-1), int8(-17)];
-    enum Piece { WHITE_KING, WHITE_QUEEN, WHITE_ROOK, WHITE_BISHOP, WHITE_KNIGHT, WHITE_PAWN, EMPTY, BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN }
-    int8[13] Pieces = [int8(6), int8(5), int8(4), int8(3), int8(2), int8(1), int8(0), int8(-6), int8(-5), int8(-4), int8(-3), int8(-2), int8(-1)];
     enum Player { WHITE, BLACK }
-    int8[2] Players = [int8(1), int8(-1)];
+    enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
+    bytes constant c_Directions = "\x30\x31\x41\x51\x50\x4f\x3f\x2f";
+    enum Piece { WHITE_KING, WHITE_QUEEN, WHITE_ROOK, WHITE_BISHOP, WHITE_KNIGHT, WHITE_PAWN, EMPTY, BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN }
+    bytes constant c_Pieces = "\x3a\x3b\x3c\x3d\x3e\x3f\x40\x46\x45\x44\x43\x42\x41";
     enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
-    //byes Flags = [int8(123), int8(11), int8(16), int8(78), int8(79), int8(62), int8(63), int8(61), int8(77)];
     bytes constant c_Flags = "\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c";
     function Flags(Flag i) internal returns (uint) {
        return uint(c_Flags[uint(i)]);
     }
+    function Pieces(Piece i) internal returns (int8) {
+        return -64 + int8(c_Pieces[uint(i)]);
+    }
+    function Directions(Direction i) internal returns (int8) {
+        return -64 + int8(c_Directions[uint(i)]);
+    }
+    function Players(Player p) internal returns (int8) {
+        if (p == Player.WHITE) {
+            return 1;
+        }
+        return -1;
+    }
 
-    int8[8] knight_moves = [int8(-33), int8(-31), int8(-18), int8(-14), int8(14), int8(18), int8(31), int8(33)];
+    bytes constant knightMoves = '\x1f\x21\x2e\x32\x4e\x52\x5f\x61';
 
     function Chess() {
         head = 'end';
@@ -162,9 +172,9 @@
 
         int8 currentPlayerColor;
         if (msg.sender == games[gameId].playerWhite) {
-            currentPlayerColor = Players[uint(Player.WHITE)];
+            currentPlayerColor = Players(Player.WHITE);
         } else {
-            currentPlayerColor = Players[uint(Player.BLACK)];
+            currentPlayerColor = Players(Player.BLACK);
         }
 
         int8 fromFigure = games[gameId].state[fromIndex];
@@ -178,8 +188,8 @@
 
         // For all pieces except knight, check if way is free
         // In case of king, it will check that he is not in check on any of the fields
-        if (abs(fromFigure) != uint(Pieces[uint(Piece.BLACK_KNIGHT)])) {
-            bool checkForCheck = abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_KING)]);
+        if (abs(fromFigure) != uint(Pieces(Piece.BLACK_KNIGHT))) {
+            bool checkForCheck = abs(fromFigure) == uint(Pieces(Piece.BLACK_KING));
             checkWayFree(gameId, fromIndex, toIndex, currentPlayerColor, checkForCheck);
         }
 
@@ -238,7 +248,7 @@
         bool isDiagonal = !(abs(direction) == 16 || abs(direction) == 1);
 
         // Kings
-        if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_KING)])) {
+        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_KING))) {
             // Normal move
             if (int(fromIndex) + direction == int(toIndex)) {
                 return;
@@ -248,7 +258,7 @@
                 // Cannot move if already in check
                 throw;
             }
-            if (fromFigure == Pieces[uint(Piece.BLACK_KING)]) {
+            if (fromFigure == Pieces(Piece.BLACK_KING)) {
                 if (4 == fromIndex && toFigure == 0) {
                     if (toIndex == 1 && getFlag(gameId, Flag.BLACK_LEFT_CASTLING) >= 0) {
                         return;
@@ -258,7 +268,7 @@
                     }
                 }
             }
-            if (fromFigure == Pieces[uint(Piece.WHITE_KING)]) {
+            if (fromFigure == Pieces(Piece.WHITE_KING)) {
                 if (116 == fromIndex && toFigure == 0) {
                     if (toIndex == 113 && getFlag(gameId, Flag.WHITE_LEFT_CASTLING) >= 0) {
                         return;
@@ -273,12 +283,12 @@
         }
 
         // Bishops, Queens, Rooks
-        if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_BISHOP)]) ||
-            abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_QUEEN)]) ||
-            abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_ROOK)])) {
+        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
+            abs(fromFigure) == uint(Pieces(Piece.BLACK_QUEEN)) ||
+            abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
 
-            if (!isDiagonal && abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_BISHOP)]) ||
-                isDiagonal && abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_ROOK)])) {
+            if (!isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
+                isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
                 return;
             }
 
@@ -295,10 +305,10 @@
         }
 
         // Pawns
-        if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_PAWN)])) {
+        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN))) {
             // Black can only move in positive, White negative direction
-            if (fromFigure == Pieces[uint(Piece.BLACK_PAWN)] && direction < 0 ||
-                fromFigure == Pieces[uint(Piece.WHITE_PAWN)] && direction > 0) {
+            if (fromFigure == Pieces(Piece.BLACK_PAWN) && direction < 0 ||
+                fromFigure == Pieces(Piece.WHITE_PAWN) && direction > 0) {
                 throw;
             }
             // Forward move
@@ -324,9 +334,9 @@
             if (int(fromIndex) + direction == int(toIndex)) {
                 // if empty, the en passant flag needs to be set
                 if (toFigure * fromFigure == 0) {
-                    if (fromFigure == Pieces[uint(Piece.BLACK_PAWN)] &&
+                    if (fromFigure == Pieces(Piece.BLACK_PAWN) &&
                         getFlag(gameId, Flag.WHITE_EN_PASSANT) == int(toIndex) ||
-                        fromFigure == Pieces[uint(Piece.WHITE_PAWN)] &&
+                        fromFigure == Pieces(Piece.WHITE_PAWN) &&
                         getFlag(gameId, Flag.BLACK_EN_PASSANT) == int(toIndex)) {
                         return;
                     }
@@ -339,9 +349,9 @@
         }
 
         // Knights
-        if (abs(fromFigure) == uint(Pieces[uint(Piece.BLACK_KNIGHT)])) {
-            for (uint i; i < knight_moves.length; i++) {
-                if (int(fromIndex) + knight_moves[i] == int(toIndex)) {
+        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_KNIGHT))) {
+            for (uint i; i < 8; i++) {
+                if (int(fromIndex) + int(knightMoves[i]) - 64 == int(toIndex)) {
                     return;
                 }
             }
@@ -400,27 +410,27 @@
         /*Check directions*/
         if (isAboveLeft){
             if (isSameVertical){
-                return Directions[uint(Direction.UP)];
+                return Directions(Direction.UP);
             }
             if (isSameHorizontal){
-                return Directions[uint(Direction.LEFT)];
+                return Directions(Direction.LEFT);
             }
             if (isLeftSide){
-                return Directions[uint(Direction.UP_LEFT)];
+                return Directions(Direction.UP_LEFT);
             } else {
-                return Directions[uint(Direction.UP_RIGHT)];
+                return Directions(Direction.UP_RIGHT);
             }
         } else {
             if (isSameVertical){
-                return Directions[uint(Direction.DOWN)];
+                return Directions(Direction.DOWN);
             }
             if (isSameHorizontal){
-                return Directions[uint(Direction.RIGHT)];
+                return Directions(Direction.RIGHT);
             }
             if (isLeftSide){
-                return Directions[uint(Direction.DOWN_LEFT)];
+                return Directions(Direction.DOWN_LEFT);
             } else{
-                return Directions[uint(Direction.DOWN_RIGHT)];
+                return Directions(Direction.DOWN_RIGHT);
             }
         }
     }
@@ -437,28 +447,28 @@
         // it already passed valid we just need to move the rook
 
         // Black
-        if (fromFigure == Pieces[uint(Piece.BLACK_KING)]){
+        if (fromFigure == Pieces(Piece.BLACK_KING)){
             setFlag(gameId, Flag.BLACK_KING_POS, int8(toIndex));
             if ((fromIndex == 4)&&(toIndex == 1)){
                 games[gameId].state[0] = 0;
-                games[gameId].state[2] = Pieces[uint(Piece.BLACK_ROOK)];
+                games[gameId].state[2] = Pieces(Piece.BLACK_ROOK);
             }
             if ((fromIndex == 4)&&(toIndex == 6)){
                 games[gameId].state[7] = 0;
-                games[gameId].state[5] = Pieces[uint(Piece.BLACK_ROOK)];
+                games[gameId].state[5] = Pieces(Piece.BLACK_ROOK);
             }
 
         }
         // White
-        if (fromFigure == Pieces[uint(Piece.WHITE_KING)]){
+        if (fromFigure == Pieces(Piece.WHITE_KING)){
             setFlag(gameId, Flag.WHITE_KING_POS, int8(toIndex));
             if ((fromIndex == 116)&&(toIndex == 112)){
                 games[gameId].state[112] = 0;
-                games[gameId].state[114] = Pieces[uint(Piece.BLACK_ROOK)];
+                games[gameId].state[114] = Pieces(Piece.BLACK_ROOK);
             }
             if ((fromIndex == 116)&&(toIndex == 118)){
                 games[gameId].state[118] = 0;
-                games[gameId].state[117] = Pieces[uint(Piece.BLACK_ROOK)];
+                games[gameId].state[117] = Pieces(Piece.BLACK_ROOK);
             }
 
         }
@@ -466,13 +476,13 @@
         //Remove Castling Flag
 
         // Black
-        if (fromFigure == Pieces[uint(Piece.BLACK_KING)]){
+        if (fromFigure == Pieces(Piece.BLACK_KING)){
             if (fromIndex == 4){
                 setFlag(gameId, Flag.BLACK_LEFT_CASTLING, -1);
                 setFlag(gameId, Flag.BLACK_RIGHT_CASTLING, -1);
             }
         }
-        if (fromFigure == Pieces[uint(Piece.BLACK_ROOK)]){
+        if (fromFigure == Pieces(Piece.BLACK_ROOK)){
             if (fromIndex == 0){
                 setFlag(gameId, Flag.BLACK_LEFT_CASTLING, -1);
             }
@@ -482,13 +492,13 @@
         }
 
         // White
-        if (fromFigure == Pieces[uint(Piece.WHITE_KING)]){
+        if (fromFigure == Pieces(Piece.WHITE_KING)){
             if (fromIndex == 116){
                 setFlag(gameId, Flag.WHITE_LEFT_CASTLING, -1);
                 setFlag(gameId, Flag.WHITE_RIGHT_CASTLING, -1);
             }
         }
-        if (fromFigure == Pieces[uint(Piece.WHITE_ROOK)]){
+        if (fromFigure == Pieces(Piece.WHITE_ROOK)){
             if (fromIndex == 112){
                 setFlag(gameId, Flag.WHITE_LEFT_CASTLING, -1);
             }
@@ -551,9 +561,9 @@
     }
 
     function is_diagonal(Direction dir) internal returns (bool){
-      if(abs(Directions[uint(dir)]) == 16)
+      if(abs(Directions(dir)) == 16)
         return false;
-      if(abs(Directions[uint(dir)]) == 1)
+      if(abs(Directions(dir)) == 1)
         return false;
       return true;
     }
