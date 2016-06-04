@@ -556,13 +556,31 @@
         if(abs(fromFigure) == uint(Pieces(Piece.BLACK_KING)))
             return true; 
         
+        // through move of fromFigure from fromIndex king may now be in danger from that direction
+        // get that direction
         int8 kingIndex = getOwnKing(gameId, movingPlayerColor);
         int8 kingDangerDirection = getDirection(uint256(kingIndex), fromIndex);
 
+        // get the first Figure in this direction. Threat of Knight does not change through move of fromFigure.
+        // All other figures can not jump over other figures. So only the first figure matters. 
         int8 firstFigureIndex = getFirstFigure(gameId, kingDangerDirection,kingIndex);
+     
+        // if we found a figure in the danger direction
+        if(firstFigureIndex != -1) {
+            int8 firstFigure = games[gameId].state[uint(firstFigureIndex)];
 
+            //if its an enemy
+            if(firstFigure * movingPlayerColor > 0 ){
+                // check if the figure can move to the field of the king
+                int8 kingFigure = Pieces(Piece.BLACK_KING)* movingPlayerColor;
+                validateMove(gameId, firstFigureIndex, kingIndex, firstFigure, kingFigure, currentPlayerColor);
+                //it can
+                return false;
+            }
 
-        return false;
+        }
+
+        return true;
     }
 
     function testIfCheck() {
