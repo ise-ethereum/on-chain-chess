@@ -140,7 +140,7 @@
         // If the other player isn't white, player2 will play as white
         if (games[gameId].playerWhite == 0) {
             games[gameId].playerWhite = msg.sender;
-            // Game starts with White, so here P2
+            // Game starts with White, so here player2
             games[gameId].nextPlayer = games[gameId].player2;
         }
 
@@ -219,7 +219,7 @@
 
     function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) {
         // check if the move actually fits the data structure
-        if ((toIndex & 0x88) != 0) {
+        if (((toIndex & 0x88) != 0) && ((fromIndex & 0x88) != 0)) {
             throw;
         }
 
@@ -229,7 +229,8 @@
         }
 
         // check if the toIndex is empty (= is 0) or contains an enemy figure ("positive" * "negative" = "negative")
-        // --> this only allows captures (negative results  or moves to empty fields ( = 0)
+        // --> this only allows captures (negative results)  or moves to empty fields ( = 0)
+        // also check if there is a figure at fromIndex to move (fromFigure != 0)
         if (fromFigure * toFigure > 0) {
             throw;
         }
