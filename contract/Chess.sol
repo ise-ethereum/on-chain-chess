@@ -36,7 +36,7 @@
     enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
     int8[8] Directions = [int8(-16), int8(-15), int8(1), int8(17), int8(16), int8(15), int8(-1), int8(-17)];
     enum Piece { WHITE_KING, WHITE_QUEEN, WHITE_ROOK, WHITE_BISHOP, WHITE_KNIGHT, WHITE_PAWN, EMPTY, BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN }
-    int8[13] Pieces = [int8(-6), int8(-5), int8(-4), int8(-3), int8(-2), int8(-1), int8(0), int8(6), int8(5), int8(4), int8(3), int8(2), int8(1)];
+    int8[13] Pieces = [int8(6), int8(5), int8(4), int8(3), int8(2), int8(1), int8(0), int8(-6), int8(-5), int8(-4), int8(-3), int8(-2), int8(-1)];
     enum Player { WHITE, BLACK }
     int8[2] Players = [int8(1), int8(-1)];
     enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
