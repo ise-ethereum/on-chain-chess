@@ -263,7 +263,7 @@
             }
             if (fromFigure == Pieces(Piece.BLACK_KING)) {
                 if (4 == fromIndex && toFigure == 0) {
-                    if (toIndex == 1 && getFlag(gameId, Flag.BLACK_LEFT_CASTLING) >= 0) {
+                    if (toIndex == 2 && getFlag(gameId, Flag.BLACK_LEFT_CASTLING) >= 0) {
                         return;
                     }
                     if (toIndex == 6 && getFlag(gameId, Flag.BLACK_RIGHT_CASTLING) >= 0) {
@@ -273,7 +273,7 @@
             }
             if (fromFigure == Pieces(Piece.WHITE_KING)) {
                 if (116 == fromIndex && toFigure == 0) {
-                    if (toIndex == 113 && getFlag(gameId, Flag.WHITE_LEFT_CASTLING) >= 0) {
+                    if (toIndex == 114 && getFlag(gameId, Flag.WHITE_LEFT_CASTLING) >= 0) {
                         return;
                     }
                     if (toIndex == 118 && getFlag(gameId, Flag.WHITE_RIGHT_CASTLING) >= 0) {
