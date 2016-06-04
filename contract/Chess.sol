@@ -515,13 +515,27 @@
         }
 
         int8 direction = getDirection(fromIndex, toIndex);
-        // En Passant - remove catched pawn
-        // en passant if figure:pawn and diagonal move to empty field
-        if(abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN)) && is_diagonal(direction) && toFigure == Pieces(Piece.EMPTY)){
-            if(fromFigure == Pieces(Piece.BLACK_PAWN)){
-                games[gameId].state[uint(int(toIndex) + Directions(Direction.UP))] = 0;
-            }else{
-                 games[gameId].state[uint(int(toIndex) + Directions(Direction.DOWN))] = 0;
+       
+        //PAWN - EN PASSANT or DOUBLE STEP
+        if(abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN))){
+
+            // En Passant - remove catched pawn
+            // en passant if figure:pawn and diagonal move to empty field
+            if(is_diagonal(direction) && toFigure == Pieces(Piece.EMPTY)){
+                if(fromFigure == Pieces(Piece.BLACK_PAWN)){
+                    games[gameId].state[uint(int(toIndex) + Directions(Direction.UP))] = 0;
+                }else{
+                     games[gameId].state[uint(int(toIndex) + Directions(Direction.DOWN))] = 0;
+                }
+            }
+
+            // in case of double Step: set EN_PASSANT-Flag
+            else if(int(fromIndex) + direction + direction == int(toIndex)){
+                if(fromFigure == Pieces(Piece.BLACK_PAWN)){
+                    games[gameId].state[Flags(Flag.BLACK_EN_PASSANT)] = (int8(toIndex) + Directions(Direction.UP));
+                }else{
+                    games[gameId].state[Flags(Flag.WHITE_EN_PASSANT)] = (int8(toIndex) + Directions(Direction.DOWN));
+                }
             }
         }
 
