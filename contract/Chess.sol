@@ -419,9 +419,43 @@
         }
     }
 
-    function makeTemporaryMove() {
 
-    }
+        function makeTemporaryMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure){
+            games[gameId].state[uint(Flags[uint(Flag.WHITE_EN_PASSANT)])] = -1;
+            games[gameId].state[uint(Flags[uint(Flag.WHITE_EN_PASSANT)])] = -1;
+
+
+            // <---- Special Moves ---->
+
+            // castling
+            // it already passed valid we just need to move the rook
+
+            // Black
+            if (fromFigure == Pieces[uint(Piece.BLACK_KING)]){
+                Flags[uint(Flag.BLACK_KING_POS)] = int8(toIndex);
+                if ((fromIndex == 4)&&(toIndex == 1)){
+                    games[gameId].state[0] = 0;
+                    games[gameId].state[2] = Pieces[uint(Piece.BLACK_ROOK)];
+                }
+                if ((fromIndex == 4)&&(toIndex == 6)){
+                    games[gameId].state[7] = 0;
+                    games[gameId].state[5] = Pieces[uint(Piece.BLACK_ROOK)];
+                }
+
+            }
+            // White
+            if (fromFigure == Pieces[uint(Piece.WHITE_KING)]){
+                Flags[uint(Flag.WHITE_KING_POS)] = int8(toIndex);
+                if ((fromIndex == 116)&&(toIndex == 112)){
+                    games[gameId].state[112] = 0;
+                    games[gameId].state[114] = Pieces[uint(Piece.BLACK_ROOK)];
+                }
+                if ((fromIndex == 116)&&(toIndex == 118)){
+                    games[gameId].state[118] = 0;
+                    games[gameId].state[117] = Pieces[uint(Piece.BLACK_ROOK)];
+                }
+
+            }
 
     function isLegal() {
 
