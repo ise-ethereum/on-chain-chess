@@ -525,7 +525,7 @@
             }
         }
 
-        // Double Step
+        
 
 
         // <---- Normal Moves --->
@@ -576,12 +576,8 @@
         else return uint256(-1*value);
     }
 
-    function is_diagonal(int8 dir) internal returns (bool){
-      if(abs(dir) == 16)
-        return false;
-      if(abs(dir) == 1)
-        return false;
-      return true;
+    function is_diagonal(int8 direction) internal returns (bool){
+      return !(abs(direction) == 16 || abs(direction) == 1);
     }
 
     /* This unnamed function is called whenever someone tries to send ether to it */
