@@ -34,7 +34,6 @@
      * Directions(Direction.UP)
      */
     enum Player { WHITE, BLACK }
-    int8[2] Players = [int8(1), int8(-1)];
     enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
     bytes constant c_Directions = "\x30\x31\x41\x51\x50\x4f\x3f\x2f";
     enum Piece { WHITE_KING, WHITE_QUEEN, WHITE_ROOK, WHITE_BISHOP, WHITE_KNIGHT, WHITE_PAWN, EMPTY, BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN }
@@ -49,6 +48,12 @@
     }
     function Directions(Direction i) internal returns (int8) {
         return -64 + int8(c_Directions[uint(i)]);
+    }
+    function Players(Player p) internal returns (int8) {
+        if (p == Player.WHITE) {
+            return 1;
+        }
+        return -1;
     }
 
     bytes constant knightMoves = '\x1f\x21\x2e\x32\x4e\x52\x5f\x61';
@@ -167,9 +172,9 @@
 
         int8 currentPlayerColor;
         if (msg.sender == games[gameId].playerWhite) {
-            currentPlayerColor = Players[uint(Player.WHITE)];
+            currentPlayerColor = Players(Player.WHITE);
         } else {
-            currentPlayerColor = Players[uint(Player.BLACK)];
+            currentPlayerColor = Players(Player.BLACK);
         }
 
         int8 fromFigure = games[gameId].state[fromIndex];
