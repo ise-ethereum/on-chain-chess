@@ -37,7 +37,7 @@
     enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
     bytes constant c_Directions = "\x30\x31\x41\x51\x50\x4f\x3f\x2f";
     enum Piece { WHITE_KING, WHITE_QUEEN, WHITE_ROOK, WHITE_BISHOP, WHITE_KNIGHT, WHITE_PAWN, EMPTY, BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN }
-    bytes constant c_Pieces = "\x3a\x3b\x3c\x3d\x3e\x3f\x40\x46\x45\x44\x43\x42\x41";
+    bytes constant c_Pieces = "\x46\x45\x44\x43\x42\x41\x40\x3a\x3b\x3c\x3d\x3e\x3f";
     enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
     bytes constant c_Flags = "\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c";
     function Flags(Flag i) internal returns (uint) {
