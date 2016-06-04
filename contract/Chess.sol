@@ -513,8 +513,17 @@
                 setFlag(gameId, Flag.WHITE_RIGHT_CASTLING, -1);
             }
         }
-        // En Passant
 
+        int8 direction = getDirection(fromIndex, toIndex);
+        // En Passant - remove catched pawn
+        // en passant if figure:pawn and diagonal move to empty field
+        if(abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN)) && is_diagonal(direction) && toFigure == Pieces(Piece.EMPTY)){
+            if(fromFigure == Pieces(Piece.BLACK_PAWN)){
+                games[gameId].state[uint(int(toIndex) + Directions(Direction.UP))] = 0;
+            }else{
+                 games[gameId].state[uint(int(toIndex) + Directions(Direction.DOWN))] = 0;
+            }
+        }
 
         // Double Step
 
@@ -567,10 +576,10 @@
         else return uint256(-1*value);
     }
 
-    function is_diagonal(Direction dir) internal returns (bool){
-      if(abs(Directions(dir)) == 16)
+    function is_diagonal(int8 dir) internal returns (bool){
+      if(abs(dir) == 16)
         return false;
-      if(abs(Directions(dir)) == 1)
+      if(abs(dir) == 1)
         return false;
       return true;
     }
