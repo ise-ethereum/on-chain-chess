@@ -573,7 +573,7 @@
             if(firstFigure * movingPlayerColor > 0 ){
                 // check if the figure can move to the field of the king
                 int8 kingFigure = Pieces(Piece.BLACK_KING)* movingPlayerColor;
-                validateMove(gameId, firstFigureIndex, kingIndex, firstFigure, kingFigure, currentPlayerColor);
+                validateMove(gameId, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, movingPlayerColor);
                 //it can
                 return false;
             }
