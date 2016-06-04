@@ -62,7 +62,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     }
     let game = { gameId: contractGameObject.gameId };
 
-    if (accounts.availableAccounts.indexOf(contractGameObject.p2accountId) !== -1) {
+    if (accounts.availableAccounts.indexOf(contractGameObject.player2) !== -1) {
       game.self = {
         username: contractGameObject.player2Alias,
         accountId: contractGameObject.player2,
@@ -99,6 +99,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     }
 
     games.list.push(game);
+
     return game;
   };
 
@@ -144,8 +145,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
         $rootScope.$broadcast('message',
           'Your game has successfully been created and has the id ' + game.gameId,
           'success', 'startgame');
-        $rootScope.$apply();
       }
+
+      $rootScope.$apply();
     }
   };
 
@@ -264,7 +266,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
   Chess.GameJoined({}, games.eventGameJoined);
   Chess.GameStateChanged({}, games.eventGameStateChanged);
   Chess.Move({}, games.eventMove);
-  //Chess.GameEnded({}, games.eventGameEnded);
+  Chess.GameEnded({}, games.eventGameEnded);
 
   return games;
 }).filter('ownGames', function (accounts) {
