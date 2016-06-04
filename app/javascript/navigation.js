@@ -58,7 +58,7 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
       activePage: pages.playGamePage
     })
     .otherwise({redirectTo: '/' + pages.welcomePage});
-}).controller('NavigationCtrl', function (navigation, games, $scope) {
+}).controller('NavigationCtrl', function (accounts, navigation, games, $scope) {
   $scope.games = games.list;
 
   $scope.navigation = navigation;
@@ -105,29 +105,38 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
       }
 
       for(let i in newGames) {
-        let oldGameIndex = oldGameIds.indexOf(newGames[i].gameId);
+        if(accounts.availableAccounts.indexOf(newGames[i].self.accountId) !== -1 ||
+          (typeof(newGames[i].opponent) !== 'undefined' &&
+            accounts.availableAccounts.indexOf(newGames[i].opponent.accountId) !== -1
+          )
+        ) {
 
-        if(oldGameIndex !== -1) {
-          oldGameIds.splice(oldGameIndex, 1);
+          let oldGameIndex = oldGameIds.indexOf(newGames[i].gameId);
+
+          if (oldGameIndex !== -1) {
+            oldGameIds.splice(oldGameIndex, 1);
+          }
+
+
+          let menuName =
+            (typeof(newGames[i].opponent) !== 'undefined') ?
+              newGames[i].opponent.username : 'Open game';
+
+          console.log('Adding menu entry for game with id ' +
+            newGames[i].gameId + ' (' + menuName + ')');
+          // Since mist menu callbacks don't provide the clicked element, we need to
+          // create the callbacks in a loop; thus the JSHint error has to be suppressed
+          /*jshint -W083 */
+          mist.menu.update(
+            newGames[i].gameId, {
+              name: menuName,
+              position: i + 3,
+              selected: navigation.isActiveGame(newGames[i])
+            }, function () {
+              navigation.goto(navigation.playGamePage, newGames[i].gameId);
+            });
+          /*jshint +W083 */
         }
-
-
-        let menuName =
-          (typeof(newGames[i].opponent) !== 'undefined') ?
-            newGames[i].opponent.username : 'Open game';
-
-        console.log('Adding menu entry for game with id ' +
-          newGames[i].gameId + ' (' + menuName + ')');
-        // Since mist menu callbacks don't provide the clicked element, we need to
-        // create the callbacks in a loop; thus the JSHint error has to be suppressed
-        /*jshint -W083 */
-        mist.menu.update(
-          newGames[i].gameId, {
-            name: menuName,
-            position: i + 3,
-            selected: navigation.isActiveGame(newGames[i])
-          }, function() {navigation.goto(navigation.playGamePage, newGames[i].gameId);});
-        /*jshint +W083 */
       }
 
       for(let i in oldGameIds) {
