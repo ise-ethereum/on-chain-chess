@@ -318,6 +318,7 @@
             }
             // Forward move
             if (!isDiagonal) {
+                // no horizontal movement allowed
                 if (abs(direction) < 2) {
                     throw;
                 }
@@ -374,7 +375,7 @@
         int8 direction = getDirection(fromIndex, toIndex);
         int currentIndex = int(fromIndex) + direction;
 
-        // as long as we do not reach the desired position
+        // as long as we do not reach the desired position walk in direction and check
         while (int(toIndex) != currentIndex) {
             // we reached the end of the field
             if (currentIndex & 0x88 != 0) {
@@ -384,7 +385,7 @@
             if (games[gameId].state[uint(currentIndex)] != 0) {
                 throw;
             }
-            // Check for check in case of kind
+            // Check for check in case of king
             if (shouldCheckForCheck && checkForCheck(gameId, uint(currentIndex), currentPlayerColor)) {
                 throw;
             }
@@ -442,6 +443,7 @@
 
 
     function makeTemporaryMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure){
+        // remove all en passant flags
         setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
         setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
 
@@ -454,9 +456,9 @@
         // Black
         if (fromFigure == Pieces(Piece.BLACK_KING)){
             setFlag(gameId, Flag.BLACK_KING_POS, int8(toIndex));
-            if ((fromIndex == 4)&&(toIndex == 1)){
+            if ((fromIndex == 4)&&(toIndex == 2)){
                 games[gameId].state[0] = 0;
-                games[gameId].state[2] = Pieces(Piece.BLACK_ROOK);
+                games[gameId].state[3] = Pieces(Piece.BLACK_ROOK);
             }
             if ((fromIndex == 4)&&(toIndex == 6)){
                 games[gameId].state[7] = 0;
@@ -467,18 +469,18 @@
         // White
         if (fromFigure == Pieces(Piece.WHITE_KING)){
             setFlag(gameId, Flag.WHITE_KING_POS, int8(toIndex));
-            if ((fromIndex == 116)&&(toIndex == 112)){
+            if ((fromIndex == 116)&&(toIndex == 114)){
                 games[gameId].state[112] = 0;
-                games[gameId].state[114] = Pieces(Piece.BLACK_ROOK);
+                games[gameId].state[115] = Pieces(Piece.BLACK_ROOK);
             }
             if ((fromIndex == 116)&&(toIndex == 118)){
-                games[gameId].state[118] = 0;
+                games[gameId].state[119] = 0;
                 games[gameId].state[117] = Pieces(Piece.BLACK_ROOK);
             }
 
         }
 
-        //Remove Castling Flag
+        //Remove Castling Flag if king or Rook moves. But only at the first move for better performance
 
         // Black
         if (fromFigure == Pieces(Piece.BLACK_KING)){
