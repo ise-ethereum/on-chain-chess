@@ -15,7 +15,7 @@ angular.module('dappChess').controller('MessagesCtrl', function ($scope, $timeou
         return true;
       });
     }
-    if(type === 'success' || type === 'error') {
+    if(type === 'success' || type === 'error' || type === 'message') {
       $timeout(function() {
         $scope.messages = $scope.messages.filter(function(message) {
           if(id === message.id) {
