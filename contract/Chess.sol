@@ -459,7 +459,37 @@
 
         //Remove Castling Flag
 
+        // Black
+        if (fromFigure == Pieces[uint(Piece.BLACK_KING)]){
+            if (fromIndex == 4){
+                Flags[uint(Flag.BLACK_LEFT_CASTLING)] = -1;
+                Flags[uint(Flag.BLACK_RIGHT_CASTLING)] = -1;
+            }
+        }
+        if (fromFigure == Pieces[uint(Piece.BLACK_ROOK)]){
+            if (fromIndex == 0){
+                Flags[uint(Flag.BLACK_LEFT_CASTLING)] = -1;
+            }
+            if (fromIndex == 7){
+                Flags[uint(Flag.BLACK_RIGHT_CASTLING)] = -1;
+            }
+        }
 
+        // White
+        if (fromFigure == Pieces[uint(Piece.WHITE_KING)]){
+            if (fromIndex == 116){
+                Flags[uint(Flag.WHITE_LEFT_CASTLING)] = -1;
+                Flags[uint(Flag.WHITE_RIGHT_CASTLING)] = -1;
+            }
+        }
+        if (fromFigure == Pieces[uint(Piece.WHITE_ROOK)]){
+            if (fromIndex == 112){
+                Flags[uint(Flag.WHITE_LEFT_CASTLING)] = -1;
+            }
+            if (fromIndex == 119){
+                Flags[uint(Flag.WHITE_RIGHT_CASTLING)] = -1;
+            }
+        }
         // En Passant
 
 
