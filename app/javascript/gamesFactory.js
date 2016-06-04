@@ -104,26 +104,36 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
   };
 
   games.setWinner = function(gameId, winnerAccountId) {
-    for(let i in games) {
-      if(games[i].gameId === gameId) {
-        if(games[i].self.accountId === winnerAccountId) {
-          games[i].winner = 'self';
+    for(let i in games.list) {
+      if(games.list[i].gameId === gameId) {
+        if(games.list[i].self.accountId === winnerAccountId) {
+          games.list[i].winner = 'self';
 
+          console.log(accounts.availableAccounts, winnerAccountId, accounts.availableAccounts.indexOf(winnerAccountId) !== -1);
           if (accounts.availableAccounts.indexOf(winnerAccountId) !== -1) {
             $rootScope.$broadcast('message',
-              'You have won the game against ' + games[i].opponent.username,
+              'You have won the game against ' + games.list[i].opponent.username,
               'message', 'playgame');
           }
         }
-        else if(games[i].opponent.accountId === winnerAccountId) {
-          games[i].winner = 'opponent';
+        else if(games.list[i].opponent.accountId === winnerAccountId) {
+          games.list[i].winner = 'opponent';
 
-          if (accounts.availableAccounts.indexOf(games[i].self.accountId) !== -1) {
+          console.log(accounts.availableAccounts, games.list[i].self.accountId, accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1);
+          if (accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1) {
             $rootScope.$broadcast('message',
-              'You have lost the game against ' + games[i].opponent.username,
+              'You have lost the game against ' + games.list[i].opponent.username,
               'message', 'playgame');
           }
         }
+        else {
+          console.log('error: could not find winner ' + winnerAccountId,
+            'self: ' + games.list[i].self.accountId,
+            'opponent: ' + games.list[i].opponent.accountId
+          );
+        }
+
+        $rootScope.$apply();
 
         break;
       }
