@@ -290,8 +290,8 @@
             abs(fromFigure) == uint(Pieces(Piece.BLACK_QUEEN)) ||
             abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
 
-            if (!isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
-                isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
+            if (isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
+                !isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
                 return;
             }
 
