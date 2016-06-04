@@ -180,6 +180,7 @@
         }
 
         //makeTemporaryMove
+        makeTemporaryMove(gameId, fromIndex, toIndex, fromFigure, toFigure);
 
         //isLegal
 
@@ -197,6 +198,7 @@
         }
 
         Move(gameId, msg.sender, fromIndex, toIndex);
+        GameStateChanged(gameId, games[gameId].state);
     }
 
     function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) {
@@ -544,7 +546,7 @@
         else return uint256(-1*value);
     }
 
-	function is_diagonal(Direction dir) internal returns (bool){
+    function is_diagonal(Direction dir) internal returns (bool){
       if(abs(Directions[uint(dir)]) == 16)
         return false;
       if(abs(Directions[uint(dir)]) == 1)
