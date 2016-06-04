@@ -37,5 +37,5 @@ angular.module('dappChess').controller('InitializeGameCtrl',
       }
     };
 
-    console.log(accounts.availableAccounts);
+    console.log('Available accounts', accounts.availableAccounts);
   });

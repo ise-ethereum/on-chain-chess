@@ -95,7 +95,7 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
       }, function() {navigation.goto(navigation.joinGamePage);}
     );
 
-    $scope.$watchCollection('games', function(newGames, oldGames) {
+    $scope.$watch('games', function(newGames, oldGames) {
       console.log('games changed');
 
       let oldGameIds = [];
@@ -134,6 +134,6 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
         console.log('Removing menu entry for game with id ' + oldGameIds[i]);
         mist.menu.remove(oldGameIds[i]);
       }
-    });
+    }, true);
   }
 });
