@@ -40,7 +40,11 @@
     enum Player { WHITE, BLACK }
     int8[2] Players = [int8(1), int8(-1)];
     enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
-    int8[9] Flags = [int8(123), int8(11), int8(16), int8(78), int8(79), int8(62), int8(63), int8(61), int8(77)];
+    //byes Flags = [int8(123), int8(11), int8(16), int8(78), int8(79), int8(62), int8(63), int8(61), int8(77)];
+    bytes constant c_Flags = "\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c";
+    function Flags(Flag i) internal returns (uint) {
+       return uint(c_Flags[uint(i)]);
+    }
 
     int8[8] knight_moves = [int8(-33), int8(-31), int8(-18), int8(-14), int8(14), int8(18), int8(31), int8(33)];
 
@@ -58,16 +62,16 @@
      * Convenience function to set a flag
      * Usage: setFlag(gameId, Flag.BLACK_KING_POS, 4);
      */
-    function setFlag(bytes32 gameId, Flag flag, uint value) internal {
-        games[gameId].state[uint(Flags[uint(flag)])] = int8(value);
+    function setFlag(bytes32 gameId, Flag flag, int value) internal {
+        games[gameId].state[Flags(flag)] = int8(value);
     }
 
     /**
      * Convenience function to set a flag
-     * Usage: setFlag(gameId, Flag.BLACK_KING_POS, 4);
+     * Usage: getFlag(gameId, Flag.BLACK_KING_POS);
      */
     function getFlag(bytes32 gameId, Flag flag) internal returns (int8) {
-        return games[gameId].state[uint(Flags[uint(flag)])];
+        return games[gameId].state[Flags(flag)];
     }
 
     /**
@@ -421,8 +425,8 @@
 
 
     function makeTemporaryMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure){
-        games[gameId].state[uint(Flags[uint(Flag.WHITE_EN_PASSANT)])] = -1;
-        games[gameId].state[uint(Flags[uint(Flag.WHITE_EN_PASSANT)])] = -1;
+        setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
+        setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
 
 
         // <---- Special Moves ---->
@@ -432,7 +436,7 @@
 
         // Black
         if (fromFigure == Pieces[uint(Piece.BLACK_KING)]){
-            Flags[uint(Flag.BLACK_KING_POS)] = int8(toIndex);
+            setFlag(gameId, Flag.BLACK_KING_POS, int8(toIndex));
             if ((fromIndex == 4)&&(toIndex == 1)){
                 games[gameId].state[0] = 0;
                 games[gameId].state[2] = Pieces[uint(Piece.BLACK_ROOK)];
@@ -445,7 +449,7 @@
         }
         // White
         if (fromFigure == Pieces[uint(Piece.WHITE_KING)]){
-            Flags[uint(Flag.WHITE_KING_POS)] = int8(toIndex);
+            setFlag(gameId, Flag.WHITE_KING_POS, int8(toIndex));
             if ((fromIndex == 116)&&(toIndex == 112)){
                 games[gameId].state[112] = 0;
                 games[gameId].state[114] = Pieces[uint(Piece.BLACK_ROOK)];
@@ -462,32 +466,32 @@
         // Black
         if (fromFigure == Pieces[uint(Piece.BLACK_KING)]){
             if (fromIndex == 4){
-                Flags[uint(Flag.BLACK_LEFT_CASTLING)] = -1;
-                Flags[uint(Flag.BLACK_RIGHT_CASTLING)] = -1;
+                setFlag(gameId, Flag.BLACK_LEFT_CASTLING, -1);
+                setFlag(gameId, Flag.BLACK_RIGHT_CASTLING, -1);
             }
         }
         if (fromFigure == Pieces[uint(Piece.BLACK_ROOK)]){
             if (fromIndex == 0){
-                Flags[uint(Flag.BLACK_LEFT_CASTLING)] = -1;
+                setFlag(gameId, Flag.BLACK_LEFT_CASTLING, -1);
             }
             if (fromIndex == 7){
-                Flags[uint(Flag.BLACK_RIGHT_CASTLING)] = -1;
+                setFlag(gameId, Flag.BLACK_RIGHT_CASTLING, -1);
             }
         }
 
         // White
         if (fromFigure == Pieces[uint(Piece.WHITE_KING)]){
             if (fromIndex == 116){
-                Flags[uint(Flag.WHITE_LEFT_CASTLING)] = -1;
-                Flags[uint(Flag.WHITE_RIGHT_CASTLING)] = -1;
+                setFlag(gameId, Flag.WHITE_LEFT_CASTLING, -1);
+                setFlag(gameId, Flag.WHITE_RIGHT_CASTLING, -1);
             }
         }
         if (fromFigure == Pieces[uint(Piece.WHITE_ROOK)]){
             if (fromIndex == 112){
-                Flags[uint(Flag.WHITE_LEFT_CASTLING)] = -1;
+                setFlag(gameId, Flag.WHITE_LEFT_CASTLING, -1);
             }
             if (fromIndex == 119){
-                Flags[uint(Flag.WHITE_RIGHT_CASTLING)] = -1;
+                setFlag(gameId, Flag.WHITE_RIGHT_CASTLING, -1);
             }
         }
         // En Passant
@@ -544,7 +548,7 @@
         else return uint256(-1*value);
     }
 
-	function is_diagonal(Direction dir) internal returns (bool){
+    function is_diagonal(Direction dir) internal returns (bool){
       if(abs(Directions[uint(dir)]) == 16)
         return false;
       if(abs(Directions[uint(dir)]) == 1)
