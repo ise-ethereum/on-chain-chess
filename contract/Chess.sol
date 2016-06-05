@@ -231,13 +231,13 @@
 
         // check if the toIndex is empty (= is 0) or contains an enemy figure ("positive" * "negative" = "negative")
         // --> this only allows captures (negative results)  or moves to empty fields ( = 0)
-        // also check if there is a figure at fromIndex to move (fromFigure != 0)
-        if (fromFigure * toFigure < 0) {
+        if (fromFigure * toFigure > 0) {
             throw;
         }
 
         // check if mover of the figure is the owner of the figure
-        if (currentPlayerColor * fromFigure < 0) {
+        // also check if there is a figure at fromIndex to move (fromFigure != 0)
+        if (currentPlayerColor * fromFigure <= 0) {
             throw;
         }
     }
