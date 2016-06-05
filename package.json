@@ -7,7 +7,7 @@
     "start": "webpack --watch",
     "build": "webpack --bail",
     "test": "mocha-webpack --growl",
-    "test-testrpc": "concurrently --kill-others -s first 'testrpc' 'npm run test'",
+    "test-testrpc": "concurrently --kill-others -s first \"testrpc -p ${TESTRPC_PORT:-8545}\" 'npm run test'",
     "lint": "jshint app/javascript/*.js"
   },
   "repository": {
