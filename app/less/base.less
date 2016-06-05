@@ -1,39 +1,31 @@
-@import "../dapp-styles/dapp-styles.less";
+@import "../css/normalize.css";
+@import "../css/skeleton.css";
+
 @import "input.less";
 @import "message.less";
 @import "table.less";
+@import "header.less";
+@import "game.less";
 
-header.dapp-header {
-  overflow:hidden;
-  background:linear-gradient(to bottom, #2c539e 0%,#5583e0 100%);
-  /*box-shadow: 0px 4px 9px -4px rgba(0,0,0,0.75);*/
+body {
+	font-family: 'Open Sans', sans-serif;
 
-  .background {
-    position:absolute;
-    left:0;
-    top:2px;
-    background:url(../img/header.png) no-repeat center top;
-    width:100%;
-    height:81px;
-    z-index:-1;
-  }
-  .dapp-title {
-    color:#FFF;
-    font-size:2em;
-    text-shadow:0 0 1px #000;
-    text-transform:lowercase;
-  }
+	&.metapage {
+    background:#000 url(../img/chess.jpg) no-repeat fixed 0 0 / cover;
+	}
 }
-aside.dapp-aside {
-  background:linear-gradient(to right, #7d7e7d 0%,#606060 100%);
-
-  nav ul li {
-    a {
-      color:#EEE;
-    }
-    a.active {
-      cursor:inherit;
-      color:#000;
-    }
-  }
+div.container.space-top {
+	margin-top:4em;
+}
+div.bg-overlay {
+	background-image:url(../img/bg-overlay.png);
+	width:100%;
+	height:100%;
+	position:fixed;
+	left:0;
+	top:0;
+	z-index:-1;
+}
+main {
+	color:#FFF
 }

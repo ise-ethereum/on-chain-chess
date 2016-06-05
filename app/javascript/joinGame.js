@@ -1,9 +1,10 @@
 /* global angular */
-import {web3, Chess} from '../../contract/Chess.sol';
+import {Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('JoinGameCtrl',
-  function ($rootScope, $scope, games) {
-    $scope.availableAccounts = web3.eth.accounts;
-    $scope.selectedAccount = web3.eth.defaultAccount;
+  function ($rootScope, $scope, games, accounts) {
+    $scope.availableAccounts = accounts.availableAccounts;
+
+    $scope.selectedAccount = accounts.defaultAccount;
     $scope.username = null;
     $scope.gameId = null;
     $scope.games = games.list;
@@ -17,7 +18,7 @@ angular.module('dappChess').controller('JoinGameCtrl',
     };
     $scope.setSelectedGame = function($event, game) {
       $scope.gameId = game.gameId;
-      
+
       $event.preventDefault();
     };
     $scope.isSelectedGame = function(game) {

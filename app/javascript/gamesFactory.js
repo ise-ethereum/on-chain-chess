@@ -1,6 +1,6 @@
 /* global angular */
-import {web3, Chess} from '../../contract/Chess.sol';
-angular.module('dappChess').factory('games', function (navigation, $rootScope, $route) {
+import {Chess} from '../../contract/Chess.sol';
+angular.module('dappChess').factory('games', function (navigation, accounts, $rootScope, $route) {
   const games = {
     list: [],
     openGames: []
@@ -62,7 +62,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
     }
     let game = { gameId: contractGameObject.gameId };
 
-    if (web3.eth.accounts.indexOf(contractGameObject.p2accountId) !== -1) {
+    if (accounts.availableAccounts.indexOf(contractGameObject.player2) !== -1) {
       game.self = {
         username: contractGameObject.player2Alias,
         accountId: contractGameObject.player2,
@@ -88,27 +88,76 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
         };
       }
     }
+    if(typeof(contractGameObject.winner) !== 'undefined' &&
+      contractGameObject.winner !== '0x0000000000000000000000000000000000000000') {
+      if(game.self.accountId === contractGameObject.winner) {
+        game.winner = 'self';
+      }
+      else if(game.opponent.accountId === contractGameObject.winner) {
+        game.winner = 'opponent';
+      }
+    }
+
     games.list.push(game);
+
     return game;
+  };
+
+  games.setWinner = function(gameId, winnerAccountId) {
+    for(let i in games.list) {
+      if(games.list[i].gameId === gameId) {
+        if(games.list[i].self.accountId === winnerAccountId) {
+          games.list[i].winner = 'self';
+
+          console.log(accounts.availableAccounts, winnerAccountId, accounts.availableAccounts.indexOf(winnerAccountId) !== -1);
+          if (accounts.availableAccounts.indexOf(winnerAccountId) !== -1) {
+            $rootScope.$broadcast('message',
+              'You have won the game against ' + games.list[i].opponent.username,
+              'message', 'playgame');
+          }
+        }
+        else if(games.list[i].opponent.accountId === winnerAccountId) {
+          games.list[i].winner = 'opponent';
+
+          console.log(accounts.availableAccounts, games.list[i].self.accountId, accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1);
+          if (accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1) {
+            $rootScope.$broadcast('message',
+              'You have lost the game against ' + games.list[i].opponent.username,
+              'message', 'playgame');
+          }
+        }
+        else {
+          console.log('error: could not find winner ' + winnerAccountId,
+            'self: ' + games.list[i].self.accountId,
+            'opponent: ' + games.list[i].opponent.accountId
+          );
+        }
+
+        $rootScope.$apply();
+
+        break;
+      }
+    }
   };
 
   games.eventGameInitialized = function (err, data) {
     console.log('eventGameInitialized', err, data);
     if (err) {
       console.log('error occured', err);
-      $rootScope.$broadcast('message',
+      /*$rootScope.$broadcast('message',
         'Your game could not be created, the following error occured: ' + err,
-        'error', 'startgame');
+        'error', 'startgame');*/
     } else {
       let game = games.add(data.args);
       games.openGames.push(game.gameId);
 
-      if (web3.eth.accounts.indexOf(game.self.accountId) !== -1) {
+      if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
         $rootScope.$broadcast('message',
           'Your game has successfully been created and has the id ' + game.gameId,
           'success', 'startgame');
-        $rootScope.$apply();
       }
+
+      $rootScope.$apply();
     }
   };
 
@@ -116,9 +165,9 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
     console.log('eventGameJoined', err, data);
     if (err) {
       console.log('error occured', err);
-      $rootScope.$broadcast('message',
+      /*$rootScope.$broadcast('message',
         'It was not possible to join the game, the following error occured: ' + err,
-        'error', 'joingame');
+        'error', 'joingame');*/
     } else {
       let gameId = data.args.gameId;
       let p1accountId = data.args.player1;
@@ -135,7 +184,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
         // remove game from openGames
         let gameIndex = games.openGames.indexOf(gameId);
         games.openGames.splice(gameIndex, 1);
-        if (web3.eth.accounts.indexOf(p2accountId) !== -1) {
+        if (accounts.availableAccounts.indexOf(p2accountId) !== -1) {
           game.self = {
             username: p2username,
             accountId: p2accountId,
@@ -160,7 +209,7 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
         }
       }
 
-      if (web3.eth.accounts.indexOf(game.self.accountId) !== -1) {
+      if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
         $rootScope.$broadcast('message', 'Your game against ' +
                 game.opponent.username.replace(/<(?:.|\n)*?>/gm, '') +
                 ' has started',
@@ -184,8 +233,20 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
     console.log('eventMove', err, data);
   };
 
+  games.eventGameEnded = function(err, data) {
+    console.log('eventGameEnded', err, data);
+    if (err) {
+      console.log('error occured', err);
+      /*$rootScope.$broadcast('message',
+        'The surrender could not be saved, the following error occurred: ' + err,
+        'error', 'playgame');*/
+    } else {
+      games.setWinner(data.args.gameId, data.args.winner);
+    }
+  };
+
   // Fetch games of player
-  for (let accountId of web3.eth.accounts) {
+  for (let accountId of accounts.availableAccounts) {
     let numberGames = Chess.numberGamesOfPlayers(accountId);
     if (numberGames === 0) {
       return;
@@ -215,24 +276,20 @@ angular.module('dappChess').factory('games', function (navigation, $rootScope, $
   Chess.GameJoined({}, games.eventGameJoined);
   Chess.GameStateChanged({}, games.eventGameStateChanged);
   Chess.Move({}, games.eventMove);
+  Chess.GameEnded({}, games.eventGameEnded);
 
   return games;
-}).filter('ownGames', function () {
+}).filter('ownGames', function (accounts) {
   return function (games) {
-    if (typeof games !== 'undefined')
-      return games.filter(function (game) {
-        return web3.eth.accounts.indexOf(game.self.accountId) !== -1;
-      });
+    return games.filter(function (game) {
+      return accounts.availableAccounts.indexOf(game.self.accountId) !== -1;
+    });
   };
-}).filter('othersOpenGames', function () {
+}).filter('othersOpenGames', function (accounts) {
   return function (games, openGames) {
     if (typeof games !== 'undefined') {
       return games.filter(function (game) {
-        // We can not filter out "our own games yet",
-        // course otherwise we would not see any games at all
-        // with the current test setup
-        // Remove the true part for live function
-        return web3.eth.accounts.indexOf(game.self.accountId) === -1 || true;
+        return accounts.availableAccounts.indexOf(game.self.accountId) === -1;
       }).filter(function(game) {
         return openGames.indexOf(game.gameId) !== -1;
       });

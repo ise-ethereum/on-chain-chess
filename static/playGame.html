@@ -1,16 +1,18 @@
-<h1>Play Game</h1>
-<div class="row clear" data-ng-show="isOpenGame()">
-  <div class="col col-12 mobile-full">
-    <p>Your game has started, but no opponent has joined the game yet.</p>
-    <p>You can tell a friend to directly join the game with the game id<br>
-      <strong>{{getGameId()}}</strong></p>
-    <p>Account ID used for this game: {{getGame().self.accountId}}<br>
-      Start color: {{getGame().self.color}}</p>
-  </div>
+<div class="container space-top">
+  <h1>Play Game</h1>
 </div>
-<div class="row clear" data-ng-show="!isOpenGame()">
-  <div class="col col-12 mobile-full">
-    <p>Hooray, you are now in a chess game.</p>
+<div class="container" data-ng-show="isOpenGame()">
+  <p>Your game has started, but no opponent has joined the game yet.</p>
+  <p>You can tell a friend to directly join the game with the game id<br>
+    <strong>{{getGameId()}}</strong></p>
+  <p>Account ID used for this game: {{getGame().self.accountId}}<br>
+    Start color: {{getGame().self.color}}</p>
+</div>
+<div class="container" data-ng-show="!isOpenGame()">
+  <div class="eight columns">
+    <p data-ng-show="gameIsActive()">Hooray, you are now in an ongoing chess game.</p>
+    <p data-ng-show="gameIsWon()">You have won this game</p>
+    <p data-ng-show="gameIsLost()">You have lost this game</p>
     <p>Game data:</p>
     <ul>
       <li>Your account ID: {{getGame().self.accountId}}</li>
@@ -20,5 +22,11 @@
       <li>Opponents color: {{getGame().opponent.color}}</li>
       <li>Opponents username: {{getGame().opponent.username}}</li>
     </ul>
+  </div>
+  <div class="four columns">
+    <button data-ng-click="surrender()" data-ng-show="gameIsActive()">Surrender</button>
+    <div class="game-log">
+      This is the space for the game log
+    </div>
   </div>
 </div>
