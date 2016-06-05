@@ -109,7 +109,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
         if(games.list[i].self.accountId === winnerAccountId) {
           games.list[i].winner = 'self';
 
-          console.log(accounts.availableAccounts, winnerAccountId, accounts.availableAccounts.indexOf(winnerAccountId) !== -1);
+          console.log(accounts.availableAccounts, winnerAccountId,
+                      accounts.availableAccounts.indexOf(winnerAccountId) !== -1);
           if (accounts.availableAccounts.indexOf(winnerAccountId) !== -1) {
             $rootScope.$broadcast('message',
               'You have won the game against ' + games.list[i].opponent.username,
@@ -119,7 +120,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
         else if(games.list[i].opponent.accountId === winnerAccountId) {
           games.list[i].winner = 'opponent';
 
-          console.log(accounts.availableAccounts, games.list[i].self.accountId, accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1);
+          console.log(accounts.availableAccounts, games.list[i].self.accountId,
+                      accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1);
           if (accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1) {
             $rootScope.$broadcast('message',
               'You have lost the game against ' + games.list[i].opponent.username,
