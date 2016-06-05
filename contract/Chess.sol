@@ -39,16 +39,16 @@
     enum Piece { BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN, EMPTY, WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING }
     enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
     bytes constant c_Flags = "\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c";
-    function Flags(Flag i) internal returns (uint) {
+    function Flags(Flag i) constant internal returns (uint) {
        return uint(c_Flags[uint(i)]);
     }
-    function Pieces(Piece i) internal returns (int8) {
+    function Pieces(Piece i) constant internal returns (int8) {
         return -6 + int8(uint(i));
     }
-    function Directions(Direction i) internal returns (int8) {
+    function Directions(Direction i) constant internal returns (int8) {
         return -64 + int8(c_Directions[uint(i)]);
     }
-    function Players(Player p) internal returns (int8) {
+    function Players(Player p) constant internal returns (int8) {
         if (p == Player.WHITE) {
             return 1;
         }
@@ -66,6 +66,8 @@
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
     event GameEnded(bytes32 indexed gameId, address indexed winner);
+
+    event DebugInts(string message, int value1, int value2, int value3);
 
     /**
      * Convenience function to set a flag
@@ -186,7 +188,9 @@
         sanityCheck(fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
 
         // Check if move is technically possible
-        validateMove(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
+        if (!validateMove(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor)) {
+            throw;
+        }
 
         // For all pieces except knight, check if way is free
         // In case of king, it will check that he is not in check on any of the fields
@@ -195,17 +199,13 @@
             checkWayFree(gameId, fromIndex, toIndex, currentPlayerColor, checkForCheck);
         }
 
-        //makeTemporaryMove
+        // makeTemporaryMove
         makeTemporaryMove(gameId, fromIndex, toIndex, fromFigure, toFigure);
 
-        //isLegal
+        // isLegal
         isLegal(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
 
-        //testIfCheck
-
-        // Update state
-        games[gameId].state[toIndex] = games[gameId].state[fromIndex];
-        games[gameId].state[fromIndex] = 0;
+        // TODO: testIfCheck
 
         // Set nextPlayer
         if (msg.sender == games[gameId].player1) {
@@ -219,12 +219,12 @@
     }
 
     function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) {
-        // check if the move actually fits the data structure
-        if (((toIndex & 0x88) != 0) && ((fromIndex & 0x88) != 0)) {
+        // check that move is within the field
+        if (toIndex & 0x88 != 0 || fromIndex & 0x88 != 0) {
             throw;
         }
 
-        // check if the move tries to move a figure onto it self
+        // check that from and to are distinct
         if (fromIndex == toIndex) {
             throw;
         }
@@ -232,13 +232,12 @@
         // check if the toIndex is empty (= is 0) or contains an enemy figure ("positive" * "negative" = "negative")
         // --> this only allows captures (negative results)  or moves to empty fields ( = 0)
         // also check if there is a figure at fromIndex to move (fromFigure != 0)
-        if (fromFigure * toFigure > 0) {
+        if (fromFigure * toFigure < 0) {
             throw;
         }
 
         // check if mover of the figure is the owner of the figure
-        // todo: fix color to enum
-        if (currentPlayerColor * fromFigure > 0) {
+        if (currentPlayerColor * fromFigure < 0) {
             throw;
         }
     }
@@ -247,54 +246,56 @@
      * Validates if a move is technically (not legally) possible,
      * i.e. if piece is capable to move this way
      */
-    function validateMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) {
+    function validateMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool) {
         int8 direction = getDirection(fromIndex, toIndex);
         bool isDiagonal = !(abs(direction) == 16 || abs(direction) == 1);
 
+        DebugInts('validateMove. fromFigure, toFigure, direction', int(fromFigure), int(fromFigure), int(direction));
+
         // Kings
-        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_KING))) {
+        if (abs(fromFigure) == uint(Pieces(Piece.WHITE_KING))) {
             // Normal move
             if (int(fromIndex) + direction == int(toIndex)) {
-                return;
+                return true;
             }
             // Castling
             if (checkForCheck(gameId, fromIndex, movingPlayerColor)) {
                 // Cannot move if already in check
-                throw;
+                return false;
             }
             if (fromFigure == Pieces(Piece.BLACK_KING)) {
                 if (4 == fromIndex && toFigure == 0) {
                     if (toIndex == 2 && getFlag(gameId, Flag.BLACK_LEFT_CASTLING) >= 0) {
-                        return;
+                        return true;
                     }
                     if (toIndex == 6 && getFlag(gameId, Flag.BLACK_RIGHT_CASTLING) >= 0) {
-                        return;
+                        return true;
                     }
                 }
             }
             if (fromFigure == Pieces(Piece.WHITE_KING)) {
                 if (116 == fromIndex && toFigure == 0) {
                     if (toIndex == 114 && getFlag(gameId, Flag.WHITE_LEFT_CASTLING) >= 0) {
-                        return;
+                        return true;
                     }
                     if (toIndex == 118 && getFlag(gameId, Flag.WHITE_RIGHT_CASTLING) >= 0) {
-                        return;
+                        return true;
                     }
                 }
             }
 
-            throw;
+            return false;
         }
 
         // Bishops, Queens, Rooks
-        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
-            abs(fromFigure) == uint(Pieces(Piece.BLACK_QUEEN)) ||
-            abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
+        if (abs(fromFigure) == uint(Pieces(Piece.WHITE_BISHOP)) ||
+            abs(fromFigure) == uint(Pieces(Piece.WHITE_QUEEN)) ||
+            abs(fromFigure) == uint(Pieces(Piece.WHITE_ROOK))) {
 
             // Bishop can only walk diagonally, Rook only non-diagonally
             if (!isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
                 isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
-                throw;
+                return false;
             }
 
             // Traverse all fields in direction
@@ -302,40 +303,40 @@
             // walk in direction while inside board to find toIndex
             while (temp & 0x88 != 0) {
                 if (uint(temp) == toIndex) {
-                    return;
+                    return true;
                 }
                 temp += direction;
             }
 
-            throw;
+            return false;
         }
 
         // Pawns
-        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN))) {
+        if (abs(fromFigure) == uint(Pieces(Piece.WHITE_PAWN))) {
             // Black can only move in positive, White negative direction
             if (fromFigure == Pieces(Piece.BLACK_PAWN) && direction < 0 ||
                 fromFigure == Pieces(Piece.WHITE_PAWN) && direction > 0) {
-                throw;
+                return false;
             }
             // Forward move
             if (!isDiagonal) {
                 // no horizontal movement allowed
                 if (abs(direction) < 2) {
-                    throw;
+                    return false;
                 }
                 // simple move
                 if (int(fromIndex) + direction == int(toIndex)) {
-                    return;
+                    return true;
                 }
                 // double move
                 if (int(fromIndex) + direction + direction == int(toIndex)) {
                     // Can only do double move starting form specific ranks
                     int rank = int(fromIndex/16);
                     if (1 == rank || 6 == rank) {
-                        return;
+                        return true;
                     }
                 }
-                throw;
+                return false;
             }
             // diagonal move
             if (int(fromIndex) + direction == int(toIndex)) {
@@ -345,27 +346,28 @@
                         getFlag(gameId, Flag.WHITE_EN_PASSANT) == int(toIndex) ||
                         fromFigure == Pieces(Piece.WHITE_PAWN) &&
                         getFlag(gameId, Flag.BLACK_EN_PASSANT) == int(toIndex)) {
-                        return;
+                        return true;
                     }
+                    return false;
                 }
                 // If not empty
-                return;
+                return true;
             }
 
-            throw;
+            return false;
         }
 
         // Knights
-        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_KNIGHT))) {
+        if (abs(fromFigure) == uint(Pieces(Piece.WHITE_KNIGHT))) {
             for (uint i; i < 8; i++) {
                 if (int(fromIndex) + int(knightMoves[i]) - 64 == int(toIndex)) {
-                    return;
+                    return true;
                 }
             }
-            throw;
+            return false;
         }
 
-        throw;
+        return false;
     }
 
 
@@ -397,10 +399,10 @@
 
     function checkForCheck(bytes32 gameId, uint256 kingAtIndex, int8 currentPlayerColor) returns (bool) {
         // TODO
-        return true;
+        return false;
     }
 
-    function getDirection(uint256 fromIndex, uint256 toIndex) returns (int8) {
+    function getDirection(uint256 fromIndex, uint256 toIndex) constant returns (int8) {
         // check if the figure is moved up or left of its origin
         bool isAboveLeft = fromIndex > toIndex;
 
@@ -415,28 +417,28 @@
         bool isLeftSide = (fromIndex%8 > toIndex%8);
 
         /*Check directions*/
-        if (isAboveLeft){
-            if (isSameVertical){
+        if (isAboveLeft) {
+            if (isSameVertical) {
                 return Directions(Direction.UP);
             }
-            if (isSameHorizontal){
+            if (isSameHorizontal) {
                 return Directions(Direction.LEFT);
             }
-            if (isLeftSide){
+            if (isLeftSide) {
                 return Directions(Direction.UP_LEFT);
             } else {
                 return Directions(Direction.UP_RIGHT);
             }
         } else {
-            if (isSameVertical){
+            if (isSameVertical) {
                 return Directions(Direction.DOWN);
             }
-            if (isSameHorizontal){
+            if (isSameHorizontal) {
                 return Directions(Direction.RIGHT);
             }
-            if (isLeftSide){
+            if (isLeftSide) {
                 return Directions(Direction.DOWN_LEFT);
-            } else{
+            } else {
                 return Directions(Direction.DOWN_RIGHT);
             }
         }
@@ -516,7 +518,7 @@
         }
 
         int8 direction = getDirection(fromIndex, toIndex);
-       
+
         //PAWN - EN PASSANT or DOUBLE STEP
         if(abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN))){
 
@@ -540,8 +542,6 @@
             }
         }
 
-        
-
 
         // <---- Normal Moves --->
 
@@ -550,37 +550,38 @@
 
     }
 
-    // checks whether movingPlayerColor's king gets checked by move 
-   function isLegal(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool){
+    // checks whether movingPlayerColor's king gets checked by move
+    function isLegal(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool){
         // the king already gets tested when he moves
-        if(abs(fromFigure) == uint(Pieces(Piece.BLACK_KING)))
-            return true; 
-        
+        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_KING)))
+            return;
+
         // through move of fromFigure from fromIndex king may now be in danger from that direction
         // get that direction
         int8 kingIndex = getOwnKing(gameId, movingPlayerColor);
         int8 kingDangerDirection = getDirection(uint256(kingIndex), fromIndex);
 
         // get the first Figure in this direction. Threat of Knight does not change through move of fromFigure.
-        // All other figures can not jump over other figures. So only the first figure matters. 
+        // All other figures can not jump over other figures. So only the first figure matters.
         int8 firstFigureIndex = getFirstFigure(gameId, kingDangerDirection,kingIndex);
-     
+
         // if we found a figure in the danger direction
-        if(firstFigureIndex != -1) {
+        if (firstFigureIndex != -1) {
             int8 firstFigure = games[gameId].state[uint(firstFigureIndex)];
 
-            //if its an enemy
-            if(firstFigure * movingPlayerColor > 0 ){
+            // if its an enemy
+            if (firstFigure * movingPlayerColor > 0) {
                 // check if the figure can move to the field of the king
                 int8 kingFigure = Pieces(Piece.BLACK_KING)* movingPlayerColor;
-                validateMove(gameId, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, movingPlayerColor);
-                //it can
-                return false;
+                if (validateMove(gameId, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, movingPlayerColor)) {
+                    // it can
+                    throw;
+                }
             }
 
         }
 
-        return true;
+        return;
     }
 
     function testIfCheck() {

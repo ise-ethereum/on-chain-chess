@@ -44,6 +44,7 @@
     "less-loader": "^2.2.3",
     "mocha": "*",
     "mocha-webpack": "*",
+    "solc": "^0.3.4",
     "solc-loader": "^1.0.0-rc.3",
     "source-map-support": "*",
     "style-loader": "^0.13.1",

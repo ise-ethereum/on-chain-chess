@@ -1,4 +1,4 @@
-/* global describe, it, xit */
+/* global describe, it */
 import { Chess, web3 } from '../contract/Chess.sol';
 
 var assert = require('chai').assert;
@@ -20,6 +20,17 @@ describe('Chess contract', function() {
   const player1 = web3.eth.accounts[0];
   const player2 = web3.eth.accounts[1];
   const player3 = web3.eth.accounts[2];
+
+  // Remove this for CI/deploy, otherwise the test never finishes
+  /*
+  var debugFilter = Chess.DebugInts({});
+  debugFilter.watch(function(error, result){
+    console.log(result.args.message,
+                result.args.value1.toNumber(),
+                result.args.value2.toNumber(),
+                result.args.value3.toNumber());
+  });
+  */
 
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
@@ -123,7 +134,7 @@ describe('Chess contract', function() {
     });
 
     // TODO: Enable after finishing implementation of move validation
-    xit('should accept a valid move', function(done) {
+    it('should accept a valid move', function(done) {
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
         Chess.move(testGames[0], 96, 80, {from: player1, gas: 500000});
@@ -140,7 +151,7 @@ describe('Chess contract', function() {
       });
     });
 
-    xit('should have updated nextPlayer after the previous move', function() {
+    it('should have updated nextPlayer after the previous move', function() {
       assert.throws(function(){
         // Cannot move again from player1 because nextPlayer will be player2
         Chess.move(testGames[0], 0, 0, {from: player1, gas: 500000});
@@ -208,3 +219,5 @@ describe('Chess contract', function() {
   });
   */
 });
+
+
