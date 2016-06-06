@@ -589,20 +589,21 @@
             }
         }
 
-        // <---- Normal Move --->
-
-        games[gameId].state[toIndex] = games[gameId].state[fromIndex];
-        games[gameId].state[fromIndex] = 0;
-
         // <---- Promotion --->
 
         int targetRank = int(toIndex/16);
         if (targetRank == 7 && fromFigure == Pieces(Piece.BLACK_PAWN)) {
-            games[gameId].state[fromIndex] = Pieces(Piece.BLACK_QUEEN);
+            games[gameId].state[toIndex] = Pieces(Piece.BLACK_QUEEN);
         }
         else if (targetRank == 0 && fromFigure == Pieces(Piece.WHITE_PAWN)) {
-            games[gameId].state[fromIndex] = Pieces(Piece.WHITE_QUEEN);
+            games[gameId].state[toIndex] = Pieces(Piece.WHITE_QUEEN);
         }
+        else {
+            // Normal move
+            games[gameId].state[toIndex] = games[gameId].state[fromIndex];
+        }
+
+        games[gameId].state[fromIndex] = 0;
     }
 
     // checks whether movingPlayerColor's king gets checked by move
