@@ -2,8 +2,160 @@
 import {Chess as SoliChess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('PlayGameCtrl',
   function (games, $route, $scope, $rootScope) {
+    // init chess validation
+    let chess;
+
     function checkOpenGame(gameId) {
       return games.openGames.indexOf(gameId) !== -1;
+    }
+
+    // Update game information to user
+    function updateGameInfo(status) {
+      $('#info-status').html(status);
+      $('#info-fen').html(chess.fen());
+      $('#info-pgn').html(chess.pgn());
+    }
+
+    function processChessMove() {
+      console.log('chessMove');
+
+      let nextPlayer, status,
+        game = $scope.getGame(),
+        userColor = (game.self.color === 'white') ? 'w' :  'b';
+
+      // define next player
+      if (userColor === chess.turn()) {
+        nextPlayer = game.self.username;
+
+        //chess.enableUserInput(false);
+      } else {
+        nextPlayer = game.opponent.username;
+        //chess.enableUserInput(true);
+      }
+
+      // game over?
+      if (chess.in_checkmate() === true) { // jshint ignore:line
+        status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+      }
+
+      // draw?
+      else if (chess.in_draw() === true) { // jshint ignore:line
+        status = 'DRAW!';
+      }
+
+      // game is still on
+      else {
+        status = 'Next player is ' + nextPlayer + '.';
+
+        // plaver in check?
+        if (chess.in_check() === true) { // jshint ignore:line
+          status = 'CHECK! ' + status;
+          // ToDo: set 'danger' color for king
+          console.log('css');
+        }
+      }
+
+      updateGameInfo(status);
+    }
+
+    // player clicked on chess piece
+    function pieceSelected(notationSquare) {
+      var i,
+        movesNotation,
+        movesPosition = [];
+
+      movesNotation = chess.moves({square: notationSquare, verbose: true});
+      for (i = 0; i < movesNotation.length; i++) {
+        movesPosition.push(ChessUtils.convertNotationSquareToIndex(movesNotation[i].to));
+      }
+      return movesPosition;
+    }
+
+    // move chess piece if valid
+    function pieceMove(move) {
+      let game = $scope.getGame();
+
+      try {
+        $rootScope.$broadcast('message', 'Submitting your move, please wait a moment...',
+          'loading', 'playgame-' + game.gameId);
+        $rootScope.$apply();
+
+        SoliChess.move(game.gameId, '96', '80', {from: game.self.accountId});
+
+        SoliChess.Move({}, function(err, data) {
+          console.log('eventMove', err, data);
+          if(err) {
+
+          }
+          else {
+            // if valid: move chess piece from a to b
+            // else: return null
+            console.log('moving figure ', {
+              from: move.from,
+              to: move.to,
+              promotion: 'q'
+            });
+            chess.move({
+              from: move.from,
+              to: move.to,
+              promotion: 'q'
+            });
+
+            processChessMove();
+
+            $rootScope.$broadcast('message',
+              'Your move has been accepted',
+              'success', 'playgame-' + game.gameId);
+            $rootScope.$apply();
+          }
+        });
+
+      } catch(e) {
+        $rootScope.$broadcast('message', 'Could not validate your move',
+          'error', 'playgame-' + game.gameId);
+        $rootScope.$apply();
+      }
+
+      return chess.fen();
+    }
+
+    // set all chess pieces in start position
+    function resetGame(board) {
+      console.log('resetGame', board);
+
+      let game = $scope.getGame();
+      board.setPosition(ChessUtils.FEN.startId);
+      chess.reset();
+
+      let gamer;
+      if (game.self.color === 'white') {
+        gamer = game.self.username;
+      } else {
+        gamer = game.opponent.username;
+      }
+
+      updateGameInfo('Next player is ' + gamer + '.' );
+    }
+
+    function initGame() {
+      let game = $scope.getGame(),
+        board = new Chessboard('my-board', {
+          position: ChessUtils.FEN.startId,
+          eventHandlers: {
+            onPieceSelected: pieceSelected,
+            onMove: pieceMove
+          }
+        }
+      );
+
+      // init game
+      resetGame(board);
+
+      // opponent starts game
+      if (game.self.color === 'black') {
+        board.setOrientation(ChessUtils.ORIENTATION.black);
+        //board.enableUserInput(false);
+      }
     }
 
     $scope.getGameId = function() {
@@ -56,142 +208,11 @@ angular.module('dappChess').controller('PlayGameCtrl',
     //--- init Chessboard ---
     if ($scope.isOpenGame !== false) {
       $(document).ready(function () {
+        chess = new Chess();
 
-        // get information
-        let game = $scope.getGame();
-        let userColor;
-        if (game.self.color === 'white') {
-          userColor = 'w';
-        } else {
-          userColor = 'b';
-        }
+        initGame();
 
-        // init chess validation
-        let chess = new Chess();
-
-        // Update game information to user
-        function updateGameInfo(status) {
-          $('#info-status').html(status);
-          $('#info-fen').html(chess.fen());
-          $('#info-pgn').html(chess.pgn());
-        }
-
-        // player clicked on chess piece
-        function pieceSelected(notationSquare) {
-          var i,
-            movesNotation,
-            movesPosition = [];
-
-          movesNotation = chess.moves({square: notationSquare, verbose: true});
-          for (i = 0; i < movesNotation.length; i++) {
-            movesPosition.push(ChessUtils.convertNotationSquareToIndex(movesNotation[i].to));
-          }
-          return movesPosition;
-        }
-
-        // move chess piece if valid
-        function pieceMove(move) {
-
-          let nextPlayer, status;
-
-          // if valid: move chess piece from a to b
-          // else: return null
-          let chessMove = chess.move({
-            from: move.from,
-            to: move.to,
-            promotion: 'q'
-          });
-
-          try {
-            console.log(game.gameId, '96', '80', {from: game.self.accountId});
-            SoliChess.move(game.gameId, '96', '80', {from: game.self.accountId});
-
-            SoliChess.Move({}, function(err, data) {
-              console.log(data.args);
-            });
-
-          } catch(e) {
-            console.log(e);
-          }
-
-
-
-          // define next player
-          if (userColor === chess.turn()) {
-            nextPlayer = game.self.username;
-
-            //chess.enableUserInput(false);
-          } else {
-            nextPlayer = game.opponent.username;
-            //chess.enableUserInput(true);
-          }
-
-          // check situation
-          if (chessMove !== null) {
-
-            // game over?
-            if (chess.in_checkmate() === true) { // jshint ignore:line
-              status = 'CHECKMATE! ' + nextPlayer + ' lost.';
-            }
-
-            // draw?
-            else if (chess.in_draw() === true) { // jshint ignore:line
-              status = 'DRAW!';
-            }
-
-            // game is still on
-            else {
-              status = 'Next player is ' + nextPlayer + '.';
-
-              // plaver in check?
-              if (chess.in_check() === true) { // jshint ignore:line
-                status = 'CHECK! ' + status;
-                // ToDo: set 'danger' color for king
-                console.log('css');
-              }
-            }
-
-            updateGameInfo(status);
-          }
-
-          return chess.fen();
-        }
-
-        // init chessboard
-
-        let board = new Chessboard('my-board', {
-          position: ChessUtils.FEN.startId,
-          eventHandlers: {
-            onPieceSelected: pieceSelected,
-            onMove: pieceMove
-          }
-        });
-
-        // set all chess pieces in start position
-        function resetGame() {
-          board.setPosition(ChessUtils.FEN.startId);
-          chess.reset();
-
-          let gamer;
-          if (game.self.color === 'white') {
-            gamer = game.self.username;
-          } else {
-            gamer = game.opponent.username;
-          }
-
-          updateGameInfo('Next player is ' + gamer + '.' );
-        }
-
-        // init game
-        resetGame();
-
-        // opponent starts game
-        if (game.self.color === 'black') {
-          board.setOrientation(ChessUtils.ORIENTATION.black);
-          //board.enableUserInput(false);
-        }
-
-
+        window.tempChess = chess;
       });
     }
   }
