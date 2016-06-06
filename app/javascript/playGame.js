@@ -59,14 +59,14 @@ angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, 
 
       console.log(i);
       z++;
-      
+
       // skip 8
       if (z === 8){
         i += 8;
         z = 0;
       }
     }
-  };
+  }
 
   //--- init Chessboard ---
   if ($scope.isOpenGame !== false) {
@@ -126,7 +126,12 @@ angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, 
         console.log(web3.eth.accounts);
 
         try {
-          SoliChess.move(game.gameId, toHex('96'), toHex('80'), {from: game.self.accountId});
+          SoliChess.move(game.gameId, '96', '80', {from: game.self.accountId});
+          let moveEvent = SoliChess.Move({gameId: game.gameId});
+          moveEvent.watch(function(result) {
+            console.log(result.args);
+          });
+
         } catch(e) {
           console.log(e);
         }
