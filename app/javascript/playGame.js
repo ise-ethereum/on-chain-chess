@@ -3,7 +3,8 @@ import {Chess as SoliChess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('PlayGameCtrl',
   function (games, $route, $scope, $rootScope) {
     // init chess validation
-    let chess;
+    var chess, board;
+
 
     function checkOpenGame(gameId) {
       return games.openGames.indexOf(gameId) !== -1;
@@ -90,18 +91,55 @@ angular.module('dappChess').controller('PlayGameCtrl',
           else {
             // if valid: move chess piece from a to b
             // else: return null
-            console.log('moving figure ', {
-              from: move.from,
-              to: move.to,
-              promotion: 'q'
-            });
+
+            console.log(chess.fen());
             chess.move({
               from: move.from,
               to: move.to,
               promotion: 'q'
             });
 
-            processChessMove();
+            console.log(chess.fen());
+            board.setPosition(chess.fen());
+            board.reset();
+
+            let nextPlayer, status,
+              game = $scope.getGame(),
+              userColor = (game.self.color === 'white') ? 'w' :  'b';
+
+            // define next player
+            if (userColor === chess.turn()) {
+              nextPlayer = game.self.username;
+
+              //chess.enableUserInput(false);
+            } else {
+              nextPlayer = game.opponent.username;
+              //chess.enableUserInput(true);
+            }
+
+            // game over?
+            if (chess.in_checkmate() === true) { // jshint ignore:line
+              status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+            }
+
+            // draw?
+            else if (chess.in_draw() === true) { // jshint ignore:line
+              status = 'DRAW!';
+            }
+
+            // game is still on
+            else {
+              status = 'Next player is ' + nextPlayer + '.';
+
+              // plaver in check?
+              if (chess.in_check() === true) { // jshint ignore:line
+                status = 'CHECK! ' + status;
+                // ToDo: set 'danger' color for king
+                console.log('css');
+              }
+            }
+
+            updateGameInfo(status);
 
             $rootScope.$broadcast('message',
               'Your move has been accepted',
@@ -115,8 +153,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
           'error', 'playgame-' + game.gameId);
         $rootScope.$apply();
       }
-
       return chess.fen();
+
     }
 
     // set all chess pieces in start position
@@ -135,27 +173,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       }
 
       updateGameInfo('Next player is ' + gamer + '.' );
-    }
-
-    function initGame() {
-      let game = $scope.getGame(),
-        board = new Chessboard('my-board', {
-          position: ChessUtils.FEN.startId,
-          eventHandlers: {
-            onPieceSelected: pieceSelected,
-            onMove: pieceMove
-          }
-        }
-      );
-
-      // init game
-      resetGame(board);
-
-      // opponent starts game
-      if (game.self.color === 'black') {
-        board.setOrientation(ChessUtils.ORIENTATION.black);
-        //board.enableUserInput(false);
-      }
     }
 
     $scope.getGameId = function() {
@@ -210,9 +227,26 @@ angular.module('dappChess').controller('PlayGameCtrl',
       $(document).ready(function () {
         chess = new Chess();
 
-        initGame();
+        let game = $scope.getGame();
 
-        window.tempChess = chess;
+        board = new Chessboard('my-board', {
+            position: ChessUtils.FEN.startId,
+            eventHandlers: {
+              onPieceSelected: pieceSelected,
+              onMove: pieceMove
+            }
+          }
+        );
+
+        // init game
+        resetGame(board);
+
+        // opponent starts game
+        if (game.self.color === 'black') {
+          board.setOrientation(ChessUtils.ORIENTATION.black);
+          board.enableUserInput(false);
+        }
+
       });
     }
   }
