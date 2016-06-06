@@ -44,10 +44,10 @@ contract Chess {
      function abs(int8 a) internal returns (int8){
        if(a < 0 )
         return -a;
-       else 
+       else
         return a;
    }
-   
+
     function is_diagonal(Direction dir) internal returns (bool){
       if(abs(Directions[uint(dir)]) == 16)
         return false;

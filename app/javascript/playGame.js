@@ -2,6 +2,7 @@
 import {web3, Chess as SoliChess} from '../../contract/Chess.sol';
 
 angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, $scope) {
+
   function checkOpenGame(gameId) {
     return games.openGames.indexOf(gameId) !== -1;
   }
@@ -26,6 +27,45 @@ angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, 
     }
 
     return false;
+  };
+
+  function toHex(str) {
+    var hex = '';
+    for(var i=0;i<str.length;i++) {
+      hex += ''+str.charCodeAt(i).toString(16);
+    }
+    return hex;
+  }
+
+  var states = {
+    '-6': 'bK',
+    '-5': 'bQ',
+    '-4': 'bR',
+    '-3': 'bB',
+    '-2': 'bN',
+    '-1': 'bP',
+    '1' : 'wP',
+    '2' : 'wN',
+    '3' : 'wB',
+    '4' : 'wR',
+    '5' : 'wQ',
+    '6' : 'wK'
+  };
+
+
+  function toFen(array) {
+    var z = 0;
+    for (var i = 0; i < array.length; i++){
+
+      console.log(i);
+      z++;
+      
+      // skip 8
+      if (z === 8){
+        i += 8;
+        z = 0;
+      }
+    }
   };
 
   //--- init Chessboard ---
@@ -76,17 +116,31 @@ angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, 
           to: move.to,
           promotion: 'q'
         });
-        console.log(chessMove);
+        console.log(chessMove.from);
+        console.log(chessMove.to);
 
+
+        console.log(game.self.accountId);
+        console.log(game.gameId);
         // ToDo send information to server
+        console.log(web3.eth.accounts);
+
+        try {
+          SoliChess.move(game.gameId, toHex('96'), toHex('80'), {from: game.self.accountId});
+        } catch(e) {
+          console.log(e);
+        }
+
+
 
         // define next player
         if (userColor === chess.turn()) {
-          nextPlayer = game.opponent.name;
-          chess.enableUserInput(false);
+          nextPlayer = game.self.username;
+
+          //chess.enableUserInput(false);
         } else {
-          nextPlayer = game.self.name;
-          chess.enableUserInput(true);
+          nextPlayer = game.opponent.username;
+          //chess.enableUserInput(true);
         }
 
         // check situation
@@ -121,7 +175,7 @@ angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, 
       }
 
       // init chessboard
-      
+
       let board = new Chessboard('my-board', {
         position: ChessUtils.FEN.startId,
         eventHandlers: {
@@ -151,7 +205,7 @@ angular.module('dappChess').controller('PlayGameCtrl', function (games, $route, 
       // opponent starts game
       if (game.self.color === 'black') {
         board.setOrientation(ChessUtils.ORIENTATION.black);
-        board.enableUserInput(false);
+        //board.enableUserInput(false);
       }
 
 
