@@ -199,15 +199,11 @@
             checkWayFree(gameId, fromIndex, toIndex, currentPlayerColor, checkForCheck);
         }
 
-        // make temporary move
-        makeTemporaryMove(gameId, fromIndex, toIndex, fromFigure, toFigure);
+        // Make the move
+        makeMove(gameId, fromIndex, toIndex, fromFigure, toFigure);
 
-        // check legality
-        isLegal(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
-        // TODO: testIfCheck
-
-        // Promotion
-        // TODO
+        // Check legality (player's own king may not be in check after move)
+        checkLegality(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
 
         // Set nextPlayer
         if (msg.sender == games[gameId].player1) {
@@ -216,11 +212,12 @@
             games[gameId].nextPlayer = games[gameId].player1;
         }
 
+        // Send events
         Move(gameId, msg.sender, fromIndex, toIndex);
         GameStateChanged(gameId, games[gameId].state);
     }
 
-    function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) {
+    function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) internal {
         // check that move is within the field
         if (toIndex & 0x88 != 0 || fromIndex & 0x88 != 0) {
             throw;
@@ -376,7 +373,7 @@
     /**
      * Checks if the way between fromIndex and toIndex is unblocked
      */
-    function checkWayFree(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 currentPlayerColor, bool shouldCheckForCheck) {
+    function checkWayFree(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 currentPlayerColor, bool shouldCheckForCheck) internal {
         int8 direction = getDirection(fromIndex, toIndex);
         int currentIndex = int(fromIndex) + direction;
 
@@ -399,7 +396,7 @@
         return;
     }
 
-    function checkForCheck(bytes32 gameId, uint256 kingIndex, int8 currentPlayerColor) returns (bool) {
+    function checkForCheck(bytes32 gameId, uint256 kingIndex, int8 currentPlayerColor) internal returns (bool) {
 
         //get Position of King
        // int8 kingIndex = getOwnKing(gameId, currentPlayerColor);
@@ -450,7 +447,7 @@
         return false; // king is not checked
     }
 
-    function getDirection(uint256 fromIndex, uint256 toIndex) constant returns (int8) {
+    function getDirection(uint256 fromIndex, uint256 toIndex) constant internal returns (int8) {
         // check if the figure is moved up or left of its origin
         bool isAboveLeft = fromIndex > toIndex;
 
@@ -493,7 +490,7 @@
     }
 
 
-    function makeTemporaryMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure){
+    function makeMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure) internal {
         // remove all en passant flags
         setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
         setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
@@ -607,7 +604,7 @@
     }
 
     // checks whether movingPlayerColor's king gets checked by move
-    function isLegal(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool){
+    function checkLegality(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) internal returns (bool){
         // the king already gets tested when he moves
         if (abs(fromFigure) == uint(Pieces(Piece.BLACK_KING)))
             return;
