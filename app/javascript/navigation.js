@@ -1,14 +1,15 @@
-/* global angular */
+/* global angular, mist */
 angular.module('dappChess').config(function ($routeProvider, $provide) {
   const pages = {
-    playGamePage: 'playGame',
+    welcomePage: 'welcome',
+    initializeGamePage: 'initializeGame',
     joinGamePage: 'joinGame',
-    initializeGamePage: 'initializeGame'
+    playGamePage: 'playGame'
   };
 
   $provide.factory('navigation', function ($route) {
     let navigation = pages;
-    
+
     navigation.isActivePage = function (page) {
       if(typeof ($route.current) !== 'undefined') {
         return page === $route.current.activePage;
@@ -25,7 +26,7 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
 
     navigation.goto = function(page, parameter) {
       if(parameter) {
-        window.location = '#/' + page + '/' + parameter; 
+        window.location = '#/' + page + '/' + parameter;
       }
       else {
         window.location = '#/' + page;
@@ -34,12 +35,12 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
 
     return navigation;
   });
-  
+
   $routeProvider
-    .when('/welcome', {
-      templateUrl: 'welcome.html',
+    .when('/' + pages.welcomePage, {
+      templateUrl: pages.welcomePage + '.html',
       controller: 'WelcomeCtrl',
-      activePage: 'welcome'
+      activePage: pages.welcomePage
     })
     .when('/' + pages.initializeGamePage, {
       templateUrl: pages.initializeGamePage + '.html',
@@ -56,5 +57,92 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
       controller: 'PlayGameCtrl',
       activePage: pages.playGamePage
     })
-    .otherwise({redirectTo: '/welcome'});
+    .otherwise({redirectTo: '/' + pages.welcomePage});
+}).controller('NavigationCtrl', function (accounts, navigation, games, $scope) {
+  $scope.games = games.list;
+
+  $scope.navigation = navigation;
+
+  $scope.isMist = false;
+
+  console.log(typeof(mist) === 'undefined' ? 'No mist browser' : 'Mist browser');
+
+  if(typeof(mist) !== 'undefined') {
+    $scope.isMist = true;
+
+    console.log('Clearing mist menu');
+    mist.menu.clear();
+
+    mist.menu.add(
+      'welcome', {
+        name: 'Welcome',
+        position: 1,
+        selected: navigation.isActivePage(navigation.welcomePage)
+      }, function() {navigation.goto(navigation.welcomePage);}
+    );
+    mist.menu.add(
+      'initializeGame', {
+        name: 'New game',
+        position: 2,
+        selected: navigation.isActivePage(navigation.initializeGamePage)
+      }, function() {navigation.goto(navigation.initializeGamePage);}
+    );
+    mist.menu.add(
+      'joinGame', {
+        name: 'Join game',
+        position: 3,
+        selected: navigation.isActivePage(navigation.joinGamePage)
+      }, function() {navigation.goto(navigation.joinGamePage);}
+    );
+
+    $scope.$watch('games', function(newGames, oldGames) {
+      console.log('games changed');
+
+      let oldGameIds = [];
+
+      for(let i in oldGames) {
+        oldGameIds.push(oldGames[i].gameId);
+      }
+
+      for(let i in newGames) {
+        if(accounts.availableAccounts.indexOf(newGames[i].self.accountId) !== -1 ||
+          (typeof(newGames[i].opponent) !== 'undefined' &&
+            accounts.availableAccounts.indexOf(newGames[i].opponent.accountId) !== -1
+          )
+        ) {
+
+          let oldGameIndex = oldGameIds.indexOf(newGames[i].gameId);
+
+          if (oldGameIndex !== -1) {
+            oldGameIds.splice(oldGameIndex, 1);
+          }
+
+
+          let menuName =
+            (typeof(newGames[i].opponent) !== 'undefined') ?
+              newGames[i].opponent.username : 'Open game';
+
+          console.log('Adding menu entry for game with id ' +
+            newGames[i].gameId + ' (' + menuName + ')');
+          // Since mist menu callbacks don't provide the clicked element, we need to
+          // create the callbacks in a loop; thus the JSHint error has to be suppressed
+          /*jshint -W083 */
+          mist.menu.update(
+            newGames[i].gameId, {
+              name: menuName,
+              position: i + 3,
+              selected: navigation.isActiveGame(newGames[i])
+            }, function () {
+              navigation.goto(navigation.playGamePage, newGames[i].gameId);
+            });
+          /*jshint +W083 */
+        }
+      }
+
+      for(let i in oldGameIds) {
+        console.log('Removing menu entry for game with id ' + oldGameIds[i]);
+        mist.menu.remove(oldGameIds[i]);
+      }
+    }, true);
+  }
 });

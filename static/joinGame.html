@@ -1,21 +1,18 @@
-<h1>Join a chess game</h1>
-<div class="row clear">
-  <div class="col col-4 mobile-full">
+<div class="container space-top">
+  <h1>Join a chess game</h1>
+</div>
+<div class="container">
+  <div class="four columns">
     <form name="form" novalidate data-ng-submit="joinGame(form)">
-      <label>Account for betting</label>
-      <ul class="dapp-account-list">
-        <li data-ng-repeat="account in availableAccounts">
-          <button type="button" data-ng-class="{
-              selected: isSelectedAccount(account)
-            }" data-ng-click="selectAccount(account)">
-            <a class="dapp-identicon dapp-small"></a>
-            <h3>Account {{$index}}</h3>
-            <span>{{account}}</span>
-            <figure class="icon-check" data-ng-show="isSelectedAccount(account)"></figure>
-          </button>
-        </li>
-      </ul>
-      <input name="selectedAccount" type="hidden" data-ng-model="selectedAccount" required />
+      <label>Account to use</label>
+      <select name="selectedAccount" data-ng-model="selectedAccount" required>
+        <option value="">Select account</option>
+        <option data-ng-repeat="account in availableAccounts" data-ng-value="account">Account {{$index}}</option>
+      </select>
+      <!-- Does not work in the current version of Mist / only creates new accounts, although it should select or create an account -->
+      <!--<button data-ng-click="selectOrCreateAccount()">Create new account</button>
+      <input name="selectedAccount" type="hidden" data-ng-model="selectedAccount" required />-->
+
       <div data-ng-show="form.$submitted || form.selectedAccount.$touched">
         <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>
       </div>
@@ -35,8 +32,8 @@
       <input type="submit" value="Join game" />
     </form>
   </div>
-  <div class="col col-8 mobile-full">
-    <table class="dapp-zebra">
+  <div class="eight columns">
+    <table class="zebra">
       <thead>
         <tr>
           <th>Opponent</th>

@@ -52,5 +52,8 @@
     "web3-loader": "^1.0.1",
     "webpack": "^1.13.0",
     "webpack-node-externals": "*"
+  },
+  "dependencies": {
+    "simple-line-icons": "^2.3.1"
   }
 }
