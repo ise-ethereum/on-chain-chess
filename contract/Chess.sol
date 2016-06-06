@@ -204,7 +204,6 @@
 
         // isLegal
         isLegal(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
-
         // TODO: testIfCheck
 
         // Set nextPlayer
@@ -397,9 +396,55 @@
         return;
     }
 
-    function checkForCheck(bytes32 gameId, uint256 kingAtIndex, int8 currentPlayerColor) returns (bool) {
-        // TODO
-        return false;
+    function checkForCheck(bytes32 gameId, uint256 kingIndex, int8 currentPlayerColor) returns (bool) {
+        
+        //get Position of King
+       // int8 kingIndex = getOwnKing(gameId, currentPlayerColor);
+
+        // look in every direction whether there is an enemy figure that checks the king
+        for(uint dir = 0; dir < 8; dir ++){
+          // get the first Figure in this direction. Threat of Knight does not change through move of fromFigure.
+          // All other figures can not jump over figures. So only the first figure matters.
+          int8 firstFigureIndex = getFirstFigure(gameId, Directions(Direction(dir)),int8(kingIndex));
+
+
+          // if we found a figure in the danger direction
+          if (firstFigureIndex != -1) {
+              int8 firstFigure = games[gameId].state[uint(firstFigureIndex)];
+
+              // if its an enemy
+              if (firstFigure * currentPlayerColor > 0) {
+                  // check if the enemy figure can move to the field of the king
+                  int8 kingFigure = Pieces(Piece.BLACK_KING)* currentPlayerColor;
+                  if (validateMove(gameId, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, currentPlayerColor)) {
+                      // it can
+                      return true; // king is checked
+                  }
+              }
+
+          }
+        }
+
+        //Knights
+        // Knights can jump over figures. So they need to be tested seperately with every possible move.
+        for(uint move = 0; move < 8; move ++){
+            // currentMoveIndex: where knight could start with move that checks king
+            int8 currentMoveIndex = int8(kingIndex) + int8(knightMoves[move]);
+
+            // if inside the board
+            if(uint(currentMoveIndex) & 0x88 == 0){
+
+                // get Figure at currentMoveIndex
+                int8 currentFigure = Pieces(Piece(currentMoveIndex));
+                
+                // if it is an enemy knight, king can be checked
+                if(currentFigure * currentPlayerColor == Pieces(Piece.WHITE_KNIGHT)){
+                    return true; // king is checked
+                }
+            }
+        }
+
+        return false; // king is not checked
     }
 
     function getDirection(uint256 fromIndex, uint256 toIndex) constant returns (int8) {
