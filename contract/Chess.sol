@@ -193,18 +193,21 @@
         }
 
         // For all pieces except knight, check if way is free
-        // In case of king, it will check that he is not in check on any of the fields
-        if (abs(fromFigure) != uint(Pieces(Piece.BLACK_KNIGHT))) {
-            bool checkForCheck = abs(fromFigure) == uint(Pieces(Piece.BLACK_KING));
+        if (abs(fromFigure) != uint(Pieces(Piece.WHITE_KNIGHT))) {
+            // In case of king, it will check that he is not in check on any of the fields he moves over
+            bool checkForCheck = abs(fromFigure) == uint(Pieces(Piece.WHITE_KING));
             checkWayFree(gameId, fromIndex, toIndex, currentPlayerColor, checkForCheck);
         }
 
-        // makeTemporaryMove
+        // make temporary move
         makeTemporaryMove(gameId, fromIndex, toIndex, fromFigure, toFigure);
 
-        // isLegal
+        // check legality
         isLegal(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
         // TODO: testIfCheck
+
+        // Promotion
+        // TODO
 
         // Set nextPlayer
         if (msg.sender == games[gameId].player1) {
@@ -397,7 +400,7 @@
     }
 
     function checkForCheck(bytes32 gameId, uint256 kingIndex, int8 currentPlayerColor) returns (bool) {
-        
+
         //get Position of King
        // int8 kingIndex = getOwnKing(gameId, currentPlayerColor);
 
@@ -436,7 +439,7 @@
 
                 // get Figure at currentMoveIndex
                 int8 currentFigure = Pieces(Piece(currentMoveIndex));
-                
+
                 // if it is an enemy knight, king can be checked
                 if(currentFigure * currentPlayerColor == Pieces(Piece.WHITE_KNIGHT)){
                     return true; // king is checked
@@ -495,104 +498,101 @@
         setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
         setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
 
+        // <---- Special Move ---->
 
-        // <---- Special Moves ---->
-
-        // castling
-        // it already passed valid we just need to move the rook
-
-        // Black
-        if (fromFigure == Pieces(Piece.BLACK_KING)){
+        // Black King
+        if (fromFigure == Pieces(Piece.BLACK_KING)) {
+            // Update position flag
             setFlag(gameId, Flag.BLACK_KING_POS, int8(toIndex));
-            if ((fromIndex == 4)&&(toIndex == 2)){
+            // Castling
+            if (fromIndex == 4 && toIndex == 2) {
                 games[gameId].state[0] = 0;
                 games[gameId].state[3] = Pieces(Piece.BLACK_ROOK);
             }
-            if ((fromIndex == 4)&&(toIndex == 6)){
+            if (fromIndex == 4 && toIndex == 6) {
                 games[gameId].state[7] = 0;
                 games[gameId].state[5] = Pieces(Piece.BLACK_ROOK);
             }
 
         }
-        // White
-        if (fromFigure == Pieces(Piece.WHITE_KING)){
+        // White King
+        if (fromFigure == Pieces(Piece.WHITE_KING)) {
+            // Update position flag
             setFlag(gameId, Flag.WHITE_KING_POS, int8(toIndex));
-            if ((fromIndex == 116)&&(toIndex == 114)){
+            // Castling
+            if (fromIndex == 116 && toIndex == 114) {
                 games[gameId].state[112] = 0;
                 games[gameId].state[115] = Pieces(Piece.BLACK_ROOK);
             }
-            if ((fromIndex == 116)&&(toIndex == 118)){
+            if (fromIndex == 116 && toIndex == 118) {
                 games[gameId].state[119] = 0;
                 games[gameId].state[117] = Pieces(Piece.BLACK_ROOK);
             }
 
         }
 
-        //Remove Castling Flag if king or Rook moves. But only at the first move for better performance
+        // Remove Castling Flag if king or Rook moves. But only at the first move for better performance
 
         // Black
-        if (fromFigure == Pieces(Piece.BLACK_KING)){
-            if (fromIndex == 4){
+        if (fromFigure == Pieces(Piece.BLACK_KING)) {
+            if (fromIndex == 4) {
                 setFlag(gameId, Flag.BLACK_LEFT_CASTLING, -1);
                 setFlag(gameId, Flag.BLACK_RIGHT_CASTLING, -1);
             }
         }
-        if (fromFigure == Pieces(Piece.BLACK_ROOK)){
-            if (fromIndex == 0){
+        if (fromFigure == Pieces(Piece.BLACK_ROOK)) {
+            if (fromIndex == 0) {
                 setFlag(gameId, Flag.BLACK_LEFT_CASTLING, -1);
             }
-            if (fromIndex == 7){
+            if (fromIndex == 7) {
                 setFlag(gameId, Flag.BLACK_RIGHT_CASTLING, -1);
             }
         }
 
         // White
-        if (fromFigure == Pieces(Piece.WHITE_KING)){
-            if (fromIndex == 116){
+        if (fromFigure == Pieces(Piece.WHITE_KING)) {
+            if (fromIndex == 116) {
                 setFlag(gameId, Flag.WHITE_LEFT_CASTLING, -1);
                 setFlag(gameId, Flag.WHITE_RIGHT_CASTLING, -1);
             }
         }
-        if (fromFigure == Pieces(Piece.WHITE_ROOK)){
-            if (fromIndex == 112){
+        if (fromFigure == Pieces(Piece.WHITE_ROOK)) {
+            if (fromIndex == 112) {
                 setFlag(gameId, Flag.WHITE_LEFT_CASTLING, -1);
             }
-            if (fromIndex == 119){
+            if (fromIndex == 119) {
                 setFlag(gameId, Flag.WHITE_RIGHT_CASTLING, -1);
             }
         }
 
         int8 direction = getDirection(fromIndex, toIndex);
 
-        //PAWN - EN PASSANT or DOUBLE STEP
-        if(abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN))){
-
-            // En Passant - remove catched pawn
-            // en passant if figure:pawn and diagonal move to empty field
-            if(is_diagonal(direction) && toFigure == Pieces(Piece.EMPTY)){
-                if(fromFigure == Pieces(Piece.BLACK_PAWN)){
+        // PAWN - EN PASSANT or DOUBLE STEP
+        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN))) {
+            // En Passant - remove caught pawn
+            // en passant if figure: pawn and diagonal move to empty field
+            if (is_diagonal(direction) && toFigure == Pieces(Piece.EMPTY)) {
+                if (fromFigure == Pieces(Piece.BLACK_PAWN)) {
                     games[gameId].state[uint(int(toIndex) + Directions(Direction.UP))] = 0;
-                }else{
-                     games[gameId].state[uint(int(toIndex) + Directions(Direction.DOWN))] = 0;
+                } else {
+                    games[gameId].state[uint(int(toIndex) + Directions(Direction.DOWN))] = 0;
                 }
             }
 
             // in case of double Step: set EN_PASSANT-Flag
-            else if(int(fromIndex) + direction + direction == int(toIndex)){
-                if(fromFigure == Pieces(Piece.BLACK_PAWN)){
-                    games[gameId].state[Flags(Flag.BLACK_EN_PASSANT)] = (int8(toIndex) + Directions(Direction.UP));
-                }else{
-                    games[gameId].state[Flags(Flag.WHITE_EN_PASSANT)] = (int8(toIndex) + Directions(Direction.DOWN));
+            else if (int(fromIndex) + direction + direction == int(toIndex)) {
+                if (fromFigure == Pieces(Piece.BLACK_PAWN)) {
+                    setFlag(gameId, Flag.BLACK_EN_PASSANT, int8(toIndex) + Directions(Direction.UP));
+                } else {
+                    setFlag(gameId, Flag.WHITE_EN_PASSANT, int8(toIndex) + Directions(Direction.DOWN));
                 }
             }
         }
 
-
-        // <---- Normal Moves --->
+        // <---- Normal Move --->
 
         games[gameId].state[toIndex] = games[gameId].state[fromIndex];
         games[gameId].state[fromIndex] = 0;
-
     }
 
     // checks whether movingPlayerColor's king gets checked by move
