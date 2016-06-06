@@ -133,10 +133,23 @@ describe('Chess contract', function() {
       }, Error);
     });
 
-    // TODO: Enable after finishing implementation of move validation
+    it('should throw an exception when a move is invalid', function() {
+      // Test some invalid moves, but from correct player
+      assert.throws(function(){
+        // a1a1
+        Chess.move(testGames[0], 0, 0, {from: player1, gas: 500000});
+      }, Error);
+      assert.throws(function(){
+        // a8a7
+        Chess.move(testGames[0], 112, 96, {from: player1, gas: 500000});
+      }, Error);
+      // TODO: Add more invalid moves
+    });
+
     it('should accept a valid move', function(done) {
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
+        // a7a6
         Chess.move(testGames[0], 96, 80, {from: player1, gas: 500000});
       }, Error);
 
