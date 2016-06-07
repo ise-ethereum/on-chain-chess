@@ -122,10 +122,28 @@ describe('Chess contract', function() {
       }, Error);
     });
 
+
+    it('should throw an exception when a move is invalid', function() {
+      // Test some invalid moves, but from correct player
+      assert.throws(function(){
+        // white pawn a7a7
+        Chess.move(testGames[0], 96, 96, {from: player1, gas: 500000});
+      }, Error);
+
+      assert.throws(function(){
+        // white rook a8a7
+        Chess.move(testGames[0], 112, 96, {from: player1, gas: 500000});
+      }, Error);
+
+      // TODO: Add more invalid moves
+    });
+
     it('should accept a valid move', function(done) {
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
-        Chess.move(testGames[0], 99, 83, {from: player1, gas: 100000});
+        // white pawn a7a6
+        Chess.move(testGames[0], 96, 80, {from: player1, gas: 500000});
+
       }, Error);
 
       // Watch for event from contract to check if it worked
@@ -142,8 +160,30 @@ describe('Chess contract', function() {
     it('should have updated nextPlayer after the previous move', function() {
       assert.throws(function(){
         // Cannot move again from player1 because nextPlayer will be player2
-        Chess.move(testGames[0], 0, 0, {from: player1, gas: 100000});
+
+        Chess.move(testGames[0], 80, 64, {from: player1, gas: 500000});
+
       }, Error);
+    });
+
+    it('should accept valid moves', function() {
+      // Test for several other valid moves
+      assert.doesNotThrow(function(){
+        // black pawn a2a3 -- Pawn normal move
+        Chess.move(testGames[0], 16, 32, {from: player2, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // white knight g8h6 -- Knight move
+        Chess.move(testGames[0], 118, 87, {from: player1, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // black pawn c2c4 -- Pawn double move
+        Chess.move(testGames[0], 18, 50, {from: player2, gas: 500000});
+      }, Error);
+
+      // TODO: Add more valid moves
     });
   });
 

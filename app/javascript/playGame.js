@@ -13,7 +13,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       let alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
       for ( let i=0 ; i < 128; i++){
-        console.log(i);
         toBackend[alphabet[x] + y] = i;
         toFrontend[i] = alphabet[x] + y;
 
@@ -41,45 +40,46 @@ angular.module('dappChess').controller('PlayGameCtrl',
       $('#info-pgn').html(chess.pgn());
     }
 
-    function processChessMove() {
+    function processChessMove(chessMove) {
       console.log('chessMove');
 
       let nextPlayer, status,
         game = $scope.getGame(),
         userColor = (game.self.color === 'white') ? 'w' :  'b';
+      if (chessMove !== null) {
+        console.log('chessMove !== null');
+        // define next player
+        if (userColor === chess.turn()) {
+          nextPlayer = game.self.username;
 
-      // define next player
-      if (userColor === chess.turn()) {
-        nextPlayer = game.self.username;
+          //chess.enableUserInput(false);
+        } else {
+          nextPlayer = game.opponent.username;
+          //chess.enableUserInput(true);
+        }
 
-        //chess.enableUserInput(false);
-      } else {
-        nextPlayer = game.opponent.username;
-        //chess.enableUserInput(true);
-      }
+        // game over?
+        if (chess.in_checkmate() === true) { // jshint ignore:line
+          status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+        }
 
-      // game over?
-      if (chess.in_checkmate() === true) { // jshint ignore:line
-        status = 'CHECKMATE! ' + nextPlayer + ' lost.';
-      }
+        // draw?
+        else if (chess.in_draw() === true) { // jshint ignore:line
+          status = 'DRAW!';
+        }
 
-      // draw?
-      else if (chess.in_draw() === true) { // jshint ignore:line
-        status = 'DRAW!';
-      }
+        // game is still on
+        else {
+          status = 'Next player is ' + nextPlayer + '.';
 
-      // game is still on
-      else {
-        status = 'Next player is ' + nextPlayer + '.';
-
-        // plaver in check?
-        if (chess.in_check() === true) { // jshint ignore:line
-          status = 'CHECK! ' + status;
-          // ToDo: set 'danger' color for king
-          console.log('css');
+          // plaver in check?
+          if (chess.in_check() === true) { // jshint ignore:line
+            status = 'CHECK! ' + status;
+            // ToDo: set 'danger' color for king
+            console.log('css');
+          }
         }
       }
-
       updateGameInfo(status);
     }
 
@@ -99,7 +99,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
     // move chess piece if valid
     function pieceMove(move) {
       let game = $scope.getGame();
-
+      let chessMove = null;
       try {
         $rootScope.$broadcast('message', 'Submitting your move, please wait a moment...',
           'loading', 'playgame-' + game.gameId);
@@ -107,9 +107,18 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
         let fromIndex = position.toBackend[move.from];
         let toIndex = position.toBackend[move.to];
-        console.log(fromIndex);
-        console.log(toIndex);
-        SoliChess.move(game.gameId, '96', '80', {from: game.self.accountId});
+        console.log('fromIndex Frontend: ', move.from);
+        console.log('toIndex Frontend: ', move.to);
+        console.log('fromIndex Backend: ', fromIndex);
+        console.log('toIndex Backend: ', toIndex);
+
+        console.log('selfId: ', game.self.accountId);
+
+        SoliChess.move(game.gameId, fromIndex, toIndex, {from: game.self.accountId});
+
+        SoliChess.GameStateChanged({}, function (err, data) {
+          console.log('Gamestate: ', data.args.state);
+        });
 
         SoliChess.Move({}, function(err, data) {
           console.log('eventMove', err, data);
@@ -121,57 +130,14 @@ angular.module('dappChess').controller('PlayGameCtrl',
             // else: return null
 
             console.log(chess.fen());
-            chess.move({
+            chessMove = chess.move({
               from: move.from,
               to: move.to,
               promotion: 'q'
             });
 
             console.log(chess.fen());
-            board.setPosition(chess.fen());
-
-            let nextPlayer, status,
-              game = $scope.getGame(),
-              userColor = (game.self.color === 'white') ? 'w' :  'b';
-
-            // define next player
-            if (userColor === chess.turn()) {
-              nextPlayer = game.self.username;
-
-              //chess.enableUserInput(false);
-            } else {
-              nextPlayer = game.opponent.username;
-              //chess.enableUserInput(true);
-            }
-
-            // game over?
-            if (chess.in_checkmate() === true) { // jshint ignore:line
-              status = 'CHECKMATE! ' + nextPlayer + ' lost.';
-            }
-
-            // draw?
-            else if (chess.in_draw() === true) { // jshint ignore:line
-              status = 'DRAW!';
-            }
-
-            // game is still on
-            else {
-              status = 'Next player is ' + nextPlayer + '.';
-
-              // plaver in check?
-              if (chess.in_check() === true) { // jshint ignore:line
-                status = 'CHECK! ' + status;
-                // ToDo: set 'danger' color for king
-                console.log('css');
-              }
-            }
-
-            updateGameInfo(status);
-
-            $rootScope.$broadcast('message',
-              'Your move has been accepted',
-              'success', 'playgame-' + game.gameId);
-            $rootScope.$apply();
+            board.move(move.from + '-' + move.to);
           }
         });
 
@@ -181,8 +147,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
           'error', 'playgame-' + game.gameId);
         $rootScope.$apply();
       }
-      return chess.fen();
 
+      processChessMove(chessMove);
+
+      return chess.fen();
     }
 
     // set all chess pieces in start position
