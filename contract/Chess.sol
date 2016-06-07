@@ -300,7 +300,7 @@
             // Traverse all fields in direction
             int temp = int(fromIndex);
             // walk in direction while inside board to find toIndex
-            while (temp & 0x88 != 0) {
+            while (temp & 0x88 == 0) {
                 if (uint(temp) == toIndex) {
                     return true;
                 }

@@ -151,16 +151,16 @@ describe('Chess contract', function() {
     it('should accept a valid move', function(done) {
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
-        // white pawn a7a6
-        Chess.move(testGames[0], 96, 80, {from: player1, gas: 500000});
+        // white pawn e7e6
+        Chess.move(testGames[0], 100, 84, {from: player1, gas: 500000});
       }, Error);
 
       // Watch for event from contract to check if it worked
       var filter = Chess.Move({gameId: testGames[0]});
       filter.watch(function(error, result){
         assert.equal(player1, result.args.player);
-        assert.equal(96, result.args.fromIndex);
-        assert.equal(80, result.args.toIndex);
+        assert.equal(100, result.args.fromIndex);
+        assert.equal(84, result.args.toIndex);
         filter.stopWatching(); // Need to remove filter again
         done();
       });
@@ -169,15 +169,15 @@ describe('Chess contract', function() {
     it('should have updated nextPlayer after the previous move', function() {
       assert.throws(function(){
         // Cannot move again from player1 because nextPlayer will be player2
-        Chess.move(testGames[0], 80, 64, {from: player1, gas: 500000});
+        Chess.move(testGames[0], 84, 68, {from: player1, gas: 500000});
       }, Error);
     });
 
     it('should accept valid moves', function() {
       // Test for several other valid moves
       assert.doesNotThrow(function(){
-        // black pawn a2a3 -- Pawn normal move
-        Chess.move(testGames[0], 16, 32, {from: player2, gas: 500000});
+        // black pawn b2b3 -- Pawn normal move
+        Chess.move(testGames[0], 17, 33, {from: player2, gas: 500000});
       }, Error);
 
       assert.doesNotThrow(function(){
@@ -186,8 +186,23 @@ describe('Chess contract', function() {
       }, Error);
 
       assert.doesNotThrow(function(){
-        // black pawn c2c4 -- Pawn double move
-        Chess.move(testGames[0], 18, 50, {from: player2, gas: 500000});
+        // black pawn a2a4 -- Pawn double move
+        Chess.move(testGames[0], 16, 48, {from: player2, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // white queen d8h4 -- Queen move
+        Chess.move(testGames[0], 115, 55, {from: player1, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // black rook a1a3 -- Rook move
+        Chess.move(testGames[0], 0, 32, {from: player2, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // white king e8e7 -- King move
+        Chess.move(testGames[0], 116, 100, {from: player1, gas: 500000});
       }, Error);
 
       // TODO: Add more valid moves
