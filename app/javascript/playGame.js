@@ -3,8 +3,32 @@ import {Chess as SoliChess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('PlayGameCtrl',
   function (games, $route, $scope, $rootScope) {
     // init chess validation
-    var chess, board;
+    var chess, board, position;
 
+    function generateResults() {
+
+      let x=0, y=8;
+      let toBackend = {};
+      let toFrontend = {};
+      let alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+      for ( let i=0 ; i < 128; i++){
+        console.log(i);
+        toBackend[alphabet[x] + y] = i;
+        toFrontend[i] = alphabet[x] + y;
+
+        x++;
+        if (x===8) {
+          x = 0;
+          y --;
+          i += 8;
+        }
+
+      }
+
+      return {'toBackend':toBackend, 'toFrontend': toFrontend};
+
+    }
 
     function checkOpenGame(gameId) {
       return games.openGames.indexOf(gameId) !== -1;
@@ -81,6 +105,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
           'loading', 'playgame-' + game.gameId);
         $rootScope.$apply();
 
+        let fromIndex = position.toBackend[move.from];
+        let toIndex = position.toBackend[move.to];
+        console.log(fromIndex);
+        console.log(toIndex);
         SoliChess.move(game.gameId, '96', '80', {from: game.self.accountId});
 
         SoliChess.Move({}, function(err, data) {
@@ -101,7 +129,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
             console.log(chess.fen());
             board.setPosition(chess.fen());
-            board.reset();
 
             let nextPlayer, status,
               game = $scope.getGame(),
@@ -149,6 +176,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         });
 
       } catch(e) {
+        console.log(e);
         $rootScope.$broadcast('message', 'Could not validate your move',
           'error', 'playgame-' + game.gameId);
         $rootScope.$apply();
@@ -238,8 +266,13 @@ angular.module('dappChess').controller('PlayGameCtrl',
           }
         );
 
+        position = generateResults();
+
         // init game
         resetGame(board);
+
+
+
 
         // opponent starts game
         if (game.self.color === 'black') {
