@@ -136,11 +136,11 @@ describe('Chess contract', function() {
     it('should throw an exception when a move is invalid', function() {
       // Test some invalid moves, but from correct player
       assert.throws(function(){
-        // a1a1
+        // whtie a1a1
         Chess.move(testGames[0], 0, 0, {from: player1, gas: 500000});
       }, Error);
       assert.throws(function(){
-        // a8a7
+        // white a8a7
         Chess.move(testGames[0], 112, 96, {from: player1, gas: 500000});
       }, Error);
       // TODO: Add more invalid moves
@@ -149,7 +149,7 @@ describe('Chess contract', function() {
     it('should accept a valid move', function(done) {
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
-        // a7a6
+        // white a7a6
         Chess.move(testGames[0], 96, 80, {from: player1, gas: 500000});
       }, Error);
 
@@ -167,7 +167,20 @@ describe('Chess contract', function() {
     it('should have updated nextPlayer after the previous move', function() {
       assert.throws(function(){
         // Cannot move again from player1 because nextPlayer will be player2
-        Chess.move(testGames[0], 0, 0, {from: player1, gas: 500000});
+        Chess.move(testGames[0], 80, 64, {from: player1, gas: 500000});
+      }, Error);
+    });
+
+    it('should accept valid moves', function() {
+      // Test for several other valid moves
+      assert.doesNotThrow(function(){
+        // black a1a2
+        Chess.move(testGames[0], 16, 32, {from: player2, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // white g8h6
+        Chess.move(testGames[0], 118, 87, {from: player1, gas: 500000});
       }, Error);
     });
   });
