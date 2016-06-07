@@ -13,7 +13,7 @@
     <p data-ng-show="gameIsActive()">Hooray, you are now in an ongoing chess game.</p>
     <p data-ng-show="gameIsWon()">You have won this game</p>
     <p data-ng-show="gameIsLost()">You have lost this game</p>
-    <p>Game data:</p>
+    <!--<p>Game data:</p>
     <ul>
       <li>Your account ID: {{getGame().self.accountId}}</li>
       <li>Your color: {{getGame().self.color}}</li>
@@ -21,18 +21,16 @@
       <li>Opponents account ID: {{getGame().opponent.accountId}}</li>
       <li>Opponents color: {{getGame().opponent.color}}</li>
       <li>Opponents username: {{getGame().opponent.username}}</li>
-    </ul>
+    </ul>-->
 
     <div id="my-board" style="width:100%"></div>
-    <p><span id="info-status"></span></p>
-    <p><span id="info-pgn"></span></p>
-    <p><span id="info-fen"></span></p>
 
   </div>
   <div class="four columns">
     <button data-ng-click="surrender()" data-ng-show="gameIsActive()">Surrender</button>
     <div class="game-log">
-      This is the space for the game log
+      <p>{{gameStatus}}</p>
+      <p>{{gamePgn}}</p>
     </div>
   </div>
 </div>

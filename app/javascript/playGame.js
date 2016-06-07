@@ -4,9 +4,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
   function (games, $route, $scope, $rootScope) {
     // init chess validation
     var chess, board, position;
+    $scope.gamePgn = '';
+    $scope.gameStatus = '';
 
-    function generateResults() {
-
+    function generateMapping() {
       let x=0, y=8;
       let toBackend = {};
       let toFrontend = {};
@@ -35,9 +36,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     // Update game information to user
     function updateGameInfo(status) {
-      $('#info-status').html(status);
-      $('#info-fen').html(chess.fen());
-      $('#info-pgn').html(chess.pgn());
+      $scope.gameStatus = status;
+      $scope.gamePgn = chess.pgn();
     }
 
     function processChessMove(chessMove) {
@@ -83,6 +83,37 @@ angular.module('dappChess').controller('PlayGameCtrl',
       updateGameInfo(status);
     }
 
+    function eventMove(err, data) {
+      console.log('eventMove', err, data);
+      if(err) {
+
+      }
+      else {
+        let fromIndex = position.toFrontend[data.args.fromIndex.c[0]];
+        let toIndex = position.toFrontend[data.args.toIndex.c[0]];
+
+        console.log(chess.fen());
+        let chessMove = chess.move({
+          from: fromIndex,
+          to: toIndex,
+          promotion: 'q'
+        });
+
+        console.log(chess.fen());
+        board.move(fromIndex + '-' + toIndex);
+
+        processChessMove(chessMove);
+
+        if(board.isUserInputEnabled()) {
+          $rootScope.$broadcast('message', 'Your move was successfully transmitted.',
+            'success', 'playgame-' + $scope.getGameId());
+        }
+        $rootScope.$apply();
+
+        board.enableUserInput(!board.isUserInputEnabled());
+      }
+    }
+
     // player clicked on chess piece
     function pieceSelected(notationSquare) {
       var i,
@@ -99,7 +130,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
     // move chess piece if valid
     function pieceMove(move) {
       let game = $scope.getGame();
-      let chessMove = null;
+
       try {
         $rootScope.$broadcast('message', 'Submitting your move, please wait a moment...',
           'loading', 'playgame-' + game.gameId);
@@ -116,39 +147,12 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
         SoliChess.move(game.gameId, fromIndex, toIndex, {from: game.self.accountId});
 
-        SoliChess.GameStateChanged({}, function (err, data) {
-          console.log('Gamestate: ', data.args.state);
-        });
-
-        SoliChess.Move({}, function(err, data) {
-          console.log('eventMove', err, data);
-          if(err) {
-
-          }
-          else {
-            // if valid: move chess piece from a to b
-            // else: return null
-
-            console.log(chess.fen());
-            chessMove = chess.move({
-              from: move.from,
-              to: move.to,
-              promotion: 'q'
-            });
-
-            console.log(chess.fen());
-            board.move(move.from + '-' + move.to);
-          }
-        });
-
       } catch(e) {
         console.log(e);
         $rootScope.$broadcast('message', 'Could not validate your move',
           'error', 'playgame-' + game.gameId);
         $rootScope.$apply();
       }
-
-      processChessMove(chessMove);
 
       return chess.fen();
     }
@@ -234,13 +238,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
           }
         );
 
-        position = generateResults();
+        position = generateMapping();
 
         // init game
         resetGame(board);
-
-
-
 
         // opponent starts game
         if (game.self.color === 'black') {
@@ -248,6 +249,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
           board.enableUserInput(false);
         }
 
+        //SoliChess.GameStateChanged(eventGameStateChanged);
+        SoliChess.Move(eventMove);
       });
     }
   }
