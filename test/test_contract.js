@@ -136,20 +136,22 @@ describe('Chess contract', function() {
     it('should throw an exception when a move is invalid', function() {
       // Test some invalid moves, but from correct player
       assert.throws(function(){
-        // whtie a1a1
-        Chess.move(testGames[0], 0, 0, {from: player1, gas: 500000});
+        // white pawn a7a7
+        Chess.move(testGames[0], 96, 96, {from: player1, gas: 500000});
       }, Error);
+
       assert.throws(function(){
-        // white a8a7
+        // white rook a8a7
         Chess.move(testGames[0], 112, 96, {from: player1, gas: 500000});
       }, Error);
+
       // TODO: Add more invalid moves
     });
 
     it('should accept a valid move', function(done) {
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
-        // white a7a6
+        // white pawn a7a6
         Chess.move(testGames[0], 96, 80, {from: player1, gas: 500000});
       }, Error);
 
@@ -174,14 +176,21 @@ describe('Chess contract', function() {
     it('should accept valid moves', function() {
       // Test for several other valid moves
       assert.doesNotThrow(function(){
-        // black a1a2
+        // black pawn a2a3 -- Pawn normal move
         Chess.move(testGames[0], 16, 32, {from: player2, gas: 500000});
       }, Error);
 
       assert.doesNotThrow(function(){
-        // white g8h6
+        // white knight g8h6 -- Knight move
         Chess.move(testGames[0], 118, 87, {from: player1, gas: 500000});
       }, Error);
+
+      assert.doesNotThrow(function(){
+        // black pawn c2c4 -- Pawn double move
+        Chess.move(testGames[0], 18, 50, {from: player2, gas: 500000});
+      }, Error);
+
+      // TODO: Add more valid moves
     });
   });
 
