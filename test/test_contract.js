@@ -21,6 +21,17 @@ describe('Chess contract', function() {
   const player2 = web3.eth.accounts[1];
   const player3 = web3.eth.accounts[2];
 
+  // Remove this for CI/deploy, otherwise the test never finishes
+  /*
+  var debugFilter = Chess.DebugInts({});
+  debugFilter.watch(function(error, result){
+    console.log(result.args.message,
+                result.args.value1.toNumber(),
+                result.args.value2.toNumber(),
+                result.args.value3.toNumber());
+  });
+  */
+
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
     it('should initialize a game with player1 playing white', function (done) {
@@ -70,11 +81,11 @@ describe('Chess contract', function() {
   describe('joinGame()', function () {
     it('should join player2 as black if player1 is white', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 200000});
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000});
       }, Error);
 
       // Watch for event from contract to check if it worked
-      var filter = Chess.GameJoined({});
+      var filter = Chess.GameJoined({gameId: testGames[0]});
       filter.watch(function(error, result){
         assert.equal(testGames[0], result.args.gameId);
         assert.equal(player2, result.args.player2);
@@ -89,17 +100,17 @@ describe('Chess contract', function() {
 
     it('should disallow joining a game with two payers', function() {
       assert.throws(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 100000});
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000});
       }, Error);
     });
 
     it('should join player2 as white if player1 is black', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[1], 'Bob', {from: player2, gas: 200000});
+        Chess.joinGame(testGames[1], 'Bob', {from: player2, gas: 500000});
       }, Error);
 
       // Watch for event from contract to check if it worked
-      var filter = Chess.GameJoined({});
+      var filter = Chess.GameJoined({gameId: testGames[1]});
       filter.watch(function(error, result){
         assert.equal(testGames[1], result.args.gameId);
         assert.equal(player2, result.args.playerWhite);
@@ -112,28 +123,44 @@ describe('Chess contract', function() {
   describe('move()', function () {
     it('should throw an exception when it is not this player\'s turn', function() {
       assert.throws(function(){
-        Chess.move(testGames[0], 0, 0, {from: player2, gas: 100000});
+        Chess.move(testGames[0], 0, 0, {from: player2, gas: 500000});
       }, Error);
     });
 
-    it('should throw an exception when player with color black starts', function() {
+    it('should throw an exception when P1 is black, so they cannot move first', function() {
       assert.throws(function(){
-        Chess.move(testGames[1], 0, 0, {from: player1, gas: 100000});
+        Chess.move(testGames[1], 0, 0, {from: player1, gas: 500000});
       }, Error);
+    });
+
+    it('should throw an exception when a move is invalid', function() {
+      // Test some invalid moves, but from correct player
+      assert.throws(function(){
+        // white pawn a7a7
+        Chess.move(testGames[0], 96, 96, {from: player1, gas: 500000});
+      }, Error);
+
+      assert.throws(function(){
+        // white rook a8a7
+        Chess.move(testGames[0], 112, 96, {from: player1, gas: 500000});
+      }, Error);
+
+      // TODO: Add more invalid moves
     });
 
     it('should accept a valid move', function(done) {
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function(){
-        Chess.move(testGames[0], 99, 83, {from: player1, gas: 100000});
+        // white pawn e7e6
+        Chess.move(testGames[0], 100, 84, {from: player1, gas: 500000});
       }, Error);
 
       // Watch for event from contract to check if it worked
-      var filter = Chess.Move({});
+      var filter = Chess.Move({gameId: testGames[0]});
       filter.watch(function(error, result){
         assert.equal(player1, result.args.player);
-        assert.equal(99, result.args.fromIndex);
-        assert.equal(83, result.args.toIndex);
+        assert.equal(100, result.args.fromIndex);
+        assert.equal(84, result.args.toIndex);
         filter.stopWatching(); // Need to remove filter again
         done();
       });
@@ -142,8 +169,43 @@ describe('Chess contract', function() {
     it('should have updated nextPlayer after the previous move', function() {
       assert.throws(function(){
         // Cannot move again from player1 because nextPlayer will be player2
-        Chess.move(testGames[0], 0, 0, {from: player1, gas: 100000});
+        Chess.move(testGames[0], 84, 68, {from: player1, gas: 500000});
       }, Error);
+    });
+
+    it('should accept valid moves', function() {
+      // Test for several other valid moves
+      assert.doesNotThrow(function(){
+        // black pawn b2b3 -- Pawn normal move
+        Chess.move(testGames[0], 17, 33, {from: player2, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // white knight g8h6 -- Knight move
+        Chess.move(testGames[0], 118, 87, {from: player1, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // black pawn a2a4 -- Pawn double move
+        Chess.move(testGames[0], 16, 48, {from: player2, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // white queen d8h4 -- Queen move
+        Chess.move(testGames[0], 115, 55, {from: player1, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // black rook a1a3 -- Rook move
+        Chess.move(testGames[0], 0, 32, {from: player2, gas: 500000});
+      }, Error);
+
+      assert.doesNotThrow(function(){
+        // white king e8e7 -- King move
+        Chess.move(testGames[0], 116, 100, {from: player1, gas: 500000});
+      }, Error);
+
+      // TODO: Add more valid moves
     });
   });
 
@@ -157,7 +219,7 @@ describe('Chess contract', function() {
         gameId = result.args.gameId;
         filter.stopWatching();
 
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 200000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
         var filter2 = Chess.GameJoined({gameId: gameId});
         filter2.watch(function(){
           filter2.stopWatching();
@@ -168,12 +230,12 @@ describe('Chess contract', function() {
 
     it('should throw an exception for message from non-participant', function() {
       assert.throws(function(){
-        Chess.surrender(gameId, {from: player3, gas: 100000});
+        Chess.surrender(gameId, {from: player3, gas: 500000});
       }, Error);
     });
 
     it('should allow surrender from P1 and declare P2 as winner', function(done) {
-      Chess.surrender(gameId, {from: player1, gas: 100000});
+      Chess.surrender(gameId, {from: player1, gas: 500000});
       var filter = Chess.GameEnded({gameId: gameId});
       filter.watch(function(error, result){
         assert.equal(player2, result.args.winner);
@@ -184,7 +246,7 @@ describe('Chess contract', function() {
 
     it('should throw an exception when surrendering a game that already ended', function() {
       assert.throws(function(){
-        Chess.surrender(gameId, {from: player2, gas: 100000});
+        Chess.surrender(gameId, {from: player2, gas: 500000});
       }, Error);
     });
   });
@@ -207,3 +269,5 @@ describe('Chess contract', function() {
   });
   */
 });
+
+

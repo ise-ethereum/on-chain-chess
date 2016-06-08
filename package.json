@@ -44,11 +44,12 @@
     "less-loader": "^2.2.3",
     "mocha": "*",
     "mocha-webpack": "*",
+    "solc": "^0.3.4",
     "solc-loader": "^1.0.0-rc.3",
     "source-map-support": "*",
     "style-loader": "^0.13.1",
     "web3": "^0.15.3",
-    "web3-loader": "^1.0.0-rc.2",
+    "web3-loader": "^1.0.1",
     "webpack": "^1.13.0",
     "webpack-node-externals": "*"
   },
