@@ -7,6 +7,7 @@
  *    https://github.com/ise-ethereum/on-chain-chess/wiki/Chess-board-representation
  */
 
+
  contract Chess {
     bytes constant defaultState = '\x04\x06\x05\x03\x02\x05\x06\x04\x08\x08\x08\x0c\x08\x08\x08\x08\x07\x07\x07\x07\x07\x07\x07\x07\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x09\x09\x09\x09\x09\x09\x09\x09\x08\x08\x08\x08\x08\x08\x08\x08\x0c\x0a\x0b\x0d\x0e\x0b\x0a\x0c\x08\x08\x08\x7c\x08\x08\x08\x08';
 
@@ -18,6 +19,7 @@
         address nextPlayer;
         address playerWhite; // Player that is white in this game
         address winner;
+
         int8[128] state;
     }
 
@@ -63,6 +65,7 @@
 
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite);
+
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
     event GameEnded(bytes32 indexed gameId, address indexed winner);
@@ -73,6 +76,7 @@
      * Convenience function to set a flag
      * Usage: setFlag(gameId, Flag.BLACK_KING_POS, 4);
      */
+
     function setFlag(bytes32 gameId, Flag flag, int value) internal {
         games[gameId].state[Flags(flag)] = int8(value);
     }
@@ -83,6 +87,7 @@
      */
     function getFlag(bytes32 gameId, Flag flag) internal returns (int8) {
         return games[gameId].state[Flags(flag)];
+
     }
 
     /**
@@ -99,6 +104,7 @@
         games[gameId].player1Alias = player1Alias;
 
         // Initialize state
+
         for (uint i = 0; i < 128; i++) {
             // Read defaultState bytes string, which is offset by 8 to be > 0
             games[gameId].state[i] = int8(defaultState[i]) - 8;
@@ -131,6 +137,7 @@
      * string player2Alias: Alias of the player that is joining
      */
     function joinGame(bytes32 gameId, string player2Alias) public {
+
         // Check that this game does not have a second player yet
         if (games[gameId].player2 != 0) {
             throw;
@@ -153,6 +160,7 @@
         // Remove from openGameIds
         if (head == gameId) {
             head = openGameIds[head];
+
             openGameIds[gameId] = 0;
         } else {
             for (var g = head; g != 'end' && openGameIds[g] != 'end'; g = openGameIds[g]) {
@@ -168,6 +176,7 @@
     }
 
     /* validates a move and executes it */
+
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) public {
         // Check that it is this player's turn
         if (games[gameId].nextPlayer != msg.sender) {
@@ -367,6 +376,7 @@
         }
 
         return false;
+
     }
 
 

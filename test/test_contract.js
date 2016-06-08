@@ -21,17 +21,6 @@ describe('Chess contract', function() {
   const player2 = web3.eth.accounts[1];
   const player3 = web3.eth.accounts[2];
 
-  // Remove this for CI/deploy, otherwise the test never finishes
-  /*
-  var debugFilter = Chess.DebugInts({});
-  debugFilter.watch(function(error, result){
-    console.log(result.args.message,
-                result.args.value1.toNumber(),
-                result.args.value2.toNumber(),
-                result.args.value3.toNumber());
-  });
-  */
-
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
     it('should initialize a game with player1 playing white', function (done) {
@@ -81,11 +70,11 @@ describe('Chess contract', function() {
   describe('joinGame()', function () {
     it('should join player2 as black if player1 is white', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 200000});
       }, Error);
 
       // Watch for event from contract to check if it worked
-      var filter = Chess.GameJoined({gameId: testGames[0]});
+      var filter = Chess.GameJoined({});
       filter.watch(function(error, result){
         assert.equal(testGames[0], result.args.gameId);
         assert.equal(player2, result.args.player2);
@@ -100,17 +89,17 @@ describe('Chess contract', function() {
 
     it('should disallow joining a game with two payers', function() {
       assert.throws(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 100000});
       }, Error);
     });
 
     it('should join player2 as white if player1 is black', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[1], 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(testGames[1], 'Bob', {from: player2, gas: 200000});
       }, Error);
 
       // Watch for event from contract to check if it worked
-      var filter = Chess.GameJoined({gameId: testGames[1]});
+      var filter = Chess.GameJoined({});
       filter.watch(function(error, result){
         assert.equal(testGames[1], result.args.gameId);
         assert.equal(player2, result.args.playerWhite);
@@ -123,15 +112,16 @@ describe('Chess contract', function() {
   describe('move()', function () {
     it('should throw an exception when it is not this player\'s turn', function() {
       assert.throws(function(){
-        Chess.move(testGames[0], 0, 0, {from: player2, gas: 500000});
+        Chess.move(testGames[0], 0, 0, {from: player2, gas: 100000});
       }, Error);
     });
 
-    it('should throw an exception when P1 is black, so they cannot move first', function() {
+    it('should throw an exception when player with color black starts', function() {
       assert.throws(function(){
-        Chess.move(testGames[1], 0, 0, {from: player1, gas: 500000});
+        Chess.move(testGames[1], 0, 0, {from: player1, gas: 100000});
       }, Error);
     });
+
 
     it('should throw an exception when a move is invalid', function() {
       // Test some invalid moves, but from correct player
@@ -156,7 +146,7 @@ describe('Chess contract', function() {
       }, Error);
 
       // Watch for event from contract to check if it worked
-      var filter = Chess.Move({gameId: testGames[0]});
+      var filter = Chess.Move({});
       filter.watch(function(error, result){
         assert.equal(player1, result.args.player);
         assert.equal(100, result.args.fromIndex);
@@ -219,7 +209,7 @@ describe('Chess contract', function() {
         gameId = result.args.gameId;
         filter.stopWatching();
 
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 200000});
         var filter2 = Chess.GameJoined({gameId: gameId});
         filter2.watch(function(){
           filter2.stopWatching();
@@ -230,12 +220,12 @@ describe('Chess contract', function() {
 
     it('should throw an exception for message from non-participant', function() {
       assert.throws(function(){
-        Chess.surrender(gameId, {from: player3, gas: 500000});
+        Chess.surrender(gameId, {from: player3, gas: 100000});
       }, Error);
     });
 
     it('should allow surrender from P1 and declare P2 as winner', function(done) {
-      Chess.surrender(gameId, {from: player1, gas: 500000});
+      Chess.surrender(gameId, {from: player1, gas: 100000});
       var filter = Chess.GameEnded({gameId: gameId});
       filter.watch(function(error, result){
         assert.equal(player2, result.args.winner);
@@ -246,7 +236,7 @@ describe('Chess contract', function() {
 
     it('should throw an exception when surrendering a game that already ended', function() {
       assert.throws(function(){
-        Chess.surrender(gameId, {from: player2, gas: 500000});
+        Chess.surrender(gameId, {from: player2, gas: 100000});
       }, Error);
     });
   });
@@ -269,5 +259,3 @@ describe('Chess contract', function() {
   });
   */
 });
-
-
