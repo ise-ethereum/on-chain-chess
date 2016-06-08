@@ -301,15 +301,15 @@
             abs(fromFigure) == uint(Pieces(Piece.WHITE_ROOK))) {
 
             // Bishop can only walk diagonally, Rook only non-diagonally
-            if (!isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_BISHOP)) ||
-                isDiagonal && abs(fromFigure) == uint(Pieces(Piece.BLACK_ROOK))) {
+            if (!isDiagonal && abs(fromFigure) == uint(Pieces(Piece.WHITE_BISHOP)) ||
+                isDiagonal && abs(fromFigure) == uint(Pieces(Piece.WHITE_ROOK))) {
                 return false;
             }
 
             // Traverse all fields in direction
             int temp = int(fromIndex);
             // walk in direction while inside board to find toIndex
-            while (temp & 0x88 != 0) {
+            while (temp & 0x88 == 0) {
                 if (uint(temp) == toIndex) {
                     return true;
                 }
@@ -575,7 +575,7 @@
         int8 direction = getDirection(fromIndex, toIndex);
 
         // PAWN - EN PASSANT or DOUBLE STEP
-        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_PAWN))) {
+        if (abs(fromFigure) == uint(Pieces(Piece.WHITE_PAWN))) {
             // En Passant - remove caught pawn
             // en passant if figure: pawn and diagonal move to empty field
             if (is_diagonal(direction) && toFigure == Pieces(Piece.EMPTY)) {
@@ -616,7 +616,7 @@
     // checks whether movingPlayerColor's king gets checked by move
     function checkLegality(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) internal returns (bool){
         // the king already gets tested when he moves
-        if (abs(fromFigure) == uint(Pieces(Piece.BLACK_KING)))
+        if (abs(fromFigure) == uint(Pieces(Piece.WHITE_KING)))
             return;
 
         // through move of fromFigure from fromIndex king may now be in danger from that direction
