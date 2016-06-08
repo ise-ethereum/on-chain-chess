@@ -1,49 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html data-ng-app="dappChess">
   <head>
-    <title>Sample Ethereum Dapp with Webpack</title>
+    <title>on chain chess</title>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,400italic' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simple-line-icons/2.3.1/css/simple-line-icons.css">
+    <link type="text/css" rel="stylesheet" href="bundles/styles.css">
   </head>
-  <body>
-  	<h1>Sample Ethereum Dapp with Webpack</h1>
-    <p>Example The Coin Dapp with smart contract code from <a href="https://www.ethereum.org/token" target="_blank">https://www.ethereum.org/token</a></p>
+  <body data-ng-controller="NavigationCtrl" data-ng-class="{
+      metapage:
+        navigation.isActivePage(navigation.welcomePage) ||
+        navigation.isActivePage(navigation.initializeGamePage) ||
+        navigation.isActivePage(navigation.joinGamePage)
+  }">
+    <div class="bg-overlay"></div>
+    <header data-ng-show="!isMist">
+      <nav>
+        <ul>
+          <li>
+            <a href="#/initializeGame" data-ng-class="{
+                  active: navigation.isActivePage(navigation.initializeGamePage)
+                }">
+              <i class="icon-plus"></i>
+              <span>Start a new game</span>
+            </a>
+          </li>
+          <li>
+            <a href="#/joinGame" data-ng-class="{
+                  active: navigation.isActivePage(navigation.joinGamePage)
+                }">
+              <i class="icon-login"></i>
+              <span>Join game</span>
+            </a>
+          </li>
+          <li data-ng-repeat="game in games| ownGames">
+            <a href="#" data-ng-href="#/{{navigation.playGamePage}}/{{game.gameId}}" data-ng-class="{
+                  active: navigation.isActiveGame(game)
+                }">
+              <span>{{game.opponent.username|| "Open game"}}</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </header>
 
-    <hr>
-    <h2>Web3</h2>
-    <p>Initialized <code>Web3</code> object for easy interfacing of Ethereum JavaScript API.</p>
-    <dl>
-      <dt>Connected Ethereum node (Web3 provider)</dt>
-      <dd id="provider"></dd>
-      <dt>Latest block</dt>
-      <dd id="latest-block"></dd>
-      <dt>Accounts</dt>
-      <dd id="list-accounts"></dd>
-    </dl>
+    <!-- content-->
+    <main>
+      <div id="messages" data-ng-controller="MessagesCtrl">
+        <div class="messageContainer" data-ng-repeat="message in messages">
+          <div class="message" data-ng-class="message.type + ' animate-repeat'">
+            {{message.message}}
+          </div>
+        </div>
+      </div>
+      <div id="view" data-ng-view></div>
+    </main>
 
-    <hr>
-    <h2>MyToken</h2>
-    <p>Instantiated (deployed) MyToken is available as <code>MyToken</code>.</p>
-    <dl>
-      <dt>Token name</dt>
-      <dd id="token-name"></dd>
-      <dt>Token symbol</dt>
-      <dd id="token-symbol"></dd>
-      <dt>Total supply of token</dt>
-      <dd id="total-supply"></dd>
-      <dt>Version</dt>
-      <dd id="version"></dd>
-    </dl>
+    <!-- For production use -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-route.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-animate.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.9.4/chess.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+    <script type="text/javascript" src="javascript/chessboard.min.js"></script>
 
-    <hr>
-    <h2>tokenRecipient</h2>
-    <p>If a <code>.sol</code> file contains more than one contracts, individual instantiated contracts are also available. See <code>console.log(tokenRecipient)</code>.</p>
-
-    <hr>
-    <h2>More info</h2>
-    <p>View <code>console.log()</code> for more information of each of the above components.</p>
-
-    <hr>
-    <p>You can find more information on this sample dapp at its <a href="https://github.com/uzyn/ethereum-webpack-example-dapp" target="_blank">GitHub repository</a> and <a href="https://twitter.com/uzyn" target="_blank">@uzyn</a>.</p>
-
-    <script src="bundles/main.js"></script>
+    <!-- For local tests only -->
+    <!--
+    <script type="text/javascript" src="../app/javascript/lib/angular.js"></script>
+    <script type="text/javascript" src="../app/javascript/lib/angular-route.js"></script>
+    <script type="text/javascript" src="../app/javascript/lib/angular-animate.js"></script>
+    -->
+    <script type="text/javascript" src="bundles/main.js"></script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 --colors
+--bail
 --webpack-config webpack.config-test.js
 test/*.js
 --require source-map-support/register

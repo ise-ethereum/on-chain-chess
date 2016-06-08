@@ -1,0 +1,62 @@
+<div class="container space-top">
+  <h1>Join a chess game</h1>
+</div>
+<div class="container">
+  <div class="four columns">
+    <form name="form" novalidate data-ng-submit="joinGame(form)">
+      <label>Account to use</label>
+      <select name="selectedAccount" data-ng-model="selectedAccount" required>
+        <option value="">Select account</option>
+        <option data-ng-repeat="account in availableAccounts" data-ng-value="account">Account {{$index}}</option>
+      </select>
+      <!-- Does not work in the current version of Mist / only creates new accounts, although it should select or create an account -->
+      <!--<button data-ng-click="selectOrCreateAccount()">Create new account</button>
+      <input name="selectedAccount" type="hidden" data-ng-model="selectedAccount" required />-->
+
+      <div data-ng-show="form.$submitted || form.selectedAccount.$touched">
+        <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>
+      </div>
+
+      <label for="username">Username</label>
+      <input id="username" type="text" name="username" data-ng-model="username" required>
+      <div data-ng-show="form.$submitted || form.username.$touched">
+        <div class="error" data-ng-show="form.username.$error.required">Please enter a username.</div>
+      </div>
+
+      <label for="gameId">Game ID</label>
+      <input id="gameId" type="text" name="gameId" data-ng-model="gameId" required>
+      <div data-ng-show="form.$submitted || form.gameId.$touched">
+        <div class="error" data-ng-show="form.gameId.$error.required">Please enter the game id.</div>
+      </div>
+
+      <input type="submit" value="Join game" />
+    </form>
+  </div>
+  <div class="eight columns">
+    <table class="zebra">
+      <thead>
+        <tr>
+          <th>Opponent</th>
+          <th>Color</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-ng-repeat="game in games | othersOpenGames:openGames"
+            data-ng-class="{selected: isSelectedGame(game)}">
+          <td>{{game.self.username}}</td>
+          <td>{{game.self.color}}</td>
+          <td><a href="#" data-ng-click="setSelectedGame($event, game)">Select</a></td>
+        </tr><!-- | orderBy:predicate:reverse-->
+      </tbody>
+    </table>
+    <p><strong>Join a running chess game by following these simple steps:</strong></p>
+    <ul>
+      <li>Select the account to use, enter your username and select the start color</li>
+      <li>Enter the game id that you have received or choose a game from the list to start the game</li>
+      <li>Your request is being submitted to the blockchain. When the join was successful,
+        the game will appear with the opponents username in the nav bar.</li>
+      <li>Start playing by selecting the game</li>
+    </ul>
+  </div>
+</div>
