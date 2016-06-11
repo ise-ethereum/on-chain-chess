@@ -334,14 +334,19 @@
                 }
                 // simple move
                 if (int(fromIndex) + direction == int(toIndex)) {
-                    return true;
+                    if(toFigure == Pieces(Piece.EMPTY)){
+                        return true;
+                    }
+
                 }
                 // double move
                 if (int(fromIndex) + direction + direction == int(toIndex)) {
                     // Can only do double move starting form specific ranks
                     int rank = int(fromIndex/16);
                     if (1 == rank || 6 == rank) {
-                        return true;
+                        if(toFigure == Pieces(Piece.EMPTY)){
+                            return true;
+                        }
                     }
                 }
                 return false;
