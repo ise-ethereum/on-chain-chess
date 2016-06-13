@@ -11,6 +11,19 @@
  contract Chess {
     bytes constant defaultState = '\x04\x06\x05\x03\x02\x05\x06\x04\x08\x08\x08\x0c\x08\x08\x08\x08\x07\x07\x07\x07\x07\x07\x07\x07\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x09\x09\x09\x09\x09\x09\x09\x09\x08\x08\x08\x08\x08\x08\x08\x08\x0c\x0a\x0b\x0d\x0e\x0b\x0a\x0c\x08\x08\x08\x7c\x08\x08\x08\x08';
 
+    bool debug; // If contract is deployed in debug mode, some debug features are enabled
+
+    modifier debugOnly {
+        if (!debug)
+            throw;
+        _
+    }
+
+    modifier notEnded(bytes32 gameId) {
+        if (games[gameId].ended) throw;
+        _
+    }
+
     struct Game {
         address player1;
         address player2;
@@ -60,7 +73,8 @@
 
     bytes constant knightMoves = '\x1f\x21\x2e\x32\x4e\x52\x5f\x61';
 
-    function Chess() {
+    function Chess(bool enableDebugging) {
+        debug = enableDebugging;
         head = 'end';
     }
 
@@ -89,11 +103,6 @@
     function getFlag(bytes32 gameId, Flag flag) internal returns (int8) {
         return games[gameId].state[Flags(flag)];
 
-    }
-
-    modifier notEnded(bytes32 gameId) {
-        if (games[gameId].ended) throw;
-        _
     }
 
     /**
@@ -182,8 +191,14 @@
         GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, games[gameId].playerWhite);
     }
 
-    /* validates a move and executes it */
+    /* Explicity set game state. Only in debug mode */
+    function setGameState(bytes32 gameId, int8[128] state, address nextPlayer) debugOnly public {
+        games[gameId].state = state;
+        games[gameId].nextPlayer = nextPlayer;
+        GameStateChanged(gameId, games[gameId].state);
+    }
 
+    /* validates a move and executes it */
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {
         // Check that it is this player's turn
         if (games[gameId].nextPlayer != msg.sender) {
@@ -265,7 +280,9 @@
         int8 direction = getDirection(fromIndex, toIndex);
         bool isDiagonal = !(abs(direction) == 16 || abs(direction) == 1);
 
-        DebugInts('validateMove. fromFigure, toFigure, direction', int(fromFigure), int(fromFigure), int(direction));
+        if (debug) {
+            DebugInts('validateMove. fromFigure, toFigure, direction', int(fromFigure), int(fromFigure), int(direction));
+        }
 
         // Kings
         if (abs(fromFigure) == uint(Pieces(Piece.WHITE_KING))) {
