@@ -19,6 +19,7 @@
         address nextPlayer;
         address playerWhite; // Player that is white in this game
         address winner;
+        bool ended;
 
         int8[128] state;
     }
@@ -98,6 +99,7 @@
     function initGame(string player1Alias, bool playAsWhite) public {
         // Generate game id based on player's addresses and current block number
         bytes32 gameId = sha3(msg.sender, block.number);
+        games[gameId].ended = false;
 
         // Initialize participants
         games[gameId].player1 = msg.sender;
@@ -671,6 +673,7 @@
             // Sender is not a participant of this game
             throw;
         }
+        games[gameId].ended = true;
 
         GameEnded(gameId, games[gameId].winner);
     }

@@ -65,6 +65,10 @@ describe('Chess contract', function() {
         done();
       });
     });
+
+    it('should have set game state to not ended', function() {
+      assert.equal(false, Chess.games(testGames[0])[7]);
+    });
   });
 
   describe('joinGame()', function () {
@@ -106,6 +110,11 @@ describe('Chess contract', function() {
         filter.stopWatching(); // Need to remove filter again
         done();
       });
+    });
+
+    it('should have not change game.ended', function() {
+      assert.equal(false, Chess.games(testGames[0])[7]);
+      assert.equal(false, Chess.games(testGames[1])[7]);
     });
   });
 
@@ -232,6 +241,10 @@ describe('Chess contract', function() {
         filter.stopWatching();
         done();
       });
+    });
+
+    it('should have set game state to ended', function() {
+      assert.equal(true, Chess.games(gameId)[7]);
     });
 
     it('should throw an exception when surrendering a game that already ended', function() {
