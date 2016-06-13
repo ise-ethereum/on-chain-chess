@@ -17,7 +17,7 @@ module.exports = {
   web3Loader: {
     provider: web3provider,
     constructorParams: {
-      Chess: []
+      Chess: [true] // Enable debugging
     }
   },
   module: {
