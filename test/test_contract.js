@@ -198,7 +198,7 @@ describe('Chess contract', function() {
     });
 
     it('should set game state and accept valid move', function(done) {
-      let state = defaultBoard;
+      let state = [...defaultBoard];
       state[32] = -6; // Black king on a2
       state[67] = 5; // White queen on d4
       Chess.setGameState(testGames[0], state, player1, {from: player1, gas: 2000000});
