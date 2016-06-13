@@ -356,7 +356,7 @@ describe('Chess contract', function() {
         }, Error, '', 'make move while checkmate');
       });
 
-      describe.only('#valid', function() {
+      describe('#valid', function() {
         it('should not reject castling', function () {
           let state = [...defaultBoard];
           state[5] = 0;
