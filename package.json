@@ -6,6 +6,7 @@
   "scripts": {
     "start": "webpack --watch",
     "build": "webpack --bail",
+    "build-production": "webpack --bail --config webpack.config-production.js",
     "test": "mocha-webpack --growl",
     "test-testrpc": "concurrently --kill-others -s first \"testrpc -p ${TESTRPC_PORT:-8545}\" 'npm run test'",
     "lint": "jshint app/javascript/*.js"
