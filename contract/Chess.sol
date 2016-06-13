@@ -91,6 +91,11 @@
 
     }
 
+    modifier notEnded(bytes32 gameId) {
+        if (games[gameId].ended) throw;
+        _
+    }
+
     /**
      * Initialize a new game
      * string player1Alias: Alias of the player creating the game
@@ -179,7 +184,7 @@
 
     /* validates a move and executes it */
 
-    function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) public {
+    function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {
         // Check that it is this player's turn
         if (games[gameId].nextPlayer != msg.sender) {
             throw;
@@ -256,7 +261,7 @@
      * Validates if a move is technically (not legally) possible,
      * i.e. if piece is capable to move this way
      */
-    function validateMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool) {
+    function validateMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) notEnded(gameId) returns (bool) {
         int8 direction = getDirection(fromIndex, toIndex);
         bool isDiagonal = !(abs(direction) == 16 || abs(direction) == 1);
 
@@ -658,7 +663,20 @@
 
     }
 
-    function surrender(bytes32 gameId) public {
+    // closes a game that is not currently running
+    function closePlayerGame(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+
+        // game already started and not finished yet
+        if (game.player2 != 0 && !game.ended)
+            throw;
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        games[gameId].ended = true;
+        GameEnded(gameId, 0);
+    }
+
+    function surrender(bytes32 gameId) notEnded(gameId) public {
         if (games[gameId].winner != 0) {
             // Game already ended
             throw;
@@ -677,7 +695,6 @@
 
         GameEnded(gameId, games[gameId].winner);
     }
-
 
     // gets the first figure in direction from start, not including start
     function getFirstFigure(bytes32 gameId, int8 direction, int8 start) returns (int8){

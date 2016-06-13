@@ -67,7 +67,7 @@ describe('Chess contract', function() {
     });
 
     it('should have set game state to not ended', function() {
-      assert.equal(false, Chess.games(testGames[0])[7]);
+      assert.isFalse(Chess.games(testGames[0])[7]);
     });
   });
 
@@ -113,8 +113,41 @@ describe('Chess contract', function() {
     });
 
     it('should have not change game.ended', function() {
-      assert.equal(false, Chess.games(testGames[0])[7]);
-      assert.equal(false, Chess.games(testGames[1])[7]);
+      assert.isFalse(Chess.games(testGames[0])[7]);
+      assert.isFalse(Chess.games(testGames[1])[7]);
+    });
+  });
+
+  describe('closePlayerGame()', function () {
+    let gameId;
+    it('should initialize a game with 1 player only', function(done) {
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+
+      // Watch for event from contract to check if it worked
+      let filter = Chess.GameInitialized({});
+
+      filter.watch(function (error, result) {
+        gameId = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching(); // Need to remove filter again
+        done();
+      });
+    });
+
+    it('should be able to close a game with 1 player only', function() {
+      assert.doesNotThrow(function () {
+        Chess.closePlayerGame(gameId, {from: player1, gas: 100000});
+      }, Error);
+    });
+
+    it('should have set ended', function() {
+      assert.isTrue(Chess.games(gameId)[7]);
+    });
+
+    it('should throw and exception when trying to close a closed game', function() {
+      assert.throws(function(){
+        Chess.closePlayerGame(gameId, { from: player1, gas: 100000 });
+      }, Error);
     });
   });
 
@@ -244,7 +277,7 @@ describe('Chess contract', function() {
     });
 
     it('should have set game state to ended', function() {
-      assert.equal(true, Chess.games(gameId)[7]);
+      assert.isTrue(Chess.games(gameId)[7]);
     });
 
     it('should throw an exception when surrendering a game that already ended', function() {
