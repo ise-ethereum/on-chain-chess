@@ -249,19 +249,19 @@ describe('Chess contract', function() {
         });
         assert.throws(function() {
           Chess.move(gameId, 20, 4, {from: player2, gas: 500000});
-        }, Error, 'a', 'a');
+        }, Error);
         assert.throws(function() {
           Chess.move(gameId, 20, 35, {from: player2, gas: 500000});
-        }, Error, 'b', 'b');
+        }, Error);
         assert.throws(function() {
           Chess.move(gameId, 20, 36, {from: player2, gas: 500000});
-        }, Error, 'c', 'c');
+        }, Error);
         assert.throws(function() {
           Chess.move(gameId, 20, 37, {from: player2, gas: 500000});
-        }, Error, 'd', 'd');
+        }, Error);
         assert.throws(function() {
           Chess.move(gameId, 17, 33, {from: player2, gas: 500000});
-        }, Error, 'e', 'e');
+        }, Error);
       });
 
       it('should accept another very short game', function() {
@@ -275,13 +275,13 @@ describe('Chess contract', function() {
         });
         assert.throws(function() {
           Chess.move(gameId, 116, 101, {from: player1, gas: 500000});
-        }, Error, 'a', 'a');
+        }, Error);
         assert.throws(function() {
           Chess.move(gameId, 118, 85, {from: player1, gas: 500000});
-        }, Error, 'b', 'b');
+        }, Error);
         assert.throws(function() {
           Chess.move(gameId, 97, 65, {from: player1, gas: 500000});
-        }, Error, 'c', 'c');
+        }, Error);
       });
 
       it('should accept a \'normal\' game and refuse invalid moves between', function() {
