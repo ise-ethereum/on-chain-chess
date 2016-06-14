@@ -38,8 +38,10 @@
     }
 
     mapping (bytes32 => Game) public games;
-    mapping (address => mapping (int => bytes32)) public gamesOfPlayers;
-    mapping (address => int) public numberGamesOfPlayers;
+
+    // stack of games of players
+    mapping (address => mapping (bytes32 => bytes32)) public gamesOfPlayers;
+    mapping (address => bytes32) public gamesOfPlayersHeads;
 
     // stack of open game ids
     mapping (bytes32 => bytes32) public openGameIds;
@@ -135,8 +137,8 @@
         }
 
         // Add game to gamesOfPlayers
-        gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
-        numberGamesOfPlayers[msg.sender]++;
+        gamesOfPlayers[msg.sender][gameId] = gamesOfPlayersHeads[msg.sender];
+        gamesOfPlayersHeads[msg.sender] = gameId;
 
         // Add to openGameIds
         openGameIds[gameId] = head;
@@ -170,8 +172,8 @@
         }
 
         // Add game to gamesOfPlayers
-        gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
-        numberGamesOfPlayers[msg.sender]++;
+        gamesOfPlayers[msg.sender][gameId] = gamesOfPlayersHeads[msg.sender];
+        gamesOfPlayersHeads[msg.sender] = gameId;
 
         // Remove from openGameIds
         if (head == gameId) {
@@ -681,15 +683,50 @@
     }
 
     // closes a game that is not currently running
-    function closePlayerGame(bytes32 gameId) notEnded(gameId) public {
+    function closePlayerGame(bytes32 gameId) public {
         var game = games[gameId];
 
         // game already started and not finished yet
-        if (game.player2 != 0 && !game.ended)
+        if (!(game.player2 == 0 || game.ended))
             throw;
         if (msg.sender != game.player1 && msg.sender != game.player2)
             throw;
-        games[gameId].ended = true;
+        if (!game.ended)
+            games[gameId].ended = true;
+
+        if (game.player2 == 0) {
+            // Remove from openGameIds
+            if (head == gameId) {
+                head = openGameIds[head];
+                openGameIds[gameId] = 0;
+            } else {
+                for (var g = head; g != 'end' && openGameIds[g] != 'end'; g = openGameIds[g]) {
+                    if (openGameIds[g] == gameId) {
+                        openGameIds[g] = openGameIds[gameId];
+                        openGameIds[gameId] = 0;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Remove from gamesOfPlayers
+        var playerHead = gamesOfPlayersHeads[msg.sender];
+        if (playerHead == gameId) {
+            gamesOfPlayersHeads[msg.sender] = gamesOfPlayers[msg.sender][playerHead];
+
+            gamesOfPlayers[msg.sender][head] = 0;
+        } else {
+            for (var ga = playerHead; ga != 0 && gamesOfPlayers[msg.sender][ga] != 'end';
+                    ga = gamesOfPlayers[msg.sender][ga]) {
+                if (gamesOfPlayers[msg.sender][ga] == gameId) {
+                    gamesOfPlayers[msg.sender][ga] = gamesOfPlayers[msg.sender][gameId];
+                    gamesOfPlayers[msg.sender][gameId] = 0;
+                    break;
+                }
+            }
+        }
+
         GameEnded(gameId, 0);
     }
 
@@ -730,11 +767,6 @@
 
         return -1;
     }
-
-    function getGameId(address player, int index) constant returns (bytes32) {
-        return gamesOfPlayers[player][index];
-    }
-
 
     /*------------------------HELPER FUNCTIONS------------------------*/
 

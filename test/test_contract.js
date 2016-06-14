@@ -130,8 +130,8 @@ describe('Chess contract', function() {
     });
   });
 
-  describe('closePlayerGame()', function () {
-    let gameId;
+  describe.only('closePlayerGame()', function () {
+    let gameId, gameId2;
     it('should initialize a game with 1 player only', function(done) {
       Chess.initGame('Alice', true, {from: player1, gas: 2000000});
 
@@ -156,10 +156,146 @@ describe('Chess contract', function() {
       assert.isTrue(Chess.games(gameId)[7]);
     });
 
-    it('should throw and exception when trying to close a closed game', function() {
-      assert.throws(function(){
-        Chess.closePlayerGame(gameId, { from: player1, gas: 100000 });
+    it('should have deleted game from openGames', () => {
+      // Fetch open games
+      const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
+      for (let currentGameId = Chess.head();
+           currentGameId !== end;
+           currentGameId = Chess.openGameIds(currentGameId)) {
+        assert.notEqual(gameId, currentGameId);
+      }
+    });
+
+    it('should have deleted game from gamesOfPlayers of P1', () => {
+      const end = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      for (let currentGameId = Chess.gamesOfPlayersHeads(player1);
+           currentGameId !== end;
+           currentGameId = Chess.gamesOfPlayers(player1, currentGameId)) {
+        assert.notEqual(gameId, currentGameId);
+      }
+    });
+
+    // next test
+    it('should initialize 4 open games', () => {
+      assert.doesNotThrow(() => {
+        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      });
+    });
+
+    it('should initialize 1 open game (gameId2)', (done) => {
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      let filter = Chess.GameInitialized({});
+      filter.watch(function (error, result) {
+        gameId2 = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching();
+        done();
+      });
+    });
+
+    // TODO smarter way to start 4 games with 2 players ?
+    it('should initialize game 1/4 with 2 players', (done) => {
+      // create game 1
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      let filter = Chess.GameInitialized({});
+      filter.watch(function (error, result) {
+        let myGame = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching();
+        Chess.joinGame(myGame, 'Bob', {from: player2, gas: 500000});
+        done();
+      });
+    });
+    it('should initialize game 2/4 with 2 players', (done) => {
+      // create game 2
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      let filter = Chess.GameInitialized({});
+      filter.watch(function (error, result) {
+        let myGame = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching();
+        Chess.joinGame(myGame, 'Bob', {from: player2, gas: 500000});
+        done();
+      });
+    });
+    it('should initialize game 3/4 with 2 players', (done) => {
+      // create game 3 (will be closed later)
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      let filter = Chess.GameInitialized({});
+      filter.watch(function (error, result) {
+        gameId = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching();
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
+        done();
+      });
+    });
+    it('should initialize game 4/4 with 2 players', (done) => {
+      // create game 4
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      let filter = Chess.GameInitialized({});
+      filter.watch(function (error, result) {
+        let myGame = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching();
+        Chess.joinGame(myGame, 'Bob', {from: player2, gas: 500000});
+        done();
+      });
+    });
+
+    it('should not be able to close a not finished game', () => {
+      assert.throws(() => {
+        Chess.closePlayerGame(gameId, {from: player1, gas: 100000});
       }, Error);
+    });
+
+    it('should surrender game 3', () => {
+      Chess.surrender(gameId, {from: player2, gas: 500000});
+    });
+
+    it('should be able to close a surrendered game', () => {
+      assert.doesNotThrow(() => {
+        Chess.closePlayerGame(gameId, {from: player1, gas: 100000});
+      }, Error);
+    });
+    it('should be able to close a open game', () => {
+      assert.doesNotThrow(() => {
+        Chess.closePlayerGame(gameId2, {from: player1, gas: 100000});
+      }, Error);
+    });
+
+    it('should have deleted games from openGames', () => {
+      // Fetch open games
+      const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
+      for (let currentGameId = Chess.head();
+           currentGameId !== end;
+           currentGameId = Chess.openGameIds(currentGameId)) {;
+        assert.notEqual(gameId, currentGameId);
+        assert.notEqual(gameId2, currentGameId);
+      }
+    });
+
+    it('should have deleted games from gamesOfPlayers of P1', () => {
+      const end = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      for (let currentGameId = Chess.gamesOfPlayersHeads(player1);
+           currentGameId !== end;
+           currentGameId = Chess.gamesOfPlayers(player1, currentGameId)) {
+        assert.notEqual(gameId, currentGameId);
+        assert.notEqual(gameId2, currentGameId);
+      }
+    });
+
+    it('should not delete games from gamesOfPlayers of P2', () => {
+      const end = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      for (let currentGameId = Chess.gamesOfPlayersHeads(player2);
+           currentGameId !== end;
+           currentGameId = Chess.gamesOfPlayers(player1, currentGameId)) {
+        assert.notEqual(gameId, currentGameId);
+        assert.notEqual(gameId2, currentGameId);
+      }
     });
   });
 
