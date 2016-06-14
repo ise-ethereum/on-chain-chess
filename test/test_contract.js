@@ -399,7 +399,6 @@ describe('Chess contract', function() {
           state[1] = 0;
           state[2] = 0;
           state[3] = 0;
-          state[4] = 0;
           state[5] = 0;
           state[6] = 0;
           // clean white side
@@ -428,7 +427,7 @@ describe('Chess contract', function() {
           assert.throws(function() {
             Chess.move(gameId, 4, 2, {from: player2, gas: 500000});
           }, Error);
-          
+
           // white
           Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
           assert.throws(function() {
@@ -445,7 +444,6 @@ describe('Chess contract', function() {
           //state[1] = 0;
           state[2] = 0;
           state[3] = 0;
-          state[4] = 0;
           //state[5] = 0;
           state[6] = 0;
           // clean white side
@@ -466,6 +464,52 @@ describe('Chess contract', function() {
 
           // white
           Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
+          assert.throws(function() {
+            Chess.move(gameId, 116, 118, {from: player1, gas: 500000});
+          }, Error);
+          assert.throws(function() {
+            Chess.move(gameId, 116, 114, {from: player1, gas: 500000});
+          }, Error);
+        });
+
+        it('should reject castling when king moved', function() {
+          let state = [...defaultBoard];
+          // clear black side
+          state[1] = 0;
+          state[2] = 0;
+          state[3] = 0;
+          state[5] = 0;
+          state[6] = 0;
+          // clean white side
+          state[113] = 0;
+          state[114] = 0;
+          state[115] = 0;
+          state[117] = 0;
+          state[118] = 0;
+
+          // black
+          Chess.setGameState(gameId, state, player2, {from: player1, gas: 2000000});
+          assert.doesNotThrow(() => {
+            Chess.move(gameId, 4, 3, {from: player2, gas: 500000});
+
+            Chess.move(gameId, 96, 64, {from: player1, gas: 500000});
+            Chess.move(gameId, 3, 4, {from: player2, gas: 500000});
+          });
+          assert.throws(function() {
+            Chess.move(gameId, 4, 6, {from: player2, gas: 500000});
+          }, Error);
+          assert.throws(function() {
+            Chess.move(gameId, 4, 2, {from: player2, gas: 500000});
+          }, Error);
+
+          // white
+          Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
+          assert.doesNotThrow(() => {
+            Chess.move(gameId, 116, 115, {from: player1, gas: 500000});
+            Chess.move(gameId, 16, 48, {from: player2, gas: 500000});
+
+            Chess.move(gameId, 115, 116, {from: player1, gas: 500000});
+          });
           assert.throws(function() {
             Chess.move(gameId, 116, 118, {from: player1, gas: 500000});
           }, Error);
