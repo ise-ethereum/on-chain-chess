@@ -12,6 +12,15 @@ const defaultBoard = [-4,-2,-3,-5,-6,-3,-2,-4,0,0,0,4,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                       1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
                       4,2,3,5,6,3,2,4,0,0,0,116,0,0,0,0];
+const emptyBoard = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+
 
 describe('Chess contract', function() {
   this.timeout(10000);
@@ -146,8 +155,6 @@ describe('Chess contract', function() {
           // white rook a8a7
           Chess.move(testGames[0], 112, 96, {from: player1, gas: 500000});
         }, Error);
-
-        // TODO: Add more invalid moves
       });
 
       it('should accept a valid move', function (done) {
@@ -356,8 +363,8 @@ describe('Chess contract', function() {
         }, Error, '', 'make move while checkmate');
       });
 
-      describe('#valid', function() {
-        it('should not reject castling', function () {
+      describe('#valid', () => {
+        it('should allow castling', () => {
           let state = [...defaultBoard];
           state[5] = 0;
           state[6] = 0;
@@ -365,7 +372,7 @@ describe('Chess contract', function() {
           state[69] = -4; // B_R
 
           Chess.setGameState(gameId, state, player2, {from: player1, gas: 2000000});
-          assert.doesNotThrow(function() {
+          assert.doesNotThrow(() => {
             Chess.move(gameId, 4, 6, {from: player2, gas: 500000});
           });
         });
@@ -390,55 +397,58 @@ describe('Chess contract', function() {
             done();
           });
         });
+
+        it('should allow pawn promotion');
       });
 
-      describe('#invalid', function() {
-        it('should reject castling over check', function() {
+      describe('#invalid', () => {
+        it('should reject move when would be check', () => {
           let state = [...defaultBoard];
-          // clear black side
-          state[1] = 0;
-          state[2] = 0;
-          state[3] = 0;
-          state[5] = 0;
-          state[6] = 0;
-          // clean white side
-          state[113] = 0;
-          state[114] = 0;
-          state[115] = 0;
-          state[117] = 0;
-          state[118] = 0;
+          state[65] = -3; // B_B
+          state[71] = -5; // B_Q
 
-          // clear pawns
-          state[21] = 0;
-          state[19] = 0;
-          state[99] = 0;
-          state[101] = 0;
-
-          state[53] = 4; // W_R
-          state[51] = 4; // W_R
-          state[69] = -4; // B_R
-          state[67] = -4; // B_R
-
-          // black
-          Chess.setGameState(gameId, state, player2, {from: player1, gas: 2000000});
-          assert.throws(function() {
-            Chess.move(gameId, 4, 6, {from: player2, gas: 500000});
-          }, Error);
-          assert.throws(function() {
-            Chess.move(gameId, 4, 2, {from: player2, gas: 500000});
-          }, Error);
-
-          // white
           Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
           assert.throws(function() {
-            Chess.move(gameId, 116, 118, {from: player1, gas: 500000});
+            Chess.move(gameId, 99, 83, {from: player1, gas: 500000});
           }, Error);
           assert.throws(function() {
-            Chess.move(gameId, 116, 114, {from: player1, gas: 500000});
+            Chess.move(gameId, 99, 67, {from: player1, gas: 500000});
+          }, Error);
+          assert.throws(function() {
+            Chess.move(gameId, 101, 85, {from: player1, gas: 500000});
+          }, Error);
+          assert.throws(function() {
+            Chess.move(gameId, 101, 69, {from: player1, gas: 500000});
           }, Error);
         });
 
-        it('should reject castling with figure between', function() {
+        it('should reject invalid moves after check through pawn promotion');
+
+        it('should reject king to move next to other king', () => {
+          let state = [...emptyBoard];
+          state[52] = -6; // B_K
+          state[3 + 8] = 52; // B_K pos
+          state[83] = 6; // W_K
+          state[115 + 8] = 83; // W_K pos
+          // not sure if king positions have to be set ~Kyroy
+          Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
+          assert.throws(function() {
+            Chess.move(gameId, 83, 67, {from: player1, gas: 500000});
+          }, Error);
+          assert.throws(function() {
+            Chess.move(gameId, 83, 68, {from: player1, gas: 500000});
+          }, Error);
+
+          Chess.setGameState(gameId, state, player2, {from: player2, gas: 2000000});
+          assert.throws(function() {
+            Chess.move(gameId, 52, 67, {from: player2, gas: 500000});
+          }, Error);
+          assert.throws(function() {
+            Chess.move(gameId, 52, 68, {from: player2, gas: 500000});
+          }, Error);
+        });
+
+        it('should reject castling with figure between', () => {
           let state = [...defaultBoard];
           // clear black side
           //state[1] = 0;
@@ -472,7 +482,7 @@ describe('Chess contract', function() {
           }, Error);
         });
 
-        it('should reject castling when king moved', function() {
+        it('should reject castling when king moved', () => {
           let state = [...defaultBoard];
           // clear black side
           state[1] = 0;
@@ -518,25 +528,52 @@ describe('Chess contract', function() {
           }, Error);
         });
 
-        it('should reject move when would be chess', function() {
+        it('should reject castling over check', () => {
           let state = [...defaultBoard];
-          state[65] = -3; // B_B
-          state[71] = -5; // B_Q
+          // clear black side
+          state[1] = 0;
+          state[2] = 0;
+          state[3] = 0;
+          state[5] = 0;
+          state[6] = 0;
+          // clean white side
+          state[113] = 0;
+          state[114] = 0;
+          state[115] = 0;
+          state[117] = 0;
+          state[118] = 0;
 
+          // clear pawns
+          state[21] = 0;
+          state[19] = 0;
+          state[99] = 0;
+          state[101] = 0;
+
+          state[53] = 4; // W_R
+          state[51] = 4; // W_R
+          state[69] = -4; // B_R
+          state[67] = -4; // B_R
+
+          // black
+          Chess.setGameState(gameId, state, player2, {from: player1, gas: 2000000});
+          assert.throws(function() {
+            Chess.move(gameId, 4, 6, {from: player2, gas: 500000});
+          }, Error);
+          assert.throws(function() {
+            Chess.move(gameId, 4, 2, {from: player2, gas: 500000});
+          }, Error);
+
+          // white
           Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
           assert.throws(function() {
-            Chess.move(gameId, 99, 83, {from: player1, gas: 500000});
+            Chess.move(gameId, 116, 118, {from: player1, gas: 500000});
           }, Error);
           assert.throws(function() {
-            Chess.move(gameId, 99, 67, {from: player1, gas: 500000});
-          }, Error);
-          assert.throws(function() {
-            Chess.move(gameId, 101, 85, {from: player1, gas: 500000});
-          }, Error);
-          assert.throws(function() {
-            Chess.move(gameId, 101, 69, {from: player1, gas: 500000});
+            Chess.move(gameId, 116, 114, {from: player1, gas: 500000});
           }, Error);
         });
+
+        it('should reject castling when check');
 
         it('should reject later en passant', () => {
           let state = [...defaultBoard];
@@ -549,12 +586,14 @@ describe('Chess contract', function() {
           });
           assert.doesNotThrow(() => {
             Chess.move(gameId, 96, 64, {from: player1, gas: 500000});
-            Chess.move(gameId, 16, 48, {from: player2, gas: 500000});
+            Chess.move(gameId, 21, 53, {from: player2, gas: 500000});
           });
           assert.throws(() => {
             Chess.move(gameId, 52, 35, {from: player1, gas: 500000});
           }, Error);
         });
+
+        it('should reject pawn promotion to king or pawn');
       });
     });
   });
