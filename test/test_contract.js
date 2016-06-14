@@ -130,7 +130,7 @@ describe('Chess contract', function() {
     });
   });
 
-  describe.only('closePlayerGame()', function () {
+  describe('closePlayerGame()', function () {
     let gameId, gameId2;
     it('should initialize a game with 1 player only', function(done) {
       Chess.initGame('Alice', true, {from: player1, gas: 2000000});
