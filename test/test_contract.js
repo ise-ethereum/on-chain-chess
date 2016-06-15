@@ -272,7 +272,7 @@ describe('Chess contract', function() {
       const end = '0x656e640000000000000000000000000000000000000000000000000000000000';
       for (let currentGameId = Chess.head();
            currentGameId !== end;
-           currentGameId = Chess.openGameIds(currentGameId)) {;
+           currentGameId = Chess.openGameIds(currentGameId)) {
         assert.notEqual(gameId, currentGameId);
         assert.notEqual(gameId2, currentGameId);
       }
