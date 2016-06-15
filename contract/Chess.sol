@@ -46,7 +46,7 @@
     function getGamesOfPlayer(address player) constant returns (bytes32[]) {
         var playerHead = gamesOfPlayersHeads[player];
         var counter = 0;
-        for (var ga = playerHead; ga != 'end'; ga = gamesOfPlayers[player][ga]) {
+        for (var ga = playerHead; ga != 0; ga = gamesOfPlayers[player][ga]) {
             counter++;
         }
         bytes32[] memory data = new bytes32[](counter);
