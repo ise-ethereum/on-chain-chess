@@ -114,6 +114,7 @@
         games[gameId].player1Alias = player1Alias;
 
         // Initialize game value
+        games[gameId].value = 0;
         games[gameId].value = msg.value;
         // Initialize state
 
@@ -153,6 +154,14 @@
         // Check that this game does not have a second player yet
         if (games[gameId].player2 != 0) {
             throw;
+        }
+
+        // throw if the second player did not at least match the bet.
+        if (games[gameID].value > msg.value) {
+            throw;
+        }
+        else {
+            games[gameID].value += msg.value;
         }
 
         games[gameId].player2 = msg.sender;
