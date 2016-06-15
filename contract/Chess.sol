@@ -27,6 +27,7 @@
         address nextPlayer;
         address playerWhite; // Player that is white in this game
         address winner;
+        uint value; // What this game is worth ether paid into the game
 
         int8[128] state;
     }
@@ -112,6 +113,8 @@
         games[gameId].player1 = msg.sender;
         games[gameId].player1Alias = player1Alias;
 
+        // Initialize game value
+        games[gameId].value = msg.value;
         // Initialize state
 
         for (uint i = 0; i < 128; i++) {
@@ -198,6 +201,7 @@
     function claimWin(bytes32 gameId) public {
 
     }
+
     /* validates a move and executes it */
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) public {
         // Check that it is this player's turn
