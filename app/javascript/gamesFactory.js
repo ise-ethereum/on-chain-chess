@@ -248,14 +248,16 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
   };
 
   // Fetch games of player
+  const gamesOfPlayersEnd = '0x0000000000000000000000000000000000000000000000000000000000000000';
   for (let accountId of accounts.availableAccounts) {
-    let numberGames = Chess.numberGamesOfPlayers(accountId);
-    if (numberGames === 0) {
-      return;
-    }
-    for (let i = 0; i < numberGames; i++) {
-      let gameId = Chess.gamesOfPlayers(accountId, i);
-      games.add(games.convertArrayToGame(gameId, Chess.games(gameId)));
+    for (let currentGameId = Chess.gamesOfPlayersHeads(accountId);
+         currentGameId !== gamesOfPlayersEnd;
+         currentGameId = Chess.gamesOfPlayers(accountId, currentGameId)) {
+      // Check if the game already exists in the games list
+      let game = games.getGame(currentGameId);
+      if (typeof game === 'undefined') {
+        games.add(games.convertArrayToGame(currentGameId, Chess.games(currentGameId)));
+      }
     }
   }
 
