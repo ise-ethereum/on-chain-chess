@@ -258,6 +258,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       games.add(games.convertArrayToGame(gameId, Chess.games(gameId)));
     }
   }
+  console.log(Chess.getGamesOfPlayer(accounts.availableAccounts[0]));
 
   // Fetch open games
   const end = '0x656e640000000000000000000000000000000000000000000000000000000000';

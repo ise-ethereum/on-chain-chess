@@ -43,6 +43,21 @@
     mapping (address => mapping (bytes32 => bytes32)) public gamesOfPlayers;
     mapping (address => bytes32) public gamesOfPlayersHeads;
 
+    function getGamesOfPlayer(address player) constant returns (bytes32[]) {
+        var playerHead = gamesOfPlayersHeads[player];
+        var counter = 0;
+        for (var ga = playerHead; ga != 'end'; ga = gamesOfPlayers[player][ga]) {
+            counter++;
+        }
+        bytes32[] memory data = new bytes32[](counter);
+        var currentGame = playerHead;
+        for (var i = 0; i < counter; i++) {
+            data[i] = currentGame;
+            currentGame = gamesOfPlayers[player][currentGame];
+        }
+        return data;
+    }
+
     // stack of open game ids
     mapping (bytes32 => bytes32) public openGameIds;
     bytes32 public head;
