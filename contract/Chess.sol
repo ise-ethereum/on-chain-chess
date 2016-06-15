@@ -191,6 +191,13 @@
         GameStateChanged(gameId, games[gameId].state);
     }
 
+    /**
+    * Allows the winner of a game to claim their ether
+    * bytes32 gameId: ID of the game they have won
+    */
+    function claimWin(bytes32 gameId) public {
+
+    }
     /* validates a move and executes it */
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) public {
         // Check that it is this player's turn
