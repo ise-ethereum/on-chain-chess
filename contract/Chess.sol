@@ -157,11 +157,11 @@
         }
 
         // throw if the second player did not at least match the bet.
-        if (games[gameID].value > msg.value) {
+        if (games[gameId].value > msg.value) {
             throw;
         }
         else {
-            games[gameID].value += msg.value;
+            games[gameId].value += msg.value;
         }
 
         games[gameId].player2 = msg.sender;
