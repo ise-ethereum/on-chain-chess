@@ -208,7 +208,15 @@
     * bytes32 gameId: ID of the game they have won
     */
     function claimWin(bytes32 gameId) public {
-
+          //if (ended) is the same as: if (sender.id = gameId.winnerid)
+          if (games[gameId].winner == msg.sender){
+              //send money
+              uint payout = games[gameId].value;
+              games[gameId].value = 0;
+              if (!msg.sender.send(payout)){
+                  games[gameId].value = payout;
+                }
+          }
     }
 
     /* validates a move and executes it */
