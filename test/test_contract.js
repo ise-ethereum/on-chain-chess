@@ -458,8 +458,6 @@ describe('Chess contract', function() {
           }, Error);
         });
 
-        it('should reject invalid moves after check through pawn promotion');
-
         it('should reject king to move next to other king', () => {
           let state = [...emptyBoard];
           state[52] = -6; // B_K
@@ -483,6 +481,10 @@ describe('Chess contract', function() {
             Chess.move(gameId, 52, 68, {from: player2, gas: 500000});
           }, Error);
         });
+
+        it('should reject invalid moves after check through pawn promotion');
+
+        it('should reject invalid moves when would be check after pawn promotion');
 
         it('should reject castling with figure between', () => {
           let state = [...defaultBoard];
