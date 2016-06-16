@@ -19,6 +19,11 @@
         _
     }
 
+    modifier notEnded(bytes32 gameId) {
+        if (games[gameId].ended) throw;
+        _
+    }
+
     struct Game {
         address player1;
         address player2;
@@ -27,13 +32,16 @@
         address nextPlayer;
         address playerWhite; // Player that is white in this game
         address winner;
+        bool ended;
 
         int8[128] state;
     }
 
     mapping (bytes32 => Game) public games;
-    mapping (address => mapping (int => bytes32)) public gamesOfPlayers;
-    mapping (address => int) public numberGamesOfPlayers;
+
+    // stack of games of players
+    mapping (address => mapping (bytes32 => bytes32)) public gamesOfPlayers;
+    mapping (address => bytes32) public gamesOfPlayersHeads;
 
     // stack of open game ids
     mapping (bytes32 => bytes32) public openGameIds;
@@ -107,6 +115,7 @@
     function initGame(string player1Alias, bool playAsWhite) public {
         // Generate game id based on player's addresses and current block number
         bytes32 gameId = sha3(msg.sender, block.number);
+        games[gameId].ended = false;
 
         // Initialize participants
         games[gameId].player1 = msg.sender;
@@ -128,8 +137,8 @@
         }
 
         // Add game to gamesOfPlayers
-        gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
-        numberGamesOfPlayers[msg.sender]++;
+        gamesOfPlayers[msg.sender][gameId] = gamesOfPlayersHeads[msg.sender];
+        gamesOfPlayersHeads[msg.sender] = gameId;
 
         // Add to openGameIds
         openGameIds[gameId] = head;
@@ -163,8 +172,8 @@
         }
 
         // Add game to gamesOfPlayers
-        gamesOfPlayers[msg.sender][numberGamesOfPlayers[msg.sender]] = gameId;
-        numberGamesOfPlayers[msg.sender]++;
+        gamesOfPlayers[msg.sender][gameId] = gamesOfPlayersHeads[msg.sender];
+        gamesOfPlayersHeads[msg.sender] = gameId;
 
         // Remove from openGameIds
         if (head == gameId) {
@@ -192,7 +201,7 @@
     }
 
     /* validates a move and executes it */
-    function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) public {
+    function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {
         // Check that it is this player's turn
         if (games[gameId].nextPlayer != msg.sender) {
             throw;
@@ -269,7 +278,7 @@
      * Validates if a move is technically (not legally) possible,
      * i.e. if piece is capable to move this way
      */
-    function validateMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool) {
+    function validateMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) notEnded(gameId) returns (bool) {
         int8 direction = getDirection(fromIndex, toIndex);
         bool isDiagonal = !(abs(direction) == 16 || abs(direction) == 1);
 
@@ -673,7 +682,55 @@
 
     }
 
-    function surrender(bytes32 gameId) public {
+    // closes a game that is not currently running
+    function closePlayerGame(bytes32 gameId) public {
+        var game = games[gameId];
+
+        // game already started and not finished yet
+        if (!(game.player2 == 0 || game.ended))
+            throw;
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        if (!game.ended)
+            games[gameId].ended = true;
+
+        if (game.player2 == 0) {
+            // Remove from openGameIds
+            if (head == gameId) {
+                head = openGameIds[head];
+                openGameIds[gameId] = 0;
+            } else {
+                for (var g = head; g != 'end' && openGameIds[g] != 'end'; g = openGameIds[g]) {
+                    if (openGameIds[g] == gameId) {
+                        openGameIds[g] = openGameIds[gameId];
+                        openGameIds[gameId] = 0;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Remove from gamesOfPlayers
+        var playerHead = gamesOfPlayersHeads[msg.sender];
+        if (playerHead == gameId) {
+            gamesOfPlayersHeads[msg.sender] = gamesOfPlayers[msg.sender][playerHead];
+
+            gamesOfPlayers[msg.sender][head] = 0;
+        } else {
+            for (var ga = playerHead; ga != 0 && gamesOfPlayers[msg.sender][ga] != 'end';
+                    ga = gamesOfPlayers[msg.sender][ga]) {
+                if (gamesOfPlayers[msg.sender][ga] == gameId) {
+                    gamesOfPlayers[msg.sender][ga] = gamesOfPlayers[msg.sender][gameId];
+                    gamesOfPlayers[msg.sender][gameId] = 0;
+                    break;
+                }
+            }
+        }
+
+        GameEnded(gameId, 0);
+    }
+
+    function surrender(bytes32 gameId) notEnded(gameId) public {
         if (games[gameId].winner != 0) {
             // Game already ended
             throw;
@@ -688,10 +745,10 @@
             // Sender is not a participant of this game
             throw;
         }
+        games[gameId].ended = true;
 
         GameEnded(gameId, games[gameId].winner);
     }
-
 
     // gets the first figure in direction from start, not including start
     function getFirstFigure(bytes32 gameId, int8 direction, int8 start) returns (int8){
@@ -710,11 +767,6 @@
 
         return -1;
     }
-
-    function getGameId(address player, int index) constant returns (bytes32) {
-        return gamesOfPlayers[player][index];
-    }
-
 
     /*------------------------HELPER FUNCTIONS------------------------*/
 
