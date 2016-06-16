@@ -2,4 +2,6 @@
 --bail
 --webpack-config webpack.config-test.js
 test/*.js
+--full-trace
+--inline-diffs
 --require source-map-support/register
