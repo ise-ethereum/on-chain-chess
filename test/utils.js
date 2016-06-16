@@ -3,7 +3,7 @@ export const gameStateDisplay = (state) => {
   for (var i = 0; i < 8; i++) {
     var row = [];
     for (var j = 0; j < 16; j++) {
-      row.push(('  ' + state[i*16+j].toString(10)).slice(-2));
+      row.push(('   ' + state[i*16+j].toString(10)).slice(-3));
     }
     rows.push(row.join(' '));
   }

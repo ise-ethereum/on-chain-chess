@@ -9,6 +9,7 @@
 
 
  contract Chess {
+    // default state array, all numbers offset by +8
     bytes constant defaultState = '\x04\x06\x05\x03\x02\x05\x06\x04\x08\x08\x08\x0c\x08\x08\x08\x08\x07\x07\x07\x07\x07\x07\x07\x07\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x09\x09\x09\x09\x09\x09\x09\x09\x08\x08\x08\x08\x08\x08\x08\x08\x0c\x0a\x0b\x0d\x0e\x0b\x0a\x0c\x08\x08\x08\x7c\x08\x08\x08\x08';
 
     bool debug; // If contract is deployed in debug mode, some debug features are enabled
@@ -73,8 +74,8 @@
     enum Piece { BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN, EMPTY, WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING }
     enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
     bytes constant c_Directions = "\x30\x31\x41\x51\x50\x4f\x3f\x2f"; // [-16, -15, 1, 17, 16, 15, -1, -17] shifted by +64
-    enum Flag { MOVE_COUNT, WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
-    bytes constant c_Flags = "\x08\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c"; // [8, 123, 11, 56, 78, 79, 62, 63, 61, 77, 60, 76]
+    enum Flag { MOVE_COUNT_H, MOVE_COUNT_L, WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
+    bytes constant c_Flags = "\x08\x09\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c"; // [8, 123, 11, 56, 78, 79, 62, 63, 61, 77, 60, 76]
     function Flags(Flag i) constant internal returns (uint) {
        return uint(c_Flags[uint(i)]);
     }
@@ -263,8 +264,14 @@
         }
 
         // Update move count
-        int8 moveCount = getFlag(gameId, Flag.MOVE_COUNT);
-        setFlag(gameId, Flag.MOVE_COUNT, moveCount + 1);
+        // High and Low are int8, so from -127 to 127
+        // By using two flags we extend the positive range to 14 bit, 0 to 16384
+        int16 moveCount = int16(getFlag(gameId, Flag.MOVE_COUNT_H)) * (2**7) | int16(getFlag(gameId, Flag.MOVE_COUNT_L));
+        moveCount += 1;
+        if (moveCount > 127) {
+            setFlag(gameId, Flag.MOVE_COUNT_H, moveCount / (2**7));
+        }
+        setFlag(gameId, Flag.MOVE_COUNT_L, moveCount % 128);
 
         // Send events
         Move(gameId, msg.sender, fromIndex, toIndex);
