@@ -81,6 +81,11 @@ describe('Chess contract', function() {
     it('should have set game state to not ended', function() {
       assert.isFalse(Chess.games(testGames[0])[7]);
     });
+
+    it('should have set gamesOfPlayers', () => {
+      assert.isTrue(Chess.getGamesOfPlayer(player1).indexOf(testGames[0]) !== -1);
+      assert.isTrue(Chess.getGamesOfPlayer(player1).indexOf(testGames[1]) !== -1);
+    });
   });
 
   describe('joinGame()', function () {
@@ -127,6 +132,11 @@ describe('Chess contract', function() {
     it('should have not change game.ended', function() {
       assert.isFalse(Chess.games(testGames[0])[7]);
       assert.isFalse(Chess.games(testGames[1])[7]);
+    });
+
+    it('should have set gamesOfPlayers', () => {
+      assert.isTrue(Chess.getGamesOfPlayer(player2).indexOf(testGames[0]) !== -1);
+      assert.isTrue(Chess.getGamesOfPlayer(player2).indexOf(testGames[1]) !== -1);
     });
   });
 
