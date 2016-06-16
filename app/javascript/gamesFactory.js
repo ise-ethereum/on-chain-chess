@@ -46,7 +46,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       nextPlayer: array[4],
       playerWhite: array[5],
       winner: array[6],
-      state: array[7]
+      ended: array[7]
     };
   };
 
