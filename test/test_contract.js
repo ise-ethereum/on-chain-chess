@@ -344,14 +344,36 @@ describe('Chess contract', function() {
         Chess.move(testGames[0], 100, 84, {from: player1, gas: 500000});
       }, Error);
 
-      // Watch for event from contract to check if it worked
+      // Helper to wait for multiple async callbacks
+      let numberOfDone = 0;
+      const allDone = function() {
+        numberOfDone++;
+        if (numberOfDone >= 2) {
+          done();
+        }
+      };
+
+      // Watch for event from contract to check if the Move worked
       var filter = Chess.Move({gameId: testGames[0]});
       filter.watch(function(error, result){
         assert.equal(player1, result.args.player);
         assert.equal(100, result.args.fromIndex);
         assert.equal(84, result.args.toIndex);
         filter.stopWatching(); // Need to remove filter again
-        done();
+        allDone();
+      });
+
+      // Watch for GameStateChanged event to check that all pieces and flags
+      // were updated
+      let expectedState = [...defaultBoard];
+      expectedState[100] = 0; // moved piece away
+      expectedState[84] = defaultBoard[100];
+      expectedState[8] = 1; // updated move count
+      var filter2 = Chess.GameStateChanged({gameId: testGames[0]});
+      filter2.watch(function(error, result){
+        assert.deepEqual(gameStateDisplay(expectedState), gameStateDisplay(result.args.state));
+        filter2.stopWatching(); // Need to remove filter again
+        allDone();
       });
     });
 
