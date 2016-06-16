@@ -69,7 +69,6 @@
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
     event GameEnded(bytes32 indexed gameId, address indexed winner);
-
     event DebugInts(string message, int value1, int value2, int value3);
 
     /**
@@ -693,6 +692,10 @@
         return gamesOfPlayers[player][index];
     }
 
+
+    function getCurrentGameState(bytes32 gameId) returns (int8[128]) {
+       return games[gameId].state;
+    }
 
     /*------------------------HELPER FUNCTIONS------------------------*/
 
