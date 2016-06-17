@@ -32,7 +32,7 @@ describe('Chess contract', function() {
   const player3 = web3.eth.accounts[2];
 
   // Remove this for CI/deploy, otherwise the test never finishes
-  /*
+/*
   var debugFilter = Chess.DebugInts({});
   debugFilter.watch(function(error, result){
     console.log(result.args.message,
@@ -40,7 +40,7 @@ describe('Chess contract', function() {
                 result.args.value2.toNumber(),
                 result.args.value3.toNumber());
   });
-*/
+  */
 
 
   // We create a few test games here that will later be accessed in testGames[]
@@ -227,7 +227,7 @@ describe('Chess contract', function() {
       });
     });
 
-    describe.only('#validation', () => {
+    describe('#validation', () => {
       let gameId;
 
       beforeEach((done) => {
@@ -365,7 +365,7 @@ describe('Chess contract', function() {
         }, Error, '', 'make move while checkmate');
       });
 
-      describe('#valid', () => {
+      describe.only('#valid', () => {
         it('should allow castling', () => {
           let state = [...defaultBoard];
           state[5] = 0;
@@ -410,7 +410,7 @@ describe('Chess contract', function() {
           assert.doesNotThrow(() => {
             Chess.move(gameId, 116, 118, {from: player1, gas: 500000});
           }, Error);
-          assert.doesNotThrow(() => {
+          assert.throws(() => {
             Chess.move(gameId, 4, 6, {from: player2, gas: 500000});
           }, Error);
         });

@@ -456,11 +456,11 @@
           // if we found a figure in the danger direction
           if (firstFigureIndex != -1) {
               int8 firstFigure = games[gameId].state[uint(firstFigureIndex)];
-              if (debug) {
-                DebugInts("check: firstFigure in direction", int(Directions(Direction(dir))), int(firstFigure), int(firstFigureIndex));
-              }
               // if its an enemy
               if (firstFigure * currentPlayerColor < 0) {
+                  if (debug) {
+                    DebugInts("check: enempy in direction", int(Directions(Direction(dir))), int(firstFigure), int(firstFigureIndex));
+                  }
                   // check if the enemy figure can move to the field of the king
                   int8 kingFigure = Pieces(Piece.WHITE_KING) * currentPlayerColor;
                   if (validateMove(gameId, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, currentPlayerColor)) {
@@ -565,11 +565,11 @@
             // Castling
             if (fromIndex == 116 && toIndex == 114) {
                 games[gameId].state[112] = 0;
-                games[gameId].state[115] = Pieces(Piece.BLACK_ROOK);
+                games[gameId].state[115] = Pieces(Piece.WHITE_ROOK);
             }
             if (fromIndex == 116 && toIndex == 118) {
                 games[gameId].state[119] = 0;
-                games[gameId].state[117] = Pieces(Piece.BLACK_ROOK);
+                games[gameId].state[117] = Pieces(Piece.WHITE_ROOK);
             }
 
         }
@@ -654,9 +654,11 @@
         // Piece that was moved was the king
         if (abs(fromFigure) == uint(Pieces(Piece.WHITE_KING))) {
             if (checkForCheck(gameId, uint(toIndex), movingPlayerColor)) {
-                //DebugInts("king is in check, cannot move to on", int(currentIndex), 0, 0);
+                //DebugInts("king is in check on", int(toIndex), 0, 0);
                 throw;
             }
+            // Else we can skip the rest of the checks
+            return;
         }
 
         int8 kingIndex = getOwnKing(gameId, movingPlayerColor);
