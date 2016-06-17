@@ -23,7 +23,7 @@ const emptyBoard = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
 
 describe('Chess contract', function() {
-  this.timeout(10000);
+  this.timeout(60000);
   this.slow(500);
 
   var testGames = [];
@@ -40,7 +40,8 @@ describe('Chess contract', function() {
                 result.args.value2.toNumber(),
                 result.args.value3.toNumber());
   });
-  */
+*/
+
 
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
@@ -226,8 +227,9 @@ describe('Chess contract', function() {
       });
     });
 
-    describe('#validation', () => {
+    describe.only('#validation', () => {
       let gameId;
+
       beforeEach((done) => {
         // runs before each test in this block
         Chess.initGame('Alice', true, {from: player1, gas: 2000000});

@@ -221,13 +221,22 @@
             // In case of king, it will check that he is not in check on any of the fields he moves over
             bool checkForCheck = abs(fromFigure) == uint(Pieces(Piece.WHITE_KING));
             checkWayFree(gameId, fromIndex, toIndex, currentPlayerColor, checkForCheck);
+            if (debug) {
+                DebugInts("way is free", int(fromIndex), int(toIndex), boolToInt(checkForCheck));
+            }
         }
 
         // Make the move
         makeMove(gameId, fromIndex, toIndex, fromFigure, toFigure);
+        if (debug) {
+            DebugInts("makeMove done", int(fromIndex), int(toIndex), int(fromFigure));
+        }
 
         // Check legality (player's own king may not be in check after move)
         checkLegality(gameId, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
+        if (debug) {
+            DebugInts("checkLegality done", int(fromIndex), int(toIndex), int(fromFigure));
+        }
 
         // Set nextPlayer
         if (msg.sender == games[gameId].player1) {
@@ -283,11 +292,11 @@
             if (int(fromIndex) + direction == int(toIndex)) {
                 return true;
             }
-            // Castling
+            // Cannot castle if already in check
             if (checkForCheck(gameId, fromIndex, movingPlayerColor)) {
-                // Cannot move if already in check
                 return false;
             }
+            // Castling
             if (fromFigure == Pieces(Piece.BLACK_KING)) {
                 if (4 == fromIndex && toFigure == 0) {
                     if (toIndex == 2 && getFlag(gameId, Flag.BLACK_LEFT_CASTLING) >= 0) {
@@ -411,6 +420,7 @@
 
         // as long as we do not reach the desired position walk in direction and check
         while (int(toIndex) != currentIndex) {
+            //DebugInts("checking way index from", int(fromIndex), int(currentIndex), boolToInt(shouldCheckForCheck));
             // we reached the end of the field
             if (currentIndex & 0x88 != 0) {
                 throw;
@@ -421,6 +431,7 @@
             }
             // Check for check in case of king
             if (shouldCheckForCheck && checkForCheck(gameId, uint(currentIndex), currentPlayerColor)) {
+                //DebugInts("king is in check on", int(currentIndex), 0, 0);
                 throw;
             }
             currentIndex = currentIndex + direction;
@@ -430,30 +441,33 @@
 
     function checkForCheck(bytes32 gameId, uint256 kingIndex, int8 currentPlayerColor) internal returns (bool) {
 
+        if (debug) {
+            DebugInts("checkForCheck", int(kingIndex), int(currentPlayerColor), 0);
+        }
         //get Position of King
        // int8 kingIndex = getOwnKing(gameId, currentPlayerColor);
 
         // look in every direction whether there is an enemy figure that checks the king
-        for(uint dir = 0; dir < 8; dir ++){
+        for (uint dir = 0; dir < 8; dir ++) {
           // get the first Figure in this direction. Threat of Knight does not change through move of fromFigure.
           // All other figures can not jump over figures. So only the first figure matters.
           int8 firstFigureIndex = getFirstFigure(gameId, Directions(Direction(dir)),int8(kingIndex));
 
-
           // if we found a figure in the danger direction
           if (firstFigureIndex != -1) {
               int8 firstFigure = games[gameId].state[uint(firstFigureIndex)];
-
+              if (debug) {
+                DebugInts("check: firstFigure in direction", int(Directions(Direction(dir))), int(firstFigure), int(firstFigureIndex));
+              }
               // if its an enemy
-              if (firstFigure * currentPlayerColor > 0) {
+              if (firstFigure * currentPlayerColor < 0) {
                   // check if the enemy figure can move to the field of the king
-                  int8 kingFigure = Pieces(Piece.BLACK_KING)* currentPlayerColor;
+                  int8 kingFigure = Pieces(Piece.WHITE_KING) * currentPlayerColor;
                   if (validateMove(gameId, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, currentPlayerColor)) {
                       // it can
                       return true; // king is checked
                   }
               }
-
           }
         }
 
@@ -470,7 +484,7 @@
                 int8 currentFigure = Pieces(Piece(currentMoveIndex));
 
                 // if it is an enemy knight, king can be checked
-                if(currentFigure * currentPlayerColor == Pieces(Piece.WHITE_KNIGHT)){
+                if (currentFigure * currentPlayerColor == Pieces(Piece.WHITE_KNIGHT)) {
                     return true; // king is checked
                 }
             }
@@ -637,15 +651,25 @@
 
     // checks whether movingPlayerColor's king gets checked by move
     function checkLegality(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) internal returns (bool){
-        // the king already gets tested when he moves
-        if (abs(fromFigure) == uint(Pieces(Piece.WHITE_KING)))
-            return;
+        // Piece that was moved was the king
+        if (abs(fromFigure) == uint(Pieces(Piece.WHITE_KING))) {
+            if (checkForCheck(gameId, uint(toIndex), movingPlayerColor)) {
+                //DebugInts("king is in check, cannot move to on", int(currentIndex), 0, 0);
+                throw;
+            }
+        }
 
-        // through move of fromFigure from fromIndex king may now be in danger from that direction
-        // get that direction
         int8 kingIndex = getOwnKing(gameId, movingPlayerColor);
-        int8 kingDangerDirection = getDirection(uint256(kingIndex), fromIndex);
 
+        // Moved other piece, but own king is still in check
+        if (checkForCheck(gameId, uint(kingIndex), movingPlayerColor)) {
+            //DebugInts("| king is still in check at @, cannot move ", int(kingIndex), int(fromIndex), int(toIndex));
+            throw;
+        }
+
+        // through move of fromFigure away from fromIndex,
+        // king may now be in danger from that direction
+        int8 kingDangerDirection = getDirection(uint256(kingIndex), fromIndex);
         // get the first Figure in this direction. Threat of Knight does not change through move of fromFigure.
         // All other figures can not jump over other figures. So only the first figure matters.
         int8 firstFigureIndex = getFirstFigure(gameId, kingDangerDirection,kingIndex);
@@ -655,15 +679,14 @@
             int8 firstFigure = games[gameId].state[uint(firstFigureIndex)];
 
             // if its an enemy
-            if (firstFigure * movingPlayerColor > 0) {
+            if (firstFigure * movingPlayerColor < 0) {
                 // check if the figure can move to the field of the king
-                int8 kingFigure = Pieces(Piece.BLACK_KING)* movingPlayerColor;
+                int8 kingFigure = Pieces(Piece.BLACK_KING) * movingPlayerColor;
                 if (validateMove(gameId, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, movingPlayerColor)) {
                     // it can
                     throw;
                 }
             }
-
         }
 
         return;
@@ -729,10 +752,18 @@
     }
 
     function getOwnKing(bytes32 gameId, int8 movingPlayerColor) returns (int8){
-        if(movingPlayerColor == Players(Player.WHITE))
-            return getFlag(gameId, Flag.BLACK_KING_POS);
-        else
+        if (movingPlayerColor == Players(Player.WHITE))
             return getFlag(gameId, Flag.WHITE_KING_POS);
+        else
+            return getFlag(gameId, Flag.BLACK_KING_POS);
+    }
+
+    function boolToInt(bool value) returns (int) {
+        if (value) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     /* This unnamed function is called whenever someone tries to send ether to it */
