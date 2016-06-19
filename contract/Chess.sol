@@ -101,6 +101,7 @@
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
     event GameEnded(bytes32 indexed gameId, address indexed winner);
+    event GameClosed(bytes32 indexed gameId, address indexed player);
 
     event DebugInts(string message, int value1, int value2, int value3);
 
@@ -742,7 +743,7 @@
             }
         }
 
-        GameEnded(gameId, 0);
+        GameClosed(gameId, msg.sender);
     }
 
     function surrender(bytes32 gameId) notEnded(gameId) public {
