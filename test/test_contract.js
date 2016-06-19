@@ -42,7 +42,6 @@ describe('Chess contract', function() {
   });
   */
 
-
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
     it('should initialize a game with player1 playing white', function (done) {
@@ -229,7 +228,6 @@ describe('Chess contract', function() {
 
     describe('#validation', () => {
       let gameId;
-
       beforeEach((done) => {
         // runs before each test in this block
         Chess.initGame('Alice', true, {from: player1, gas: 2000000});
@@ -365,7 +363,7 @@ describe('Chess contract', function() {
         }, Error, '', 'make move while checkmate');
       });
 
-      describe.only('#valid', () => {
+      describe('#valid', () => {
         it('should allow castling', () => {
           let state = [...defaultBoard];
           state[5] = 0;
@@ -410,8 +408,8 @@ describe('Chess contract', function() {
           assert.doesNotThrow(() => {
             Chess.move(gameId, 116, 118, {from: player1, gas: 500000});
           }, Error);
-          assert.throws(() => {
-            Chess.move(gameId, 4, 6, {from: player2, gas: 500000});
+          assert.doesNotThrow(() => {
+            Chess.move(gameId, 4, 2, {from: player2, gas: 500000});
           }, Error);
         });
 
@@ -436,7 +434,35 @@ describe('Chess contract', function() {
           });
         });
 
-        it('should allow pawn promotion');
+        it('should allow pawn promotion', (done) => {
+          let state = [...defaultBoard];
+          // clear black side
+          state[2] = 0;
+          state[18] = 1; // W_P
+
+          // clean white side
+          state[114] = 0;
+          state[98] = -1; // B_P
+
+
+          // Watch for event from contract to check if it worked
+          var filter = Chess.GameStateChanged({gameId: gameId});
+          filter.watch((error, result) => {
+            assert.equal('0', result.args.state[18].toString());
+            assert.equal('5', result.args.state[2].toString());
+            // TODO why there is only a event after the second move?
+            assert.equal('0', result.args.state[98].toString());
+            assert.equal('-5', result.args.state[114].toString());
+            filter.stopWatching();
+            done();
+          });
+
+          Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
+          assert.doesNotThrow(() => {
+            Chess.move(gameId, 18, 2, {from: player1, gas: 500000});
+            Chess.move(gameId, 98, 114, {from: player2, gas: 500000});
+          });
+        });
       });
 
       describe('#invalid', () => {
@@ -484,9 +510,49 @@ describe('Chess contract', function() {
           }, Error);
         });
 
-        it('should reject invalid moves after check through pawn promotion');
+        it('should reject invalid moves after check through pawn promotion', () => {
+          let state = [...defaultBoard];
+          // clear black side
+          state[1] = 0;
+          state[2] = 0;
+          state[3] = 0;
 
-        it('should reject invalid moves when would be check after pawn promotion');
+          // set pawn
+          state[18] = 1; // W_P
+
+          Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
+          assert.doesNotThrow(() => {
+            Chess.move(gameId, 18, 2, {from: player1, gas: 500000});
+            // check
+          });
+          assert.throws(() => {
+            Chess.move(gameId, 98, 114, {from: player2, gas: 500000});
+          }, Error);
+          assert.doesNotThrow(() => {
+            Chess.move(gameId, 0, 2, {from: player2, gas: 500000});
+          });
+        });
+
+        it('should reject invalid moves when would be check after pawn promotion', () => {
+          let state = [...defaultBoard];
+          // clear black side
+          state[2] = 0;
+          state[19] = 0;
+
+          // set pawn
+          state[18] = 1; // W_P
+
+          Chess.setGameState(gameId, state, player1, {from: player1, gas: 2000000});
+          assert.doesNotThrow(() => {
+            Chess.move(gameId, 18, 2, {from: player1, gas: 500000});
+          });
+          assert.throws(() => {
+            Chess.move(gameId, 3, 19, {from: player2, gas: 500000});
+          }, Error);
+          assert.throws(() => {
+            Chess.move(gameId, 3, 51, {from: player2, gas: 500000});
+          }, Error);
+        });
 
         it('should reject castling with figure between', () => {
           let state = [...defaultBoard];
