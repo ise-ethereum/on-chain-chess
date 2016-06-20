@@ -268,7 +268,11 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
        'The surrender could not be saved, the following error occurred: ' + err,
        'error', 'playgame');*/
     } else {
-        if(accounts.availableAccounts.indexOf(data.args.player) !== -1) {
+      let game = games.getGame(data.args.gameId);
+
+      if(game) {
+        // If the player closed his own game
+        if (accounts.availableAccounts.indexOf(data.args.player) !== -1) {
           navigation.goto(navigation.welcomePage);
 
           $rootScope.$broadcast('message',
@@ -279,6 +283,18 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
 
           $rootScope.$apply();
         }
+        else {
+          let openGameIndex = games.openGames.indexOf(game.gameId);
+
+          // If this was an open game of another player
+          if(openGameIndex !== -1) {
+            games.removeGame(data.args.gameId);
+            games.openGames.splice(openGameIndex, 1);
+
+            $rootScope.$apply();
+          }
+        }
+      }
     }
   };
 
