@@ -224,6 +224,11 @@
             if (debug) {
                 DebugInts("way is free", int(fromIndex), int(toIndex), boolToInt(checkForCheck));
             }
+            // Check field between rook and king in case of castling
+            if (fromFigure == Pieces(Piece.BLACK_KING) && toIndex == 2 && games[gameId].state[1] != 0 ||
+                fromFigure == Pieces(Piece.WHITE_KING) && toIndex == 114 && games[gameId].state[113] != 0) {
+                throw;
+            }
         }
 
         // Make the move
