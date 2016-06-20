@@ -96,8 +96,8 @@
         head = 'end';
     }
 
-    event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite);
-    event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite);
+    event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint value);
+    event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint value);
 
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
@@ -165,7 +165,7 @@
         head = gameId;
 
         // Sent notification events
-        GameInitialized(gameId, games[gameId].player1, player1Alias, games[gameId].playerWhite);
+        GameInitialized(gameId, games[gameId].player1, player1Alias, games[gameId].playerWhite, games[gameId].value);
         GameStateChanged(gameId, games[gameId].state);
     }
 
@@ -182,7 +182,7 @@
         }
 
         // throw if the second player did not at least match the bet.
-        if (games[gameId].value > msg.value) {
+        if (games[gameId].value != msg.value) {
             throw;
         }
         else {
@@ -218,7 +218,7 @@
             }
         }
 
-        GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, games[gameId].playerWhite);
+        GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, games[gameId].playerWhite, games[gameId].value);
     }
 
     /* Explicity set game state. Only in debug mode */
@@ -240,7 +240,11 @@
               games[gameId].value = 0;
               if (!msg.sender.send(payout)){
                   games[gameId].value = payout;
-                }
+                  throw;
+              }
+          }
+          else {
+              throw;
           }
     }
 
