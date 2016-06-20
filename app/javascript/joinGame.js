@@ -1,5 +1,5 @@
 /* global angular */
-import {Chess} from '../../contract/Chess.sol';
+import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('JoinGameCtrl',
   function ($rootScope, $scope, games, accounts) {
     $scope.availableAccounts = accounts.availableAccounts;
@@ -9,6 +9,7 @@ angular.module('dappChess').controller('JoinGameCtrl',
     $scope.gameId = null;
     $scope.games = games.list;
     $scope.openGames = games.openGames;
+    $scope.etherbet = 0;
 
     $scope.isSelectedAccount = function (account) {
       return $scope.selectedAccount === account;
@@ -18,6 +19,7 @@ angular.module('dappChess').controller('JoinGameCtrl',
     };
     $scope.setSelectedGame = function($event, game) {
       $scope.gameId = game.gameId;
+      $scope.etherbet = game.value;
 
       $event.preventDefault();
     };
@@ -29,16 +31,29 @@ angular.module('dappChess').controller('JoinGameCtrl',
       $rootScope.$broadcast('message', 'Trying to join the game, please wait a moment...',
                             'loading', 'joingame');
       try {
-        Chess.joinGame($scope.gameId, $scope.username, {from: $scope.selectedAccount});
+        console.log('Trying to join game', $scope.gameId, $scope.username,
+          {
+            from: $scope.selectedAccount,
+            value: web3.toWei($scope.etherbet.replace(',', '.'), 'ether')
+          });
+        Chess.joinGame($scope.gameId, $scope.username,
+          {
+            from: $scope.selectedAccount,
+            value: web3.toWei($scope.etherbet.replace(',', '.'), 'ether')
+          });
       }
       catch(e) {
         $rootScope.$broadcast('message', 'Could not join the game', 'loading', 'joingame');
       }
     }
 
+    $scope.getBalance = accounts.getBalance;
+
     $scope.joinGame = function (form) {
       if(form.$valid) {
         joinGame();
       }
     };
+
+    
   });
