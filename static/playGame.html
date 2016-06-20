@@ -2,11 +2,16 @@
   <h1>Play Game</h1>
 </div>
 <div class="container" data-ng-show="isOpenGame()">
-  <p>Your game has started, but no opponent has joined the game yet.</p>
-  <p>You can tell a friend to directly join the game with the game id<br>
-    <strong>{{getGameId()}}</strong></p>
-  <p>Account ID used for this game: {{getGame().self.accountId}}<br>
-    Start color: {{getGame().self.color}}</p>
+  <div class="eight columns">
+    <p>Your game has started, but no opponent has joined the game yet.</p>
+    <p>You can tell a friend to directly join the game with the game id<br>
+      <strong>{{getGameId()}}</strong></p>
+    <p>Account ID used for this game: {{getGame().self.accountId}}<br>
+      Start color: {{getGame().self.color}}</p>
+  </div>
+  <div class="four columns">
+    <button data-ng-click="closeGame()">Close game</button>
+  </div>
 </div>
 <div class="container" data-ng-show="!isOpenGame()">
   <div class="eight columns">
@@ -28,6 +33,7 @@
   </div>
   <div class="four columns">
     <button data-ng-click="surrender()" data-ng-show="gameIsActive()">Surrender</button>
+    <button data-ng-click="closeGame()" data-ng-show="!gameIsActive()">Close</button>
     <div class="game-log">
       <p>{{gameStatus}}</p>
       <p>{{gamePgn}}</p>
