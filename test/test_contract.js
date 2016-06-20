@@ -837,8 +837,6 @@ describe('Chess contract', function() {
             Chess.move(gameId, 51, 68, {from: player2, gas: 500000});
           }, Error);
         });
-
-        it('should reject pawn promotion to king or pawn');
       });
     });
   });
