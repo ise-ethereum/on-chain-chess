@@ -1,11 +1,12 @@
 /* global angular */
-import {Chess} from '../../contract/Chess.sol';
+import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('InitializeGameCtrl',
   function ($rootScope, $scope, accounts) {
     $scope.availableAccounts = accounts.availableAccounts;
     $scope.selectedAccount = accounts.defaultAccount;
     $scope.startcolor = 'white';
     $scope.username = null;
+    $scope.etherbet = 0;
 
     $scope.isSelectedAccount = function (account) {
       return $scope.selectedAccount === account;
@@ -15,9 +16,12 @@ angular.module('dappChess').controller('InitializeGameCtrl',
       $rootScope.$broadcast('message', 'Your game is being created, please wait a moment...',
                             'loading', 'startgame');
       try {
-        
+
         Chess.initGame($scope.username, $scope.startcolor === 'white',
-                     { from: $scope.selectedAccount });
+         {
+           from: $scope.selectedAccount,
+           value: web3.toWei($scope.etherbet.replace(',', '.'), 'ether')
+         });
       }
       catch(e) {
         $rootScope.$broadcast('message', 'Could not initialize the game', 'loading', 'startgame');
@@ -38,5 +42,5 @@ angular.module('dappChess').controller('InitializeGameCtrl',
       }
     };
 
-    console.log('Available accounts', accounts.availableAccounts);
+    $scope.getBalance = accounts.getBalance;
   });
