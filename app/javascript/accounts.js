@@ -13,6 +13,16 @@ angular.module('dappChess').factory('accounts', function () {
       function(callback) {
         console.log('Not implemented yet');
         callback();
+      },
+    // Get ether balance with 4 digit precision
+    getBalance: function(account) {
+      if(web3.eth.accounts.indexOf(account) !== -1) {
+        return web3.fromWei(
+            web3.eth.getBalance(account), 'ether'
+          ).toDigits(20, 3).toString(10);
       }
+
+      return false;
+    }
   };
 });
