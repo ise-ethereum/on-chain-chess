@@ -33,6 +33,7 @@
         address playerWhite; // Player that is white in this game
         address winner;
         bool ended;
+        uint value; // What this game is worth ether paid into the game
 
         int8[128] state;
     }
@@ -137,6 +138,9 @@
         games[gameId].player1 = msg.sender;
         games[gameId].player1Alias = player1Alias;
 
+        // Initialize game value
+        games[gameId].value = 0;
+        games[gameId].value = msg.value;
         // Initialize state
 
         for (uint i = 0; i < 128; i++) {
@@ -177,6 +181,14 @@
             throw;
         }
 
+        // throw if the second player did not at least match the bet.
+        if (games[gameId].value > msg.value) {
+            throw;
+        }
+        else {
+            games[gameId].value += msg.value;
+        }
+
         games[gameId].player2 = msg.sender;
         games[gameId].player2Alias = player2Alias;
 
@@ -214,6 +226,22 @@
         games[gameId].state = state;
         games[gameId].nextPlayer = nextPlayer;
         GameStateChanged(gameId, games[gameId].state);
+    }
+
+    /**
+    * Allows the winner of a game to claim their ether
+    * bytes32 gameId: ID of the game they have won
+    */
+    function claimWin(bytes32 gameId) public {
+          //if (ended) is the same as: if (sender.id = gameId.winnerid)
+          if (games[gameId].winner == msg.sender){
+              //send money
+              uint payout = games[gameId].value;
+              games[gameId].value = 0;
+              if (!msg.sender.send(payout)){
+                  games[gameId].value = payout;
+                }
+          }
     }
 
     /* validates a move and executes it */
