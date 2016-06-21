@@ -1,5 +1,6 @@
 /* global angular, Chess, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
+
 angular.module('dappChess').controller('PlayGameCtrl',
   function (games, navigation, $route, $scope, $rootScope) {
     // init chess validation
@@ -246,7 +247,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
     };
 
     //--- init Chessboard ---
-    if ($scope.isOpenGame !== false) {
+    if (!$scope.isOpenGame()) {
       let game = $scope.getGame();
 
       if(game) {

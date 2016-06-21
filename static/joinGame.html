@@ -17,16 +17,17 @@
         <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>
       </div>
 
+      <span data-ng-show="selectedAccount">Balance: {{getBalance(selectedAccount)}}</span>
+
       <label for="username">Username</label>
       <input id="username" type="text" name="username" data-ng-model="username" required>
       <div data-ng-show="form.$submitted || form.username.$touched">
         <div class="error" data-ng-show="form.username.$error.required">Please enter a username.</div>
       </div>
 
-      <label for="gameId">Game ID</label>
-      <input id="gameId" type="text" name="gameId" data-ng-model="gameId" required>
+      <input name="gameId" type="hidden" data-ng-model="gameId" required />
       <div data-ng-show="form.$submitted || form.gameId.$touched">
-        <div class="error" data-ng-show="form.gameId.$error.required">Please enter the game id.</div>
+        <div class="error" data-ng-show="form.gameId.$error.required">Please select a game.</div>
       </div>
 
       <input type="submit" value="Join game" />
@@ -38,6 +39,7 @@
         <tr>
           <th>Opponent</th>
           <th>Color</th>
+          <th>Bet (ether)</th>
           <th></th>
         </tr>
       </thead>
@@ -46,6 +48,7 @@
             data-ng-class="{selected: isSelectedGame(game)}">
           <td>{{game.self.username}}</td>
           <td>{{game.self.color}}</td>
+          <td>{{game.value}}</td>
           <td><a href="#" data-ng-click="setSelectedGame($event, game)">Select</a></td>
         </tr><!-- | orderBy:predicate:reverse-->
       </tbody>
@@ -53,7 +56,7 @@
     <p><strong>Join a running chess game by following these simple steps:</strong></p>
     <ul>
       <li>Select the account to use, enter your username and select the start color</li>
-      <li>Enter the game id that you have received or choose a game from the list to start the game</li>
+      <li>Choose a game from the list to start the game</li>
       <li>Your request is being submitted to the blockchain. When the join was successful,
         the game will appear with the opponents username in the nav bar.</li>
       <li>Start playing by selecting the game</li>

@@ -1,5 +1,5 @@
 /* global angular */
-import {Chess} from '../../contract/Chess.sol';
+import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('games', function (navigation, accounts, $rootScope, $route) {
   const games = {
     list: [],
@@ -20,7 +20,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
    *      accountId: <string>,
    *      color: <string>
    *    }
-   *  }
+   *  },
+   *  ended: <boolean>,
+   *  value: <number>
    * ]
    */
 
@@ -55,7 +57,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       nextPlayer: array[4],
       playerWhite: array[5],
       winner: array[6],
-      ended: array[7]
+      ended: array[7],
+      value: array[8]
     };
   };
 
@@ -69,7 +72,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     if (typeof games.getGame(contractGameObject.gameId) !== 'undefined') {
       return;
     }
-    let game = { gameId: contractGameObject.gameId };
+    let game = {gameId: contractGameObject.gameId};
 
     if (accounts.availableAccounts.indexOf(contractGameObject.player2) !== -1) {
       game.self = {
@@ -89,7 +92,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
         color: (contractGameObject.playerWhite === contractGameObject.player1 ? 'white' : 'black')
       };
       if (typeof contractGameObject.player2 !== 'undefined' &&
-          contractGameObject.player2 !== '0x0000000000000000000000000000000000000000') {
+        contractGameObject.player2 !== '0x0000000000000000000000000000000000000000') {
         game.opponent = {
           username: contractGameObject.player2Alias,
           accountId: contractGameObject.player2,
@@ -97,17 +100,20 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
         };
       }
     }
-    if(typeof(contractGameObject.winner) !== 'undefined' &&
+    if (typeof(contractGameObject.winner) !== 'undefined' &&
       contractGameObject.winner !== '0x0000000000000000000000000000000000000000') {
-      if(game.self.accountId === contractGameObject.winner) {
+      if (game.self.accountId === contractGameObject.winner) {
         game.winner = 'self';
       }
-      else if(game.opponent.accountId === contractGameObject.winner) {
+      else if (game.opponent.accountId === contractGameObject.winner) {
         game.winner = 'opponent';
       }
     }
 
     game.ended = contractGameObject.ended;
+    game.value = web3.fromWei(contractGameObject.value, 'ether').toDigits().toString();
+
+    console.log('game added', game);
 
     games.list.push(game);
 
@@ -117,6 +123,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
   games.setWinner = function(gameId, winnerAccountId) {
     for(let i in games.list) {
       if(games.list[i].gameId === gameId) {
+        // Perform actions if game is won
         if(games.list[i].self.accountId === winnerAccountId) {
           games.list[i].winner = 'self';
           games.list[i].ended = true;
@@ -127,6 +134,26 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
             $rootScope.$broadcast('message',
               'You have won the game against ' + games.list[i].opponent.username,
               'message', 'playgame');
+
+            // When the player did win the game, claim the ether pot
+            $rootScope.$broadcast('message',
+              'Claiming your won ether in the game against ' + games.list[i].opponent.username,
+              'message', 'claimpot');
+
+            try {
+              console.log('Trying to claim ether', gameId, {from: winnerAccountId});
+              Chess.claimWin(gameId, {from: winnerAccountId});
+              $rootScope.$broadcast('message',
+                'Your won ether with the amount of ' +
+                games.list[i].value +
+                ' has been added to your account',
+                'success', 'claimpot');
+            }
+            catch(e) {
+              $rootScope.$broadcast('message',
+                'Could not claim your won ether',
+                'error', 'claimpot');
+            }
           }
         }
         else if(games.list[i].opponent.accountId === winnerAccountId) {
@@ -222,6 +249,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
             color: p2color
           };
         }
+        game.value = web3.fromWei(data.args.value, 'ether').toDigits().toString();
       }
 
       if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
