@@ -247,7 +247,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
     };
 
     //--- init Chessboard ---
-    if ($scope.isOpenGame !== false) {
+    if (!$scope.isOpenGame()) {
       let game = $scope.getGame();
 
       if(game) {
