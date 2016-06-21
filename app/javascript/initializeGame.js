@@ -24,6 +24,7 @@ angular.module('dappChess').controller('InitializeGameCtrl',
          });
       }
       catch(e) {
+        console.log(e);
         $rootScope.$broadcast('message', 'Could not initialize the game', 'loading', 'startgame');
       }
     }

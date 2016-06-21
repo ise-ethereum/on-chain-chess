@@ -1,12 +1,75 @@
 /* global angular, Chess, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
-
 angular.module('dappChess').controller('PlayGameCtrl',
-  function (games, navigation, $route, $scope, $rootScope) {
+  function (games, $route, $scope, $rootScope) {
     // init chess validation
-    let chess, board, position;
+    var chess, board, position, highlight, lastFrom, lastTo, game, currentFen, chessMove, gameState;
+
     $scope.gamePgn = '';
     $scope.gameStatus = '';
+
+
+    function generatePieceMapping(){
+      return {
+        '-6': 'k',
+        '-5': 'q',
+        '-4': 'r',
+        '-3': 'b',
+        '-2': 'n',
+        '-1': 'p',
+        '1': 'P',
+        '2': 'N',
+        '3': 'B',
+        '4': 'R',
+        '5': 'Q',
+        '6': 'K'
+      };
+    }
+
+    function generateFen(state) {
+      let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
+
+      for (var i=0; i < state.length; i++) {
+
+        // field is empty
+        if (state[i].isZero()) {
+          zero += 1;
+        }
+        // field contains a piece
+        else {
+
+          // before concatinate piece to fen, check if zeros exist
+          if (zero > 0) {
+            fen += zero;
+            zero = 0;
+          }
+          fen += toPiece[state[i].toNumber()];
+        }
+
+        skip ++;
+
+        // shadow board
+        if (skip === 8) {
+
+          // concatinate rest to fen if exists
+          if (zero > 0) {
+            fen += zero;
+            zero = 0;
+          }
+
+          // concatinate '/'
+          if (i < 118) {
+            fen += '/';
+          }
+
+          // skip shadow board and reset skip
+          i += 8;
+          skip = 0;
+        }
+      }
+
+      return fen;
+    }
 
     function generateMapping() {
       let x=0, y=8;
@@ -31,6 +94,32 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     }
 
+    function lightItUp() {
+
+      var xWhite=0, yWhite=8;
+      var xBlack=7, yBlack=1;
+      var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      var playerWhite = {};
+      var playerBlack = {};
+
+
+      for ( var i=0 ; i < 64; i++){
+        playerWhite[alphabet[xWhite] + yWhite] = i;
+        playerBlack[alphabet[xBlack] + yBlack] = i;
+
+        xWhite++;
+        xBlack--;
+        if (xWhite===8 && xBlack) {
+          yWhite--;
+          yBlack++;
+          xWhite = 0;
+          xBlack = 7;
+        }
+      }
+
+      return {'playerWhite':playerWhite, 'playerBlack':playerBlack};
+    }
+
     function checkOpenGame(gameId) {
       return games.openGames.indexOf(gameId) !== -1;
     }
@@ -42,10 +131,51 @@ angular.module('dappChess').controller('PlayGameCtrl',
     }
 
     function processChessMove(chessMove) {
+
+      let game = $scope.getGame();
       console.log('chessMove');
 
+
+      console.log(chessMove);
+      console.log('from: ' + chessMove.from);
+      console.log('to: ' + chessMove.to);
+      var fromW = highlight.playerWhite[chessMove.from];
+      var toW = highlight.playerWhite[chessMove.to];
+      var fromB = highlight.playerBlack[chessMove.from];
+      var toB = highlight.playerBlack[chessMove.to];
+      console.log('fromW: ', fromW, ' toW: ', toW);
+      console.log('fromW: ', fromB, ' toW: ', toB);
+
+      if (lastFrom !== null){
+        $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
+        $('#my-board_chess_square_' + lastTo).removeClass('chess_square_moved');
+      }
+
+      if (game.self.color === 'white') {
+        $('#my-board_chess_square_' + fromW).addClass('chess_square_moved');
+        $('#my-board_chess_square_' + toW).addClass('chess_square_moved');
+        lastFrom = fromW;
+        lastTo = toW;
+
+      } else {
+        $('#my-board_chess_square_' + fromB).addClass('chess_square_moved');
+        $('#my-board_chess_square_' + toB).addClass('chess_square_moved');
+        lastFrom = fromB;
+        lastTo = toB;
+      }
+
+      // TESTING FEN
+      try {
+        gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+        currentFen = generateFen(gameState);
+        console.log('GENERATED FEN: ', currentFen);
+        console.log('REAL FEN: ', chess.fen());
+      } catch(e) {
+        console.log('ERROR');
+      }
+
+
       let nextPlayer, status,
-        game = $scope.getGame(),
         userColor = (game.self.color === 'white') ? 'w' :  'b';
       if (chessMove !== null) {
         console.log('chessMove !== null');
@@ -94,16 +224,22 @@ angular.module('dappChess').controller('PlayGameCtrl',
         let toIndex = position.toFrontend[data.args.toIndex.c[0]];
 
         console.log(chess.fen());
-        let chessMove = chess.move({
-          from: fromIndex,
-          to: toIndex,
-          promotion: 'q'
-        });
+
+        // display move to enemy
+        if (!board.isUserInputEnabled()) {
+          chessMove = chess.move({
+            from: fromIndex,
+            to: toIndex,
+            promotion: 'q'
+          });
+          board.move(fromIndex + '-' + toIndex);
+        }
+        processChessMove(chessMove);
+
 
         console.log(chess.fen());
-        board.move(fromIndex + '-' + toIndex);
 
-        processChessMove(chessMove);
+
 
         if(board.isUserInputEnabled()) {
           $rootScope.$broadcast('message', 'Your move was successfully transmitted.',
@@ -132,6 +268,14 @@ angular.module('dappChess').controller('PlayGameCtrl',
     function pieceMove(move) {
       let game = $scope.getGame();
 
+      // move piece from ... to
+      chessMove = chess.move({
+        from: move.from,
+        to: move.to,
+        promotion: 'q'
+      });
+      board.move(move.from+ '-' + move.to);
+
       try {
         $rootScope.$broadcast('message', 'Submitting your move, please wait a moment...',
           'loading', 'playgame-' + game.gameId);
@@ -150,6 +294,11 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
       } catch(e) {
         console.log(e);
+
+        // undo move if error
+        chess.undo();
+        board.move(move.to + '-' + move.from);
+
         $rootScope.$broadcast('message', 'Could not validate your move',
           'error', 'playgame-' + game.gameId);
         $rootScope.$apply();
@@ -202,7 +351,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         'loading', 'playgame');
       try {
         console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
-        SoliChess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
+        Chess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
       }
       catch(e) {
         $rootScope.$broadcast('message', 'Could not submit your surrender', 'loading', 'playgame');
@@ -211,77 +360,66 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     $scope.gameIsWon = function() {
       let game = $scope.getGame();
-      if(game) {
-        return typeof(game.winner) !== 'undefined' && game.winner === 'self';
-      }
-      else {
-        return false;
-      }
+      return typeof(game.winner) !== 'undefined' && game.winner === 'self';
     };
 
     $scope.gameIsLost = function() {
       let game = $scope.getGame();
-      if(game) {
-        return typeof(game.winner) !== 'undefined' && game.winner === 'opponent';
-      }
-      else {
-        return false;
-      }
+      return typeof(game.winner) !== 'undefined' && game.winner === 'opponent';
     };
 
     $scope.gameIsActive = function() {
-      let game = $scope.getGame();
-
-      if(game) {
-        return !game.ended;
-      }
-      else {
-        return false;
-      }
-    };
-
-    $scope.closeGame = function() {
-      SoliChess.closePlayerGame($scope.getGameId(), {from: $scope.getGame().self.accountId});
-      $rootScope.$broadcast('message', 'Closing your game, please wait...',
-        'loading', 'playgame');
+      return typeof($scope.getGame().winner) === 'undefined';
     };
 
     //--- init Chessboard ---
-    if (!$scope.isOpenGame()) {
-      let game = $scope.getGame();
+    if ($scope.isOpenGame !== false) {
+      $(document).ready(function () {
+        chess = new Chess();
 
-      if(game) {
-        $(document).ready(function () {
-          chess = new Chess();
-            board = new Chessboard('my-board', {
-                position: ChessUtils.FEN.startId,
-                eventHandlers: {
-                  onPieceSelected: pieceSelected,
-                  onMove: pieceMove
-                }
-              }
-            );
+        game = $scope.getGame();
 
-            position = generateMapping();
+        // set current fen
+        currentFen = chess.fen();
 
-            // init game
-            resetGame(board);
+        highlight = lightItUp();
 
-            // opponent starts game
-            if (game.self.color === 'black') {
-              board.setOrientation(ChessUtils.ORIENTATION.black);
-              board.enableUserInput(false);
+        board = new Chessboard('my-board', {
+            position: ChessUtils.FEN.startId,
+            eventHandlers: {
+              onPieceSelected: pieceSelected,
+              onMove: pieceMove
             }
+          }
+        );
 
-            //SoliChess.GameStateChanged(eventGameStateChanged);
-            SoliChess.Move(eventMove);
-        });
-      }
-      else {
-        navigation.goto(navigation.welcomePage);
-        $rootScope.$broadcast('message', 'No game with the specified id exists',
-          'error', 'playgame');
-      }
+        position = generateMapping();
+
+
+        try {
+          gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+          console.log('GAMESTATE: ', gameState);
+          currentFen = generateFen(gameState);
+          console.log('GENERATED FEN: ', currentFen);
+          console.log('REAL FEN: ', chess.fen());
+        } catch(e) {
+
+        }
+
+
+
+        // init game
+        resetGame(board);
+
+        // opponent starts game
+        if (game.self.color === 'black') {
+          board.setOrientation(ChessUtils.ORIENTATION.black);
+          board.enableUserInput(false);
+        }
+
+        //SoliChess.GameStateChanged(eventGameStateChanged);
+        SoliChess.Move(eventMove);
+      });
     }
   }
 );
