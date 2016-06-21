@@ -60,6 +60,20 @@
         return data;
     }
 
+    function getOpenGameIds() constant returns (bytes32[]) {
+        var counter = 0;
+        for (var ga = head; ga != 'end'; ga = openGameIds[ga]) {
+            counter++;
+        }
+        bytes32[] memory data = new bytes32[](counter);
+        var currentGame = head;
+        for (var i = 0; i < counter; i++) {
+            data[i] = currentGame;
+            currentGame = openGameIds[currentGame];
+        }
+        return data;
+    }
+
     // stack of open game ids
     mapping (bytes32 => bytes32) public openGameIds;
     bytes32 public head;
