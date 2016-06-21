@@ -110,12 +110,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       }
     }
 
-    if (contractGameObject.ended) {
-      game.ended = true;
-    }
-    else {
-      game.ended = false;
-    }
+    game.ended = contractGameObject.ended;
     game.value = web3.fromWei(contractGameObject.value, 'ether').toDigits().toString();
 
     console.log('game added', game);
