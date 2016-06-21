@@ -66,7 +66,7 @@ describe('Chess contract', function() {
       var eventGamestate = Chess.GameStateChanged({});
       eventGamestate.watch(function(error, result){
         let state = result.args.state.map(n => n.toNumber());
-        assert.deepEqual(defaultBoard, state);
+        assert.deepEqual(gameStateDisplay(defaultBoard), gameStateDisplay(state));
         eventGamestate.stopWatching(); // Need to remove filter again
         done();
       });
@@ -352,22 +352,38 @@ describe('Chess contract', function() {
           Chess.move(testGames[0], 100, 84, {from: player1, gas: 500000});
         }, Error);
 
-        // Watch for event from contract to check if it worked
+        // Helper to wait for multiple async callbacks
+        let numberOfDone = 0;
+        const allDone = function() {
+          numberOfDone++;
+          if (numberOfDone >= 2) {
+            done();
+          }
+        };
+
+        // Watch for event from contract to check if the Move worked
         var filter = Chess.Move({gameId: testGames[0]});
-        filter.watch(function (error, result) {
+        filter.watch(function(error, result){
           assert.equal(player1, result.args.player);
           assert.equal(100, result.args.fromIndex);
           assert.equal(84, result.args.toIndex);
           filter.stopWatching(); // Need to remove filter again
-          done();
+          allDone();
         });
-      });
 
-      it('should have updated nextPlayer after the previous move', function () {
-        assert.throws(function () {
-          // Cannot move again from player1 because nextPlayer will be player2
-          Chess.move(testGames[0], 84, 68, {from: player1, gas: 500000});
-        }, Error);
+        // Watch for GameStateChanged event to check that all pieces and flags
+        // were updated
+        let expectedState = [...defaultBoard];
+        expectedState[100] = 0; // moved piece away
+        expectedState[84] = defaultBoard[100];
+        expectedState[8] = 1 >> 7; // updated move count
+        expectedState[9] = 1 % 128; // updated move count
+        var filter2 = Chess.GameStateChanged({gameId: testGames[0]});
+        filter2.watch(function(error, result){
+          assert.deepEqual(gameStateDisplay(expectedState), gameStateDisplay(result.args.state));
+          filter2.stopWatching(); // Need to remove filter again
+          allDone();
+        });
       });
 
       it('should accept valid moves', function () {
@@ -394,22 +410,42 @@ describe('Chess contract', function() {
       });
 
       it('should set game state and accept valid move', function (done) {
-        let state = [...defaultBoard];
-        state[32] = -6; // Black king on a2
-        state[67] = 5; // White queen on d4
-        Chess.setGameState(testGames[0], state, player1, {from: player1, gas: 2000000});
+        let newState = [...defaultBoard];
+        newState[32] = -6; // Black king on a2
+        newState[67] = 5; // White queen on d4
+        newState[8] = 127 >> 7; // Move count at the edge of int8 range
+        newState[9] = 127 % 128;
+
+        let numDone = 0;
+        const oneDone = function() {
+          numDone++;
+          if (numDone >= 2) {
+            done();
+          }
+        };
+
+        Chess.setGameState(testGames[0], newState, player1, {from: player1, gas: 2000000});
         var filter = Chess.GameStateChanged({gameId: testGames[0]});
-        filter.watch(function (error, result) {
-          //console.log(gameStateDisplay(state));
-          assert.deepEqual(gameStateDisplay(state), gameStateDisplay(result.args.state));
-          filter.stopWatching(); // Need to remove filter again
-
-          assert.doesNotThrow(function () {
-            // white queen d4c4 -- Queen move that checks black king on a6
-            Chess.move(testGames[0], 67, 66, {from: player1, gas: 500000});
-          }, Error);
-
-          done();
+        filter.watch(function(error, result){
+          // First event, test that it worked by sending a Move
+          if (numDone === 0) {
+            assert.deepEqual(gameStateDisplay(newState), gameStateDisplay(result.args.state));
+            assert.doesNotThrow(function(){
+              // white queen d4c4 -- Queen move that checks black king on a6
+              Chess.move(testGames[0], 67, 66, {from: player1, gas: 500000});
+            }, Error);
+          }
+          // The second event occurs after the move and should have updated
+          // the game state accordingly
+          if (numDone === 1) {
+            newState[66] = newState[67]; // Piece was moved
+            newState[67] = 0;
+            newState[8] = 128 >> 7; // = 1, Move count has overflown
+            newState[9] = 128 % 128;
+            assert.deepEqual(gameStateDisplay(newState), gameStateDisplay(result.args.state));
+            filter.stopWatching(); // Need to remove filter again
+          }
+          oneDone();
         });
       });
     });

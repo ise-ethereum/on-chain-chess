@@ -9,6 +9,7 @@
 
 
  contract Chess {
+    // default state array, all numbers offset by +8
     bytes constant defaultState = '\x04\x06\x05\x03\x02\x05\x06\x04\x08\x08\x08\x0c\x08\x08\x08\x08\x07\x07\x07\x07\x07\x07\x07\x07\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08\x09\x09\x09\x09\x09\x09\x09\x09\x08\x08\x08\x08\x08\x08\x08\x08\x0c\x0a\x0b\x0d\x0e\x0b\x0a\x0c\x08\x08\x08\x7c\x08\x08\x08\x08';
 
     bool debug; // If contract is deployed in debug mode, some debug features are enabled
@@ -64,15 +65,18 @@
     bytes32 public head;
 
     /* Flags needed for validation
-     * Usage e.g. Flags(Flag.FLAG_NAME)
-     * Directions(Direction.UP)
+     * Usage e.g. Flags(Flag.FLAG_NAME), Directions(Direction.UP), Players(Player.WHITE)
+     * Because there are no constant arrays in Solidity, we use byte literals that
+     * contain the needed numbers encoded as hex characters. We can only encode
+     * positive numbers this way, so if negative flags are needed, all values are
+     * stored shifted and later un-shifted in the accessors.
      */
     enum Player { WHITE, BLACK }
-    enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
-    bytes constant c_Directions = "\x30\x31\x41\x51\x50\x4f\x3f\x2f";
     enum Piece { BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN, EMPTY, WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING }
-    enum Flag { WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
-    bytes constant c_Flags = "\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c";
+    enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
+    bytes constant c_Directions = "\x30\x31\x41\x51\x50\x4f\x3f\x2f"; // [-16, -15, 1, 17, 16, 15, -1, -17] shifted by +64
+    enum Flag { MOVE_COUNT_H, MOVE_COUNT_L, WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
+    bytes constant c_Flags = "\x08\x09\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c"; // [8, 123, 11, 56, 78, 79, 62, 63, 61, 77, 60, 76]
     function Flags(Flag i) constant internal returns (uint) {
        return uint(c_Flags[uint(i)]);
     }
@@ -89,7 +93,7 @@
         return -1;
     }
 
-    bytes constant knightMoves = '\x1f\x21\x2e\x32\x4e\x52\x5f\x61';
+    bytes constant knightMoves = '\x1f\x21\x2e\x32\x4e\x52\x5f\x61'; // [-33, -31, -18, -14, 14, 18, 31, 33] shifted by +64
 
     function Chess(bool enableDebugging) {
         debug = enableDebugging;
@@ -119,9 +123,8 @@
      * Convenience function to set a flag
      * Usage: getFlag(gameId, Flag.BLACK_KING_POS);
      */
-    function getFlag(bytes32 gameId, Flag flag) internal returns (int8) {
+    function getFlag(bytes32 gameId, Flag flag) constant internal returns (int8) {
         return games[gameId].state[Flags(flag)];
-
     }
 
     /**
@@ -306,6 +309,16 @@
         } else {
             games[gameId].nextPlayer = games[gameId].player1;
         }
+
+        // Update move count
+        // High and Low are int8, so from -127 to 127
+        // By using two flags we extend the positive range to 14 bit, 0 to 16384
+        int16 moveCount = int16(getFlag(gameId, Flag.MOVE_COUNT_H)) * (2**7) | int16(getFlag(gameId, Flag.MOVE_COUNT_L));
+        moveCount += 1;
+        if (moveCount > 127) {
+            setFlag(gameId, Flag.MOVE_COUNT_H, moveCount / (2**7));
+        }
+        setFlag(gameId, Flag.MOVE_COUNT_L, moveCount % 128);
 
         // Send events
         Move(gameId, msg.sender, fromIndex, toIndex);
@@ -600,8 +613,8 @@
 
     function makeMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure) internal {
         // remove all en passant flags
-        setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
-        setFlag(gameId, Flag.WHITE_EN_PASSANT, -1);
+        setFlag(gameId, Flag.WHITE_EN_PASSANT, 0);
+        setFlag(gameId, Flag.BLACK_EN_PASSANT, 0);
 
         // <---- Special Move ---->
 
