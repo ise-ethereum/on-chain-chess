@@ -6,6 +6,7 @@
   "scripts": {
     "start": "webpack --watch",
     "build": "webpack --bail",
+    "build-production": "webpack --bail --config webpack.config-production.js",
     "test": "mocha-webpack --growl",
     "test-testrpc": "concurrently --kill-others -s first \"testrpc -p ${TESTRPC_PORT:-8545}\" 'npm run test'",
     "lint": "jshint app/javascript/*.js"
@@ -45,7 +46,7 @@
     "mocha": "*",
     "mocha-webpack": "*",
     "solc": "^0.3.4",
-    "solc-loader": "^1.0.0",
+    "solc-loader": "git://github.com/uzyn/solc-loader.git#035cef0d4b7e94579d058b1060078d459b108a10",
     "source-map-support": "*",
     "style-loader": "^0.13.1",
     "web3": "^0.15.3",

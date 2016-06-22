@@ -17,6 +17,14 @@
         <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>
       </div>
 
+      <span data-ng-show="selectedAccount">Balance: {{getBalance(selectedAccount)}}</span>
+
+      <label for="etherbet">Bet (in ether)</label>
+      <input id="etherbet" type="number" name="etherbet" data-ng-model="etherbet" required>
+      <div data-ng-show="form.$submitted || form.etherbet.$touched">
+        <div class="error" data-ng-show="form.etherbet.$error.required">Please enter your ether bet.</div>
+      </div>
+
       <label for="username">Username</label>
       <input id="username" type="text" name="username" data-ng-model="username" required>
       <div data-ng-show="form.$submitted || form.username.$touched">

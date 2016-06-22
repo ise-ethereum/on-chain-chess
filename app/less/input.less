@@ -20,4 +20,8 @@ label + input, label + select {
 input + div > div.error, select + div > div.error {
   color: #F00;
   margin-top:-1em;
+  margin-bottom:1em;
+}
+input[type="hidden"] + div > div.error {
+  margin-top:0
 }
