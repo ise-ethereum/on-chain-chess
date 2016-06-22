@@ -873,6 +873,12 @@
         return -1;
     }
 
+
+    function getCurrentGameState(bytes32 gameId) constant returns (int8[128]) {
+       return games[gameId].state;
+    }
+
+
     /*------------------------HELPER FUNCTIONS------------------------*/
 
     // This returns the absolute value of an integer
