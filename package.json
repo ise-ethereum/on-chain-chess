@@ -46,11 +46,11 @@
     "mocha": "*",
     "mocha-webpack": "*",
     "solc": "^0.3.4",
-    "solc-loader": "git://github.com/uzyn/solc-loader.git#035cef0d4b7e94579d058b1060078d459b108a10",
+    "solc-loader": "git://github.com/Antanukas/solc-loader.git#97ef68cf30a69f43d16953c28a1b44fa14d5ed38",
     "source-map-support": "*",
     "style-loader": "^0.13.1",
     "web3": "^0.15.3",
-    "web3-loader": "^1.0.1",
+    "web3-loader": "git://github.com/Antanukas/web3-loader.git#af4e4ad57fb409360aa5c72866e31be230a2b162",
     "webpack": "^1.13.0",
     "webpack-node-externals": "*"
   }

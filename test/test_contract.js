@@ -88,7 +88,7 @@ describe('Chess contract', function() {
     });
 
     it('should have set game state to not ended', function() {
-      assert.isFalse(Chess.games(testGames[0])[7]);
+      assert.isFalse(Chess.isGameEnded(testGames[0]));
     });
 
     it('should have set gamesOfPlayers', () => {
@@ -139,13 +139,59 @@ describe('Chess contract', function() {
     });
 
     it('should have not change game.ended', function() {
-      assert.isFalse(Chess.games(testGames[0])[7]);
-      assert.isFalse(Chess.games(testGames[1])[7]);
+      assert.isFalse(Chess.isGameEnded(testGames[0]));
+      assert.isFalse(Chess.isGameEnded(testGames[1]));
     });
 
     it('should have set gamesOfPlayers', () => {
       assert.isTrue(Chess.getGamesOfPlayer(player2).indexOf(testGames[0]) !== -1);
       assert.isTrue(Chess.getGamesOfPlayer(player2).indexOf(testGames[1]) !== -1);
+    });
+  });
+
+  describe('surrender()', function () {
+    // Setup a new game for this test
+    let gameId;
+    it('should initialize a new game and join both players', function(done) {
+      Chess.initGame('Bob', true, {from: player1, gas: 2000000});
+      var filter = Chess.GameInitialized({});
+      filter.watch(function(error, result){
+        gameId = result.args.gameId;
+        filter.stopWatching();
+
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
+        var filter2 = Chess.GameJoined({gameId: gameId});
+        filter2.watch(function(){
+          filter2.stopWatching();
+          done();
+        });
+      });
+    });
+
+    it('should throw an exception for message from non-participant', function() {
+      assert.throws(function(){
+        Chess.surrender(gameId, {from: player3, gas: 500000});
+      }, Error);
+    });
+
+    it('should allow surrender from P1 and declare P2 as winner', function(done) {
+      Chess.surrender(gameId, {from: player1, gas: 500000});
+      var filter = Chess.GameEnded({gameId: gameId});
+      filter.watch(function(error, result){
+        assert.equal(player2, result.args.winner);
+        filter.stopWatching();
+        done();
+      });
+    });
+
+    it('should have set game state to ended', function() {
+      assert.isTrue(Chess.isGameEnded(gameId));
+    });
+
+    it('should throw an exception when surrendering a game that already ended', function() {
+      assert.throws(function(){
+        Chess.surrender(gameId, {from: player2, gas: 500000});
+      }, Error);
     });
   });
 
@@ -172,7 +218,7 @@ describe('Chess contract', function() {
     });
 
     it('should have set ended', function() {
-      assert.isTrue(Chess.games(gameId)[7]);
+      assert.isTrue(Chess.isGameEnded(gameId));
     });
 
     it('should have deleted game from openGames', () => {
@@ -1062,52 +1108,6 @@ describe('Chess contract', function() {
           }, Error);
         });
       });
-    });
-  });
-
-  describe('surrender()', function () {
-    // Setup a new game for this test
-    let gameId;
-    it('should initialize a new game and join both players', function(done) {
-      Chess.initGame('Bob', true, {from: player1, gas: 2000000});
-      var filter = Chess.GameInitialized({});
-      filter.watch(function(error, result){
-        gameId = result.args.gameId;
-        filter.stopWatching();
-
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
-        var filter2 = Chess.GameJoined({gameId: gameId});
-        filter2.watch(function(){
-          filter2.stopWatching();
-          done();
-        });
-      });
-    });
-
-    it('should throw an exception for message from non-participant', function() {
-      assert.throws(function(){
-        Chess.surrender(gameId, {from: player3, gas: 500000});
-      }, Error);
-    });
-
-    it('should allow surrender from P1 and declare P2 as winner', function(done) {
-      Chess.surrender(gameId, {from: player1, gas: 500000});
-      var filter = Chess.GameEnded({gameId: gameId});
-      filter.watch(function(error, result){
-        assert.equal(player2, result.args.winner);
-        filter.stopWatching();
-        done();
-      });
-    });
-
-    it('should have set game state to ended', function() {
-      assert.isTrue(Chess.games(gameId)[7]);
-    });
-
-    it('should throw an exception when surrendering a game that already ended', function() {
-      assert.throws(function(){
-        Chess.surrender(gameId, {from: player2, gas: 500000});
-      }, Error);
     });
   });
 
