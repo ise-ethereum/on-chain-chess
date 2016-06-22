@@ -693,7 +693,7 @@
     }
 
 
-    function getCurrentGameState(bytes32 gameId) returns (int8[128]) {
+    function getCurrentGameState(bytes32 gameId) constant returns (int8[128]) {
        return games[gameId].state;
     }
 
