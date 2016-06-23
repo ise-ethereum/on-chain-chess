@@ -15,13 +15,53 @@ library ChessLogic {
      * positive numbers this way, so if negative flags are needed, all values are
      * stored shifted and later un-shifted in the accessors.
      */
-    enum Player { WHITE, BLACK }
-    enum Piece { BLACK_KING, BLACK_QUEEN, BLACK_ROOK, BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN, EMPTY, WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING }
-    enum Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
-    bytes constant c_Directions = "\x30\x31\x41\x51\x50\x4f\x3f\x2f"; // [-16, -15, 1, 17, 16, 15, -1, -17] shifted by +64
-    enum Flag { MOVE_COUNT_H, MOVE_COUNT_L, WHITE_KING_POS, BLACK_KING_POS, CURRENT_PLAYER, WHITE_LEFT_CASTLING, WHITE_RIGHT_CASTLING, BLACK_LEFT_CASTLING, BLACK_RIGHT_CASTLING, BLACK_EN_PASSANT, WHITE_EN_PASSANT}
-    bytes constant c_Flags = "\x08\x09\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d\x3c\x4c"; // [8, 123, 11, 56, 78, 79, 62, 63, 61, 77, 60, 76]
-    bytes constant knightMoves = '\x1f\x21\x2e\x32\x4e\x52\x5f\x61'; // [-33, -31, -18, -14, 14, 18, 31, 33] shifted by +64
+    enum Player { WHITE,      //  1
+                  BLACK }     // -1
+
+    enum Piece { BLACK_KING,  // -6
+                 BLACK_QUEEN, // -5
+                 BLACK_ROOK,  // -4
+                 BLACK_BISHOP,// -3
+                 BLACK_KNIGHT,// -2
+                 BLACK_PAWN,  // -1
+                 EMPTY,       //  0
+                 WHITE_PAWN,  //  1
+                 WHITE_KNIGHT,//  2
+                 WHITE_BISHOP,//  3
+                 WHITE_ROOK,  //  4
+                 WHITE_QUEEN, //  5
+                 WHITE_KING } //  6
+
+    enum Direction { UP,         //  16
+                     UP_RIGHT,   //  15
+                     RIGHT,      //   1
+                     DOWN_RIGHT, // -17
+                     DOWN,       // -16
+                     DOWN_LEFT,  // -15
+                     LEFT,       //  -1
+                     UP_LEFT }   //  17
+
+    bytes constant c_Directions = "\x30\x31\x41\x51\x50\x4f\x3f\x2f";
+    //                             [-16,-15,  1, 17, 16, 15, -1,-17] shifted by +64
+
+    enum Flag { MOVE_COUNT_H,         // 8
+                MOVE_COUNT_L,         // 9
+                WHITE_KING_POS,       // 123
+                BLACK_KING_POS,       // 11
+                CURRENT_PLAYER,       // 56
+                WHITE_LEFT_CASTLING,  // 78
+                WHITE_RIGHT_CASTLING, // 79
+                BLACK_LEFT_CASTLING,  // 62
+                BLACK_RIGHT_CASTLING, // 63
+                BLACK_EN_PASSANT,     // 61
+                WHITE_EN_PASSANT}     // 77
+
+    bytes constant c_Flags = "\x08\x09\x7b\x0b\x38\x4e\x4f\x3e\x3f\x3d\x4d";
+    //                        [  8,  9,123, 11, 56, 78, 79, 62, 63, 61, 77]
+
+    bytes constant knightMoves = '\x1f\x21\x2e\x32\x4e\x52\x5f\x61';
+    //                             [-33,-31,-18,-14,14, 18, 31, 33] shifted by +64
+
     function Flags(Flag i) constant internal returns (uint) {
        return uint(c_Flags[uint(i)]);
     }
