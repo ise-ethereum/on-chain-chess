@@ -20,7 +20,7 @@ angular.module('dappChess').controller('InitializeGameCtrl',
         Chess.initGame($scope.username, $scope.startcolor === 'white',
          {
            from: $scope.selectedAccount,
-           value: web3.toWei($scope.etherbet.replace(',', '.'), 'ether')
+           value: web3.toWei($scope.etherbet, 'ether')
          });
       }
       catch(e) {

@@ -48,6 +48,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
    * @returns object as seen in the contract
    */
   games.convertArrayToGame = function (gameId, array) {
+    let playerWhite = Chess.getWhitePlayer(gameId);
     return {
       gameId: gameId,
       player1: array[0],
@@ -55,10 +56,10 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       player1Alias: array[2],
       player2Alias: array[3],
       nextPlayer: array[4],
-      playerWhite: array[5],
-      winner: array[6],
-      ended: array[7],
-      value: array[8]
+      winner: array[5],
+      ended: array[6],
+      value: array[7],
+      playerWhite: playerWhite
     };
   };
 
