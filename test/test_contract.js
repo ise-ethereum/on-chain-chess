@@ -250,6 +250,7 @@ describe('Chess contract', function() {
       });
     });
 
+
     it('should initialize 1 open game (gameId2)', (done) => {
       Chess.initGame('Alice', true, {from: player1, gas: 2000000});
       let filter = Chess.GameInitialized({});

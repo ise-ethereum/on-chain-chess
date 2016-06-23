@@ -56,6 +56,8 @@ contract TurnBasedGame {
         address winner;
         bool ended;
         uint value; // What this game is worth ether paid into the game
+        uint time; // timer for timeout
+        int8 timeoutState; // -1 draw 0 nothing 1 checkmate
     }
 
     mapping (bytes32 => Game) public games;
@@ -162,6 +164,7 @@ contract TurnBasedGame {
         bytes32 gameId = sha3(msg.sender, block.number);
 
         games[gameId].ended = false;
+        games[gameId].timeoutState = 0;
 
         // Initialize participants
         games[gameId].player1 = msg.sender;
