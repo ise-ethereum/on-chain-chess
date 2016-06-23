@@ -82,7 +82,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
       if (state[56].toNumber() === 1) {
         // white
-        fen += ' w';
+        fen += ' w ';
       } else {
         // black
         fen += ' b ';
@@ -104,18 +104,27 @@ angular.module('dappChess').controller('PlayGameCtrl',
           fen += 'q';
         }
       } else {
-        fen += '-'
+        fen += '-';
       }
 
       // set En passant
-      //fen += position.toFrontend[]
+      if (state[61].toNumber() > 0 || state[77].toNumber() > 0) {
+        if (state[61].toNumber() > 0) {
+          fen += ' ' + position.toFrontend[state[61].toNumber()];
+        }
+        if (state[77].toNumber() > 0) {
+          fen += ' ' + position.toFrontend[state[77].toNumber()];
+        }
+      } else {
+        fen += ' -';
+      }
 
 
       // set halfmove clock
-      fen +=' 0';
+      fen +='  0 ';
 
       // set fullmove number
-      fen += state[9].toNumber() + state[8].toNumber();
+      fen += state[9].toNumber() + state[8].toNumber() + 1;
 
 
 
