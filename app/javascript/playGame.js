@@ -121,7 +121,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
 
       // set halfmove clock
-      fen +='  0 ';
+      fen +=' 0 ';
 
       // set fullmove number
       fen += state[9].toNumber() + state[8].toNumber() + 1;
@@ -187,7 +187,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
     // Update game information to user
     function updateGameInfo(status) {
       $scope.gameStatus = status;
-      $scope.gamePgn = chess.pgn();
+      $scope.gamePgn = chess.pgn().replace(/\[.*?\]\s+/g, '');
+
     }
 
     function processChessMove(chessMove) {
@@ -381,22 +382,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return chess.fen();
     }
 
-    // set all chess pieces in start position
-    function resetGame(board) {
-
-      let game = $scope.getGame();
-      board.setPosition(ChessUtils.FEN.startId);
-      chess.reset();
-
-      let gamer;
-      if (game.self.color === 'white') {
-        gamer = game.self.username;
-      } else {
-        gamer = game.opponent.username;
-      }
-
-      updateGameInfo('Next player is ' + gamer + '.' );
-    }
 
     $scope.getGameId = function() {
       return $route.current.params.id;
@@ -451,14 +436,24 @@ angular.module('dappChess').controller('PlayGameCtrl',
         chess = new Chess();
 
         game = $scope.getGame();
+        highlight = lightItUp();
+        position = generateMapping();
 
         // set current fen
-        currentFen = chess.fen();
+        try {
+          gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+          currentFen = generateFen(gameState);
+          console.log('REAL FEN: ', chess.fen());
+          console.log('GAMESTATE FEN: ', currentFen);
+          console.log('GAMESTATE: ', gameState);
+        } catch(e) {
+          console.log(e);
+        }
 
-        highlight = lightItUp();
+        let x = chess.load(currentFen);
 
         board = new Chessboard('my-board', {
-            position: ChessUtils.FEN.startId,
+            position: currentFen,
             eventHandlers: {
               onPieceSelected: pieceSelected,
               onMove: pieceMove
@@ -466,39 +461,30 @@ angular.module('dappChess').controller('PlayGameCtrl',
           }
         );
 
-        position = generateMapping();
-
-
-        try {
-          gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
-          console.log('GAMESTATE: ', gameState);
-          currentFen = generateFen(gameState);
-          console.log('GENERATED FEN: ', currentFen);
-          console.log('REAL FEN: ', chess.fen());
-          console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
-          console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
-          console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
-          console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
-          console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
-          console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
-          console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
-          console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
-        } catch(e) {
-          console.log(e);
+        let gamer;
+        if (gameState[56].toNumber() === 1) {
+          gamer = 'white';
+        } else {
+          gamer = 'black';
         }
 
+        updateGameInfo('Next player is ' + gamer + '.' , false);
 
-
-        // init game
-        resetGame(board);
+        position = generateMapping();
 
         // opponent starts game
         if (game.self.color === 'black') {
           board.setOrientation(ChessUtils.ORIENTATION.black);
-          board.enableUserInput(false);
+          if (gameState[56].toNumber() === 1){
+            board.enableUserInput(false);
+          }
+        } else {
+          if (gameState[56].toNumber() === -1){
+            board.enableUserInput(false);
+          }
         }
 
-        //SoliChess.GameStateChanged(eventGameStateChanged);
+
         SoliChess.Move(eventMove);
       });
     }
