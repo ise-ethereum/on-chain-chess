@@ -68,6 +68,57 @@ angular.module('dappChess').controller('PlayGameCtrl',
         }
       }
 
+
+      console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
+      console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
+      console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
+      console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
+      console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
+      console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
+      console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
+      console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
+
+      // set current player
+
+      if (state[56].toNumber() === 1) {
+        // white
+        fen += ' w';
+      } else {
+        // black
+        fen += ' b ';
+      }
+
+      // set Rochade
+      if (state[79].toNumber() === 0 ||
+        state[78].toNumber() === 0 || state[62].toNumber() === 0 || state[63].toNumber() === 0) {
+        if (state[79].toNumber() === 0) {
+          fen += 'K';
+        }
+        if (state[78].toNumber() === 0) {
+          fen += 'Q';
+        }
+        if (state[62].toNumber() === 0) {
+          fen += 'k';
+        }
+        if (state[63].toNumber() === 0) {
+          fen += 'q';
+        }
+      } else {
+        fen += '-'
+      }
+
+      // set En passant
+      //fen += position.toFrontend[]
+
+
+      // set halfmove clock
+      fen +=' 0';
+
+      // set fullmove number
+      fen += state[9].toNumber() + state[8].toNumber();
+
+
+
       return fen;
     }
 
@@ -136,16 +187,19 @@ angular.module('dappChess').controller('PlayGameCtrl',
       console.log('chessMove');
 
 
+      /*
       console.log(chessMove);
       console.log('from: ' + chessMove.from);
       console.log('to: ' + chessMove.to);
+      */
       var fromW = highlight.playerWhite[chessMove.from];
       var toW = highlight.playerWhite[chessMove.to];
       var fromB = highlight.playerBlack[chessMove.from];
       var toB = highlight.playerBlack[chessMove.to];
+      /*
       console.log('fromW: ', fromW, ' toW: ', toW);
       console.log('fromW: ', fromB, ' toW: ', toB);
-
+      */
       if (lastFrom !== null){
         $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
         $('#my-board_chess_square_' + lastTo).removeClass('chess_square_moved');
@@ -168,8 +222,18 @@ angular.module('dappChess').controller('PlayGameCtrl',
       try {
         gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
         currentFen = generateFen(gameState);
+        console.log('GAMESTATE: ', gameState);
         console.log('GENERATED FEN: ', currentFen);
         console.log('REAL FEN: ', chess.fen());
+        console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
+        console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
+        console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
+        console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
+        console.log('WHITE KING POSITION: ', position.toFrontend[gameState[123].toNumber()]);
+        console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
+        console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
+        console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
+        console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
       } catch(e) {
         console.log('ERROR');
       }
@@ -283,13 +347,14 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
         let fromIndex = position.toBackend[move.from];
         let toIndex = position.toBackend[move.to];
+        /*
         console.log('fromIndex Frontend: ', move.from);
         console.log('toIndex Frontend: ', move.to);
         console.log('fromIndex Backend: ', fromIndex);
         console.log('toIndex Backend: ', toIndex);
 
         console.log('selfId: ', game.self.accountId);
-
+        */
         SoliChess.move(game.gameId, fromIndex, toIndex, {from: game.self.accountId});
 
       } catch(e) {
@@ -309,7 +374,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     // set all chess pieces in start position
     function resetGame(board) {
-      console.log('resetGame', board);
 
       let game = $scope.getGame();
       board.setPosition(ChessUtils.FEN.startId);
@@ -402,8 +466,16 @@ angular.module('dappChess').controller('PlayGameCtrl',
           currentFen = generateFen(gameState);
           console.log('GENERATED FEN: ', currentFen);
           console.log('REAL FEN: ', chess.fen());
+          console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
+          console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
+          console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
+          console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
+          console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
+          console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
+          console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
+          console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
         } catch(e) {
-
+          console.log(e);
         }
 
 
