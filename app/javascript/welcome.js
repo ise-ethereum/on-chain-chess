@@ -1,3 +1,3 @@
 /* global angular */
-angular.module('dappChess').controller('WelcomeCtrl', function (crypto) {
+angular.module('dappChess').controller('WelcomeCtrl', function () {
 });
