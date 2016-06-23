@@ -95,16 +95,18 @@ library ChessLogic {
     }
 
 
-    function setupState(State storage self) {
+    function setupState(State storage self, int8 nextPlayerColor) {
         // Initialize state
         for (uint i = 0; i < 128; i++) {
             // Read defaultState bytes string, which is offset by 8 to be > 0
             self.fields[i] = int8(defaultState[i]) - 8;
         }
+        setFlag(self, Flag.CURRENT_PLAYER, nextPlayerColor);
     }
 
-    function setState(State storage self, int8[128] newState) {
+    function setState(State storage self, int8[128] newState, int8 nextPlayerColor) {
         self.fields = newState;
+        setFlag(self, Flag.CURRENT_PLAYER, nextPlayerColor);
     }
 
     /* validates a move and executes it */
@@ -155,6 +157,10 @@ library ChessLogic {
             setFlag(self, Flag.MOVE_COUNT_H, moveCount / (2**7));
         }
         setFlag(self, Flag.MOVE_COUNT_L, moveCount % 128);
+
+        // Update nextPlayer
+        int8 nextPlayerColor = currentPlayerColor == Players(Player.WHITE) ? Players(Player.BLACK) : Players(Player.WHITE);
+        setFlag(self, Flag.CURRENT_PLAYER, nextPlayerColor);
     }
 
     function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) internal {

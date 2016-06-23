@@ -4,14 +4,14 @@ import { gameStateDisplay } from './utils';
 
 var assert = require('chai').assert;
 
-const defaultBoard = [-4,-2,-3,-5,-6,-3,-2,-4,  0,0,0,  4,0,0,0,0,
-                      -1,-1,-1,-1,-1,-1,-1,-1,  0,0,0,  0,0,0,0,0,
-                       0, 0, 0, 0, 0, 0, 0, 0,  0,0,0,  0,0,0,0,0,
-                       0, 0, 0, 0, 0, 0, 0, 0,  0,0,0,  0,0,0,0,0,
-                       0, 0, 0, 0, 0, 0, 0, 0,  0,0,0,  0,0,0,0,0,
-                       0, 0, 0, 0, 0, 0, 0, 0,  0,0,0,  0,0,0,0,0,
-                       1, 1, 1, 1, 1, 1, 1, 1,  0,0,0,  0,0,0,0,0,
-                       4, 2, 3, 5, 6, 3, 2, 4,  0,0,0,116,0,0,0,0];
+const defaultBoard = [-4,-2,-3,-5,-6,-3,-2,-4,0,0,0,4,0,0,0,0,
+                      -1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,
+                      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                      1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
+                      4,2,3,5,6,3,2,4,0,0,0,116,0,0,0,0];
 const emptyBoard = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -422,6 +422,7 @@ describe('Chess contract', function() {
         let expectedState = [...defaultBoard];
         expectedState[100] = 0; // moved piece away
         expectedState[84] = defaultBoard[100];
+        expectedState[56] = -1; // next player black
         expectedState[8] = 1 >> 7; // updated move count
         expectedState[9] = 1 % 128; // updated move count
         var filter2 = Chess.GameStateChanged({gameId: testGames[0]});
@@ -486,6 +487,7 @@ describe('Chess contract', function() {
           if (numDone === 1) {
             newState[66] = newState[67]; // Piece was moved
             newState[67] = 0;
+            newState[56] = -1;
             newState[8] = 128 >> 7; // = 1, Move count has overflown
             newState[9] = 128 % 128;
             assert.deepEqual(gameStateDisplay(newState), gameStateDisplay(result.args.state));
