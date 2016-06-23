@@ -31,7 +31,8 @@ contract Chess is TurnBasedGame {
         bytes32 gameId = super.initGame(player1Alias, playAsWhite);
 
         // Setup game state
-        gameStates[gameId].setupState();
+        int8 nextPlayerColor = playAsWhite ? int8(1) : int8(-1);
+        gameStates[gameId].setupState(nextPlayerColor);
 
         if (playAsWhite) {
             // Player 1 will play as white
@@ -87,7 +88,8 @@ contract Chess is TurnBasedGame {
 
     /* Explicit set game state. Only in debug mode */
     function setGameState(bytes32 gameId, int8[128] state, address nextPlayer) debugOnly public {
-        gameStates[gameId].setState(state);
+        int8 playerColor = nextPlayer == gameStates[gameId].playerWhite ? int8(1) : int8(-1);
+        gameStates[gameId].setState(state, playerColor);
         games[gameId].nextPlayer = nextPlayer;
         GameStateChanged(gameId, gameStates[gameId].fields);
     }
