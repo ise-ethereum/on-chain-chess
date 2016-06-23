@@ -14,10 +14,13 @@ contract Chess is TurnBasedGame {
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
 
+
+
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint value);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint value);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
+    event GameTimeoutStarted(bytes32 indexed gameId,uint time, int8 timeoutState);
 
     function Chess(bool enableDebugging) TurnBasedGame(enableDebugging) {
     }
@@ -70,7 +73,9 @@ contract Chess is TurnBasedGame {
         if (games[gameId].nextPlayer != msg.sender) {
             throw;
         }
-
+        if(games[gameId].timeoutState != 0) {
+            games[gameId].timeoutState = 0;
+        }
         // Chess move validation
         gameStates[gameId].move(fromIndex, toIndex);
 
@@ -103,12 +108,59 @@ contract Chess is TurnBasedGame {
     }
 
     /* The sender claims that playerColor is in check mate */
-    function claimCheckmate(bytes32 gameId, int8 checkedPlayerColor) notEnded(gameId) public {
-        // TODO
+    function claimCheckmate(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started
+        if (game.timeoutState != 0)
+            throw;
+        // you can only claim draw / victory in the enemies turn
+        if(msg.sender == game.nextPlayer)
+            throw;
+        game.time = now;
+        game.timeoutState = 1;
+
+        GameTimeoutStarted(gameId,game.time,game.timeoutState);
     }
 
-    function claimStalemate(bytes32 gameId, int8 stalledPlayerColor) notEnded(gameId) public {
-        // TODO
+    function claimDraw(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started
+        if (game.timeoutState != 0)
+            throw;
+        // you can only claim draw / victory in the enemies turn
+        if(msg.sender == game.nextPlayer)
+            throw;
+        game.time = now;
+        game.timeoutState = -1;
+
+        GameTimeoutStarted(gameId,game.time,game.timeoutState);
+    }
+
+    function claimTimeout(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        if(msg.sender == game.nextPlayer)
+            throw;
+        if (game.timeoutState == 0)
+            throw;
+        if(now < game.time + 10 minutes)
+            throw;
+        if(game.timeoutState == -1){
+            game.ended = true;
+        }else if(game.timeoutState == 1){
+            game.ended = true;
+            game.winner = msg.sender;
+        }else{
+            throw;
+        }
     }
 
     /* This unnamed function is called whenever someone tries to send ether to the contract */

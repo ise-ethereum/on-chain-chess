@@ -7,7 +7,7 @@ var assert = require('chai').assert;
 const defaultBoard = [-4,-2,-3,-5,-6,-3,-2,-4,0,0,0,4,0,0,0,0,
                       -1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                      0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+                      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                       1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
@@ -249,6 +249,7 @@ describe('Chess contract', function() {
         Chess.initGame('Alice', true, {from: player1, gas: 2000000});
       });
     });
+
 
     it('should initialize 1 open game (gameId2)', (done) => {
       Chess.initGame('Alice', true, {from: player1, gas: 2000000});
