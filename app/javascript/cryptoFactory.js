@@ -1,10 +1,11 @@
 /* global angular */
 var ethUtils = require('../../node_modules/ethereumjs-util/index');
 
-import {web3} from '../../contract/Chess.sol';
+import {web3, Auth} from '../../contract/Auth.sol';
 angular.module('dappChess').factory('crypto', function () {
   let crypto = {};
   console.log('crypto loaded');
+  console.log('Auth', Auth);
 
   /**
    * Calculates the signature of the given data.
@@ -28,6 +29,7 @@ angular.module('dappChess').factory('crypto', function () {
     console.log('s', s);
     console.log('v', v);
     console.log('msgHash', msgHash);
+    console.log('Auth.verify', Auth.verify(msgHash, v, r, s));
 
     let signerAddress = ethUtils.ecrecover(new Buffer(msgHash, 'hex'), v, r, s);
     console.log('signerAddress', signerAddress.toString('hex'));
