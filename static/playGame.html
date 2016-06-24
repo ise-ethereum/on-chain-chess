@@ -38,6 +38,7 @@
   <div class="four columns">
     <button data-ng-click="surrender()" data-ng-show="gameIsActive()">Surrender</button>
     <button data-ng-click="closeGame()" data-ng-show="!gameIsActive()">Close</button>
+    <button data-ng-click="claimEther()" data-ng-show="gameHasClaimableEther()">Claim ether</button>
     <div class="game-log">
       <p>{{gameStatus}}</p>
       <p>{{gamePgn}}</p>
