@@ -7,7 +7,7 @@ var assert = require('chai').assert;
 const defaultBoard = [-4,-2,-3,-5,-6,-3,-2,-4,0,0,0,4,0,0,0,0,
                       -1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                      0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                       1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
@@ -365,7 +365,7 @@ describe('Chess contract', function() {
     });
   });
 
-  describe.only('Endgame', () => {
+  describe('Endgame', () => {
     let gameId;
     beforeEach((done) => {
       // runs before each test in this block
