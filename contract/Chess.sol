@@ -19,8 +19,8 @@ contract Chess is TurnBasedGame {
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint value);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint value);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
-    event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
     event GameTimeoutStarted(bytes32 indexed gameId,uint time, int8 timeoutState);
+    event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
 
     function Chess(bool enableDebugging) TurnBasedGame(enableDebugging) {
     }
@@ -108,7 +108,7 @@ contract Chess is TurnBasedGame {
     }
 
     /* The sender claims that playerColor is in check mate */
-    function claimCheckmate(bytes32 gameId) notEnded(gameId) public {
+    function claimWin(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
@@ -117,7 +117,7 @@ contract Chess is TurnBasedGame {
         if (game.timeoutState != 0)
             throw;
         // you can only claim draw / victory in the enemies turn
-        if(msg.sender == game.nextPlayer)
+        if (msg.sender == game.nextPlayer)
             throw;
         game.time = now;
         game.timeoutState = 1;
@@ -125,7 +125,7 @@ contract Chess is TurnBasedGame {
         GameTimeoutStarted(gameId,game.time,game.timeoutState);
     }
 
-    function claimDraw(bytes32 gameId) notEnded(gameId) public {
+    function offerDraw(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
@@ -134,7 +134,7 @@ contract Chess is TurnBasedGame {
         if (game.timeoutState != 0)
             throw;
         // you can only claim draw / victory in the enemies turn
-        if(msg.sender == game.nextPlayer)
+        if (msg.sender == game.nextPlayer)
             throw;
         game.time = now;
         game.timeoutState = -1;
@@ -147,18 +147,42 @@ contract Chess is TurnBasedGame {
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
             throw;
-        if(msg.sender == game.nextPlayer)
+        if (msg.sender == game.nextPlayer)
             throw;
         if (game.timeoutState == 0)
             throw;
-        if(now < game.time + 10 minutes)
+        if (now < game.time + 10 minutes)
             throw;
-        if(game.timeoutState == -1){
+        if (game.timeoutState == -1){
             game.ended = true;
-        }else if(game.timeoutState == 1){
+            GameEnded(gameId, 0);
+        } else if (game.timeoutState == 1){
             game.ended = true;
             game.winner = msg.sender;
-        }else{
+            GameEnded(gameId, msg.sender);
+        } else {
+            throw;
+        }
+    }
+
+    function confirmGameEnded(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        if (msg.sender != game.nextPlayer)
+            throw;
+        if (game.timeoutState == 0)
+            throw;
+        if (game.timeoutState == -1){
+            game.ended = true;
+            GameEnded(gameId, 0);
+        } else if (game.timeoutState == 1){
+            game.ended = true;
+            // other player won
+            game.winner = (msg.sender == game.player1 ? game.player2 : game.player1);
+            GameEnded(gameId, game.winner);
+        } else {
             throw;
         }
     }
