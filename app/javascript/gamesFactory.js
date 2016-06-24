@@ -58,7 +58,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       nextPlayer: array[4],
       winner: array[5],
       ended: array[6],
-      value: array[7],
+      pot: array[7],
+      player1WonEther: array[8],
+      player2WonEther: array[9],
       playerWhite: playerWhite
     };
   };
@@ -79,25 +81,47 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       game.self = {
         username: contractGameObject.player2Alias,
         accountId: contractGameObject.player2,
-        color: (contractGameObject.playerWhite === contractGameObject.player2 ? 'white' : 'black')
+        color: (contractGameObject.playerWhite === contractGameObject.player2 ? 'white' : 'black'),
+        wonEther: (contractGameObject.player2WonEther) ?
+          web3
+            .fromWei(contractGameObject.player2WonEther, 'ether')
+            .toDigits().toString() :
+          0
       };
       game.opponent = {
         username: contractGameObject.player1Alias,
         accountId: contractGameObject.player1,
-        color: (contractGameObject.playerWhite === contractGameObject.player1 ? 'white' : 'black')
+        color: (contractGameObject.playerWhite === contractGameObject.player1 ? 'white' : 'black'),
+        wonEther: (contractGameObject.player1WonEther) ?
+          web3
+            .fromWei(contractGameObject.player1WonEther, 'ether')
+            .toDigits().toString() :
+          0
       };
     } else {
       game.self = {
         username: contractGameObject.player1Alias,
         accountId: contractGameObject.player1,
-        color: (contractGameObject.playerWhite === contractGameObject.player1 ? 'white' : 'black')
+        color: (contractGameObject.playerWhite === contractGameObject.player1 ? 'white' : 'black'),
+        wonEther: (contractGameObject.player1WonEther) ?
+          web3
+            .fromWei(contractGameObject.player1WonEther, 'ether')
+            .toDigits().toString() :
+          0
       };
       if (typeof contractGameObject.player2 !== 'undefined' &&
         contractGameObject.player2 !== '0x0000000000000000000000000000000000000000') {
         game.opponent = {
           username: contractGameObject.player2Alias,
           accountId: contractGameObject.player2,
-          color: (contractGameObject.playerWhite === contractGameObject.player2 ? 'white' : 'black')
+          color: (contractGameObject.playerWhite === contractGameObject.player2 ?
+            'white' :
+            'black'),
+          wonEther: (contractGameObject.player2WonEther) ?
+            web3
+              .fromWei(contractGameObject.player2WonEther, 'ether')
+              .toDigits().toString() :
+            0
         };
       }
     }
@@ -112,7 +136,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     }
 
     game.ended = contractGameObject.ended;
-    game.value = web3.fromWei(contractGameObject.value, 'ether').toDigits().toString();
+    game.pot = web3.fromWei(contractGameObject.pot, 'ether').toDigits().toString();
 
     console.log('game added', game);
 
@@ -121,64 +145,52 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     return game;
   };
 
-  games.setWinner = function(gameId, winnerAccountId) {
-    for(let i in games.list) {
-      if(games.list[i].gameId === gameId) {
-        // Perform actions if game is won
-        if(games.list[i].self.accountId === winnerAccountId) {
-          games.list[i].winner = 'self';
-          games.list[i].ended = true;
+  games.showWinner = function(game) {
+    // Only do this if we are part of this game
+    if(accounts.availableAccounts.indexOf(game.self.accountId)) {
+      // Perform actions if game is won
+      if(game.winner === 'self') {
+        $rootScope.$broadcast('message',
+          'You have won the game against ' + game.opponent.username,
+          'message', 'playgame');
+      }
+      // Perform action if the winner was the opponent
+      else if(game.winner === 'opponent') {
+        $rootScope.$broadcast('message',
+          'You have lost the game against ' + game.opponent.username,
+          'message', 'playgame');
+      }
+      else {
+        $rootScope.$broadcast('message',
+          'Your game against ' + game.opponent.username + ' ended in a draw',
+          'message', 'playgame');
+      }
+    }
+  };
 
-          console.log(accounts.availableAccounts, winnerAccountId,
-                      accounts.availableAccounts.indexOf(winnerAccountId) !== -1);
-          if (accounts.availableAccounts.indexOf(winnerAccountId) !== -1) {
-            $rootScope.$broadcast('message',
-              'You have won the game against ' + games.list[i].opponent.username,
-              'message', 'playgame');
+  games.claimEther = function(game) {
+    // Only do this if we are part of this game
+    if(accounts.availableAccounts.indexOf(game.self.accountId)) {
+      // When the player has won ether, claim this
+      if (game.self.wonEther > 0) {
+        $rootScope.$broadcast('message',
+          'Claiming your won ether in the game against ' + game.opponent.username,
+          'message', 'claimpot');
 
-            // When the player did win the game, claim the ether pot
-            $rootScope.$broadcast('message',
-              'Claiming your won ether in the game against ' + games.list[i].opponent.username,
-              'message', 'claimpot');
-
-            try {
-              console.log('Trying to claim ether', gameId, {from: winnerAccountId});
-              Chess.claimWin(gameId, {from: winnerAccountId});
-              $rootScope.$broadcast('message',
-                'Your won ether with the amount of ' +
-                games.list[i].value +
-                ' has been added to your account',
-                'success', 'claimpot');
-            }
-            catch(e) {
-              $rootScope.$broadcast('message',
-                'Could not claim your won ether',
-                'error', 'claimpot');
-            }
-          }
+        try {
+          console.log('Trying to claim ether for game ', game);
+          Chess.claimWin(game.gameId, {from: game.self.accountId});
+          $rootScope.$broadcast('message',
+            'Your won ether with the amount of ' +
+            game.self.wonEther +
+            ' has been added to your account',
+            'success', 'claimpot');
         }
-        else if(games.list[i].opponent.accountId === winnerAccountId) {
-          games.list[i].winner = 'opponent';
-          games.list[i].ended = true;
-
-          console.log(accounts.availableAccounts, games.list[i].self.accountId,
-                      accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1);
-          if (accounts.availableAccounts.indexOf(games.list[i].self.accountId) !== -1) {
-            $rootScope.$broadcast('message',
-              'You have lost the game against ' + games.list[i].opponent.username,
-              'message', 'playgame');
-          }
+        catch (e) {
+          $rootScope.$broadcast('message',
+            'Could not claim your won ether',
+            'error', 'claimpot');
         }
-        else {
-          console.log('error: could not find winner ' + winnerAccountId,
-            'self: ' + games.list[i].self.accountId,
-            'opponent: ' + games.list[i].opponent.accountId
-          );
-        }
-
-        $rootScope.$apply();
-
-        break;
       }
     }
   };
@@ -188,8 +200,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     if (err) {
       console.log('error occured', err);
       /*$rootScope.$broadcast('message',
-        'Your game could not be created, the following error occured: ' + err,
-        'error', 'startgame');*/
+       'Your game could not be created, the following error occured: ' + err,
+       'error', 'startgame');*/
     } else {
       let game = games.add(data.args);
       games.openGames.push(game.gameId);
@@ -209,8 +221,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     if (err) {
       console.log('error occured', err);
       /*$rootScope.$broadcast('message',
-        'It was not possible to join the game, the following error occured: ' + err,
-        'error', 'joingame');*/
+       'It was not possible to join the game, the following error occured: ' + err,
+       'error', 'joingame');*/
     } else {
       let gameId = data.args.gameId;
       let p1accountId = data.args.player1;
@@ -250,14 +262,16 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
             color: p2color
           };
         }
-        game.value = web3.fromWei(data.args.value, 'ether').toDigits().toString();
+        game.pot = web3.fromWei(data.args.pot, 'ether').toDigits().toString();
+        game.player1WonEther = 0;
+        game.player2WonEther = 0;
       }
 
       if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
         $rootScope.$broadcast('message', 'Your game against ' +
-                game.opponent.username.replace(/<(?:.|\n)*?>/gm, '') +
-                ' has started',
-            'success', 'joingame');
+          game.opponent.username.replace(/<(?:.|\n)*?>/gm, '') +
+          ' has started',
+          'success', 'joingame');
 
         if($route.current.activePage === navigation.joinGamePage) {
           navigation.goto(navigation.playGamePage, gameId);
@@ -282,10 +296,26 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     if (err) {
       console.log('error occured', err);
       /*$rootScope.$broadcast('message',
-        'The surrender could not be saved, the following error occurred: ' + err,
-        'error', 'playgame');*/
+       'The surrender could not be saved, the following error occurred: ' + err,
+       'error', 'playgame');*/
     } else {
-      games.setWinner(data.args.gameId, data.args.winner);
+      // Update game in games list
+      let gameInContract = Chess.games(data.args.gameId);
+
+      if(gameInContract) {
+        for(let i in games.list) {
+          if (games.list[i].gameId === data.args.gameId) {
+            let game = games.convertArrayToGame(data.args.gameId, gameInContract);
+            games.list[i] = game;
+
+            // Show the winner of the game
+            games.showWinner(game);
+            //games.claimEther(game);
+
+            $rootScope.$apply();
+          }
+        }
+      }
     }
   };
 
@@ -297,30 +327,43 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
        'The surrender could not be saved, the following error occurred: ' + err,
        'error', 'playgame');*/
     } else {
-      let game = games.getGame(data.args.gameId);
+      // Update game in games list
+      let gameInContract = Chess.games(data.args.gameId);
 
-      if(game) {
-        // If the player closed his own game
-        if (accounts.availableAccounts.indexOf(data.args.player) !== -1) {
-          navigation.goto(navigation.welcomePage);
+      if(gameInContract) {
+        for(let i in games.list) {
+          if (games.list[i].gameId === data.args.gameId) {
+            let game = games.convertArrayToGame(data.args.gameId, gameInContract);
+            games.list[i] = game;
 
-          $rootScope.$broadcast('message',
-            'Your game with the id ' + data.args.gameId + ' was closed',
-            'success', 'playgame');
+            // If the player closed his own game
+            if (accounts.availableAccounts.indexOf(data.args.player) !== -1) {
+              navigation.goto(navigation.welcomePage);
 
-          games.removeGame(data.args.gameId);
+              $rootScope.$broadcast('message',
+                'Your game with the id ' + data.args.gameId + ' was closed',
+                'success', 'playgame');
 
-          $rootScope.$apply();
-        }
-        else {
-          let openGameIndex = games.openGames.indexOf(game.gameId);
+              // If the game did not have an opponent: Claim the ether from this game
+              if (typeof(game.opponent) === 'undefined') {
+                games.claimEther(game);
+              }
 
-          // If this was an open game of another player
-          if(openGameIndex !== -1) {
-            games.removeGame(data.args.gameId);
-            games.openGames.splice(openGameIndex, 1);
+              games.removeGame(data.args.gameId);
 
-            $rootScope.$apply();
+              $rootScope.$apply();
+            }
+            else {
+              let openGameIndex = games.openGames.indexOf(game.gameId);
+
+              // If this was an open game of another player
+              if (openGameIndex !== -1) {
+                games.removeGame(data.args.gameId);
+                games.openGames.splice(openGameIndex, 1);
+
+                $rootScope.$apply();
+              }
+            }
           }
         }
       }
