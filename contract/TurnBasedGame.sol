@@ -123,12 +123,12 @@ contract TurnBasedGame {
         if (games[gameId].player1 == msg.sender) {
             // Player 1 surrendered, player 2 won
             games[gameId].winner = games[gameId].player2;
-            games[gameId].player2winnings = games[gameId].pot;
+            games[gameId].player2Winnings = games[gameId].pot;
             games[gameId].pot = 0;
         } else if(games[gameId].player2 == msg.sender) {
             // Player 2 surrendered, player 1 won
             games[gameId].winner = games[gameId].player1;
-            games[gameId].player1winnings = games[gameId].pot;
+            games[gameId].player1Winnings = games[gameId].pot;
             games[gameId].pot = 0;
         } else {
             // Sender is not a participant of this game
@@ -144,17 +144,18 @@ contract TurnBasedGame {
      * bytes32 gameId: ID of the game they have won
      */
     function withdraw(bytes32 gameId) public {
+        uint payout = 0;
         if(games[gameId].player1 == msg.sender && games[gameId].player1Winnings > 0) {
-            uint payout = games[gameId].player1Winnings;
+            payout = games[gameId].player1Winnings;
             games[gameId].player1Winnings = 0;
-            if (!msg.sender.send(payout)){
+            if (!msg.sender.send(payout)) {
                 throw;
             }
         }
-        else if(games[gameId].player2 == msg.sender && games[gameId].player2Winnings > 0){
-            uint payout = games[gameId].player2Winnings;
+        else if(games[gameId].player2 == msg.sender && games[gameId].player2Winnings > 0) {
+            payout = games[gameId].player2Winnings;
             games[gameId].player2Winnings = 0;
-            if (!msg.sender.send(payout)){
+            if (!msg.sender.send(payout)) {
                 throw;
             }
         }
