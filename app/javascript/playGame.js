@@ -450,7 +450,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           console.log(e);
         }
 
-        let x = chess.load(currentFen);
+        chess.load(currentFen);
 
         board = new Chessboard('my-board', {
             position: currentFen,
