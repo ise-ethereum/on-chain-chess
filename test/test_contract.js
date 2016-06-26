@@ -391,7 +391,7 @@ describe('Chess contract', function() {
         let filter = Chess.GameTimeoutStarted({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
-          assert.isAbove(new Date().getTime() / 1000, result.args.time);
+          assert.isAbove(new Date().getTime() / 1000, result.args.timeoutStarted);
           assert.equal(1, result.args.timeoutState);
           filter.stopWatching();
           done();
@@ -441,7 +441,7 @@ describe('Chess contract', function() {
         let filter = Chess.GameTimeoutStarted({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
-          assert.isAbove(new Date().getTime() / 1000, result.args.time);
+          assert.isAbove(new Date().getTime() / 1000, result.args.timeoutStarted);
           assert.equal(-1, result.args.timeoutState);
           filter.stopWatching();
           done();
@@ -1282,5 +1282,3 @@ describe('Chess contract', function() {
   }); */
 
 });
-
-
