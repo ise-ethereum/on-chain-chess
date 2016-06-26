@@ -10,6 +10,25 @@ contract TurnBasedGame {
     event GameClosed(bytes32 indexed gameId, address indexed player);
     event DebugInts(string message, int value1, int value2, int value3);
 
+    struct Game {
+        address player1;
+        address player2;
+        string player1Alias;
+        string player2Alias;
+        address nextPlayer;
+        address winner;
+        bool ended;
+        uint value; // What this game is worth ether paid into the game
+        uint timeoutStarted; // timer for timeout
+        int8 timeoutState; // -1 draw 0 nothing 1 checkmate
+    }
+
+    mapping (bytes32 => Game) public games;
+
+    // stack of open game ids
+    mapping (bytes32 => bytes32) public openGameIds;
+    bytes32 public head;
+
     // stack of games of players
     mapping (address => mapping (bytes32 => bytes32)) public gamesOfPlayers;
     mapping (address => bytes32) public gamesOfPlayersHeads;
@@ -42,23 +61,6 @@ contract TurnBasedGame {
         }
         return data;
     }
-
-    // stack of open game ids
-    mapping (bytes32 => bytes32) public openGameIds;
-    bytes32 public head;
-
-    struct Game {
-        address player1;
-        address player2;
-        string player1Alias;
-        string player2Alias;
-        address nextPlayer;
-        address winner;
-        bool ended;
-        uint value; // What this game is worth ether paid into the game
-    }
-
-    mapping (bytes32 => Game) public games;
 
     // closes a game that is not currently running
     function closePlayerGame(bytes32 gameId) public {
@@ -162,6 +164,7 @@ contract TurnBasedGame {
         bytes32 gameId = sha3(msg.sender, block.number);
 
         games[gameId].ended = false;
+        games[gameId].timeoutState = 0;
 
         // Initialize participants
         games[gameId].player1 = msg.sender;

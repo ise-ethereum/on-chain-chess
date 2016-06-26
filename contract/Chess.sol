@@ -14,9 +14,12 @@ contract Chess is TurnBasedGame {
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
 
+
+
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint value);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint value);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
+    event GameTimeoutStarted(bytes32 indexed gameId,uint timeoutStarted, int8 timeoutState);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
 
     function Chess(bool enableDebugging) TurnBasedGame(enableDebugging) {
@@ -70,7 +73,9 @@ contract Chess is TurnBasedGame {
         if (games[gameId].nextPlayer != msg.sender) {
             throw;
         }
-
+        if(games[gameId].timeoutState != 0) {
+            games[gameId].timeoutState = 0;
+        }
         // Chess move validation
         gameStates[gameId].move(fromIndex, toIndex);
 
@@ -102,13 +107,87 @@ contract Chess is TurnBasedGame {
        return gameStates[gameId].playerWhite;
     }
 
-    /* The sender claims that playerColor is in check mate */
-    function claimCheckmate(bytes32 gameId, int8 checkedPlayerColor) notEnded(gameId) public {
-        // TODO
+    /* The sender claims he has won the game. Starts a timeout. */
+    function claimWin(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started
+        if (game.timeoutState != 0)
+            throw;
+        // you can only claim draw / victory in the enemies turn
+        if (msg.sender == game.nextPlayer)
+            throw;
+        game.timeoutStarted = now;
+        game.timeoutState = 1;
+
+        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
     }
 
-    function claimStalemate(bytes32 gameId, int8 stalledPlayerColor) notEnded(gameId) public {
-        // TODO
+    /* The sender offers the other player a draw. Starts a timeout. */
+    function offerDraw(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started
+        if (game.timeoutState != 0)
+            throw;
+        // you can only claim draw / victory in the enemies turn
+        if (msg.sender == game.nextPlayer)
+            throw;
+        game.timeoutStarted = now;
+        game.timeoutState = -1;
+
+        GameTimeoutStarted(gameId,game.timeoutStarted,game.timeoutState);
+    }
+
+    /* The sender claims a previously started timeout. */
+    function claimTimeout(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        if (msg.sender == game.nextPlayer)
+            throw;
+        if (game.timeoutState == 0)
+            throw;
+        if (now < game.timeoutStarted + 10 minutes)
+            throw;
+        if (game.timeoutState == -1){
+            game.ended = true;
+            GameEnded(gameId, 0);
+        } else if (game.timeoutState == 1){
+            game.ended = true;
+            game.winner = msg.sender;
+            GameEnded(gameId, msg.sender);
+        } else {
+            throw;
+        }
+    }
+
+    /* A timeout can be confirmed by the non-initializing player. */
+    function confirmGameEnded(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        if (msg.sender != game.nextPlayer)
+            throw;
+        if (game.timeoutState == 0)
+            throw;
+        if (game.timeoutState == -1){
+            game.ended = true;
+            GameEnded(gameId, 0);
+        } else if (game.timeoutState == 1){
+            game.ended = true;
+            // other player won
+            game.winner = (msg.sender == game.player1 ? game.player2 : game.player1);
+            GameEnded(gameId, game.winner);
+        } else {
+            throw;
+        }
     }
 
     /* This unnamed function is called whenever someone tries to send ether to the contract */
