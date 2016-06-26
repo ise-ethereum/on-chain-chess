@@ -19,7 +19,7 @@ contract Chess is TurnBasedGame {
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint value);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint value);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
-    event GameTimeoutStarted(bytes32 indexed gameId,uint time, int8 timeoutState);
+    event GameTimeoutStarted(bytes32 indexed gameId,uint timeoutStarted, int8 timeoutState);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
 
     function Chess(bool enableDebugging) TurnBasedGame(enableDebugging) {
@@ -107,7 +107,7 @@ contract Chess is TurnBasedGame {
        return gameStates[gameId].playerWhite;
     }
 
-    /* The sender claims that playerColor is in check mate */
+    /* The sender claims he has won the game. Starts a timeout. */
     function claimWin(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
         // just the two players currently playing
@@ -119,12 +119,13 @@ contract Chess is TurnBasedGame {
         // you can only claim draw / victory in the enemies turn
         if (msg.sender == game.nextPlayer)
             throw;
-        game.time = now;
+        game.timeoutStarted = now;
         game.timeoutState = 1;
 
-        GameTimeoutStarted(gameId,game.time,game.timeoutState);
+        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
     }
 
+    /* The sender offers the other player a draw. Starts a timeout. */
     function offerDraw(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
         // just the two players currently playing
@@ -136,12 +137,13 @@ contract Chess is TurnBasedGame {
         // you can only claim draw / victory in the enemies turn
         if (msg.sender == game.nextPlayer)
             throw;
-        game.time = now;
+        game.timeoutStarted = now;
         game.timeoutState = -1;
 
-        GameTimeoutStarted(gameId,game.time,game.timeoutState);
+        GameTimeoutStarted(gameId,game.timeoutStarted,game.timeoutState);
     }
 
+    /* The sender claims a previously started timeout. */
     function claimTimeout(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
         // just the two players currently playing
@@ -151,7 +153,7 @@ contract Chess is TurnBasedGame {
             throw;
         if (game.timeoutState == 0)
             throw;
-        if (now < game.time + 10 minutes)
+        if (now < game.timeoutStarted + 10 minutes)
             throw;
         if (game.timeoutState == -1){
             game.ended = true;
@@ -165,6 +167,7 @@ contract Chess is TurnBasedGame {
         }
     }
 
+    /* A timeout can be confirmed by the non-initializing player. */
     function confirmGameEnded(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
         // just the two players currently playing
