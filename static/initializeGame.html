@@ -7,7 +7,12 @@
       <label>Account to use</label>
       <select name="selectedAccount" data-ng-model="selectedAccount" required>
         <option value="">Select account</option>
-        <option data-ng-repeat="account in availableAccounts" data-ng-value="account">Account {{$index}}</option>
+        <option
+          data-ng-repeat="account in availableAccounts"
+          data-ng-value="account"
+          data-ng-style="getBlockie(account)">
+          Account {{$index}}
+        </option>
       </select>
       <!-- Does not work in the current version of Mist / only creates new accounts, although it should select or create an account -->
       <!--<button data-ng-click="selectOrCreateAccount()">Create new account</button>
@@ -49,8 +54,7 @@
       <li>Select the account to use, enter your username and select the start color to start a game</li>
       <li>Your game is being created in the blockchain. Once your game is ready,
         it will appear as &quot;Open game&quot; in the navigation</li>
-      <li>Invite friends to join your game by sending the game id to them.
-        You can find the game ID on the games page.</li>
+      <li>Friends and other players will see your game in the join game page and join it directly.</li>
       <li>Once another player has joined, the game begins.
         You will also receive a notification about this.</li>
     </ul>

@@ -1,4 +1,4 @@
-/* global angular, mist */
+/* global angular, mist, blockies */
 import {web3} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('accounts', function () {
   return {
@@ -23,6 +23,12 @@ angular.module('dappChess').factory('accounts', function () {
       }
 
       return false;
+    },
+    getBlockie: function(account) {
+      return {
+        'background-image': 'url(\'' + blockies.create(account).toDataURL() + '\')',
+        'padding-left': '40px'
+      };
     }
   };
 });

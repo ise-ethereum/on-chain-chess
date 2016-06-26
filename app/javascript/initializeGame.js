@@ -42,4 +42,5 @@ angular.module('dappChess').controller('InitializeGameCtrl',
     };
 
     $scope.getBalance = accounts.getBalance;
+    $scope.getBlockie = accounts.getBlockie;
   });

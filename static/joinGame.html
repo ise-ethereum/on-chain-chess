@@ -7,7 +7,12 @@
       <label>Account to use</label>
       <select name="selectedAccount" data-ng-model="selectedAccount" required>
         <option value="">Select account</option>
-        <option data-ng-repeat="account in availableAccounts" data-ng-value="account">Account {{$index}}</option>
+        <option
+          data-ng-repeat="account in availableAccounts"
+          data-ng-value="account"
+          data-ng-style="getBlockie(account)">
+          Account {{$index}}
+        </option>
       </select>
       <!-- Does not work in the current version of Mist / only creates new accounts, although it should select or create an account -->
       <!--<button data-ng-click="selectOrCreateAccount()">Create new account</button>

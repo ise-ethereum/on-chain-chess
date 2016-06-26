@@ -48,6 +48,7 @@ angular.module('dappChess').controller('JoinGameCtrl',
     }
 
     $scope.getBalance = accounts.getBalance;
+    $scope.getBlockie = accounts.getBlockie;
 
     $scope.joinGame = function (form) {
       if(form.$valid) {
@@ -55,5 +56,5 @@ angular.module('dappChess').controller('JoinGameCtrl',
       }
     };
 
-    
+
   });
