@@ -25,3 +25,9 @@ input + div > div.error, select + div > div.error {
 input[type="hidden"] + div > div.error {
   margin-top:0
 }
+select[name="selectedAccount"], select[name="selectedAccount"] option {
+  background-repeat:no-repeat;
+}
+select[name="selectedAccount"] option, select[name="selectedAccount"].ng-valid.ng-dirty {
+  padding-left:40px;
+}

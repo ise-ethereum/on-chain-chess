@@ -5,7 +5,11 @@
   <div class="four columns">
     <form name="form" novalidate data-ng-submit="initializeGame(form)">
       <label>Account to use</label>
-      <select name="selectedAccount" data-ng-model="selectedAccount" required>
+      <select
+        name="selectedAccount"
+        data-ng-model="selectedAccount"
+        data-ng-style="getBlockie(selectedAccount)"
+        required>
         <option value="">Select account</option>
         <option
           data-ng-repeat="account in availableAccounts"
