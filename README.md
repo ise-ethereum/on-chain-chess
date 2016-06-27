@@ -40,6 +40,8 @@ This is loosely based on [ethereum-webpack-example-dapp](https://github.com/uzyn
 
   Webpack is now started in `watch` mode, any changes done at JavaScript or Solidity files will automatically rebuild the affected modules.
 
+1. [Run SHH proxy, for P2P functions to work](https://github.com/ise-ethereum/insecure-ethereum-p2p-proxy#usage)
+
 1. Build, for deployment
 
   ```bash

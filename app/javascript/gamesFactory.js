@@ -1,6 +1,10 @@
 /* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
-angular.module('dappChess').factory('games', function (navigation, accounts, $rootScope, $route) {
+var shhFactory = require('web3-shh-dropin-for-proxy');
+var proxyUri = 'http://localhost:8090';
+var shhTopic = 'ise-ethereum-chess';
+
+angular.module('dappChess').factory('games', function (navigation, accounts, crypto, $rootScope, $route) {
   const games = {
     list: [],
     openGames: []
@@ -25,6 +29,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
    *  value: <number>
    * ]
    */
+
+  let shh = shhFactory(proxyUri);
 
   games.getGame = function (id) {
     return games.list.find(function (game) {
@@ -181,6 +187,89 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
         break;
       }
     }
+  };
+
+  /* Send move and resulting new state to second player */
+  games.sendMove = function(game, fromIndex, toIndex) {
+    let identity = game.self.accountId;
+    // TODO check that this really sends game state
+    let payload = [ 'MOVE', game.state, crypto.sign(identity, game.state),
+                   fromIndex, toIndex, crypto.sign([fromIndex, toIndex])
+                  ];
+    game.lastSentHash = web3.sha3(payload);
+    shh.post({
+      'from': identity,
+      'to': game.opponent.accountId,
+      'topic': [shhTopic, game.gameId],
+      'payload': payload
+    });
+
+    // Wait for ACK
+    if (typeof game.ackTimeout !== 'undefined') {
+      clearTimeout(game.ackTimeout);
+    }
+    game.ackTimeout = setTimeout(() => {
+      if (game.lastAckHash !== game.lastSentHash) {
+        console.log('Opponent did not ACK, sending last state and move to blockchain');
+        // TODO
+        // If not ACKed, send my last move to blockchain
+      }
+    }, 10000);
+
+    // Wait for next move
+    if (typeof game.moveTimeout !== 'undefined') {
+      clearTimeout(game.moveTimeout);
+    }
+    game.moveTimeout = setTimeout(() => {
+      console.log('Opponent did not send move, sending' +
+                  'last state and move to blockchain');
+      // TODO
+      // If opponent did not move, send my last move to blockchain
+    }, 10 * 60000);
+  };
+
+  /* Send acknowledgment of last received move */
+  games.sendAck = function(game) {
+    shh.post({
+      'from': game.self.accountId,
+      'to': game.opponent.accountId,
+      'topic': [shhTopic, game.gameId],
+      'payload': ['ACK', game.lastReceivedHash]
+    });
+  };
+
+  /* Receive move and resulting new state from opponent */
+  /* callback({[state, stateSignature, fromIndex, toIndex, moveSignature], from}) */
+  games.listenForMoves = function(game, callback) {
+    let moveEvents = shh.watch({
+      'topic': [shhTopic, game.gameId],
+      'to': game.self.accountId
+    });
+    moveEvents.arrived(function(m) {
+      if (m[0] === 'ACK') {
+        let hash = m.payload[1];
+        game.lastAckHash = hash;
+      }
+      if (m[0] === 'MOVE') {
+        let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
+        if (!crypto.verify(game.self.accountId, stateSignature, state) ||
+            !crypto.verify(game.self.accountId, moveSignature, [fromIndex, toIndex])) {
+          // Signature FAIL
+          console.log('Could not verify opponents move signature, sending last ' +
+                      'state and move to blockchain');
+          // TODO Send my last known state and move to the blockchain
+        } else {
+          game.lastReceivedHash = web3.sha3(m.payload);
+          callback(m);
+        }
+      }
+    });
+
+    return {
+      stopListening: () => {
+        moveEvents.remove();
+      }
+    };
   };
 
   games.eventGameInitialized = function (err, data) {
