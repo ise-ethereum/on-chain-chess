@@ -1,9 +1,9 @@
 /* global angular, Chess, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('PlayGameCtrl',
-  function (games, $route, $scope, $rootScope) {
+  function (games, $route, navigation, $scope, $rootScope) {
     // init chess validation
-    var chess, board, position, highlight, lastFrom, lastTo, game, currentFen, chessMove, gameState;
+    var chess, board, position, highlight, lastFrom, lastTo, currentFen, chessMove, gameState;
 
     $scope.gamePgn = '';
     $scope.gameStatus = '';
@@ -424,7 +424,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         'loading', 'playgame');
       try {
         console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
-        Chess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
+        SoliChess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
       }
       catch(e) {
         $rootScope.$broadcast('message', 'Could not submit your surrender', 'loading', 'playgame');
@@ -433,76 +433,109 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     $scope.gameIsWon = function() {
       let game = $scope.getGame();
-      return typeof(game.winner) !== 'undefined' && game.winner === 'self';
+      if(game) {
+        return typeof(game.winner) !== 'undefined' && game.winner === 'self';
+      }
+      else {
+        return false;
+      }
     };
 
     $scope.gameIsLost = function() {
       let game = $scope.getGame();
-      return typeof(game.winner) !== 'undefined' && game.winner === 'opponent';
+      if(game) {
+        return typeof(game.winner) !== 'undefined' && game.winner === 'opponent';
+      }
+      else {
+        return false;
+      }
     };
 
     $scope.gameIsActive = function() {
-      return typeof($scope.getGame().winner) === 'undefined';
+      let game = $scope.getGame();
+
+      if(game) {
+        return !game.ended;
+      }
+      else {
+        return false;
+      }
+    };
+
+    $scope.closeGame = function() {
+      SoliChess.closePlayerGame($scope.getGameId(), {from: $scope.getGame().self.accountId});
+      $rootScope.$broadcast('message', 'Closing your game, please wait...',
+        'loading', 'playgame');
     };
 
     //--- init Chessboard ---
-    if ($scope.isOpenGame !== false) {
-      $(document).ready(function () {
-        chess = new Chess();
+    if (!$scope.isOpenGame()) {
+      let game = $scope.getGame();
+      if(game) {
+        $(document).ready(function () {
+          chess = new Chess();
 
-        game = $scope.getGame();
-        highlight = lightItUp();
-        position = generateMapping();
+          game = $scope.getGame();
+          highlight = lightItUp();
+          position = generateMapping();
 
-        // set current fen
-        try {
-          gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
-          currentFen = generateFen(gameState);
+          // set current fen
+          try {
+            gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+            currentFen = generateFen(gameState);
 
-          generateState(currentFen);
+            generateState(currentFen);
 
-          console.log('REAL FEN: ', chess.fen());
-          console.log('GAMESTATE FEN: ', currentFen);
-          console.log('GAMESTATE: ', gameState);
-        } catch(e) {
-          console.log(e);
-        }
+            console.log('REAL FEN: ', chess.fen());
+            console.log('GAMESTATE FEN: ', currentFen);
+            console.log('GAMESTATE: ', gameState);
+          } catch (e) {
+            console.log(e);
+          }
 
-        board = new Chessboard('my-board', {
-            position: currentFen,
-            eventHandlers: {
-              onPieceSelected: pieceSelected,
-              onMove: pieceMove
+          board = new Chessboard('my-board', {
+              position: currentFen,
+              eventHandlers: {
+                onPieceSelected: pieceSelected,
+                onMove: pieceMove
+              }
+            }
+          );
+
+          let gamer;
+          if (gameState[56].toNumber() === 1) {
+            gamer = 'white';
+          } else {
+            gamer = 'black';
+          }
+
+          updateGameInfo('Next player is ' + gamer + '.', false);
+
+          position = generateMapping();
+
+          // opponent starts game
+          if (game.self.color === 'black') {
+            board.setOrientation(ChessUtils.ORIENTATION.black);
+            if (gameState[56].toNumber() === 1) {
+              board.enableUserInput(false);
+            }
+          } else {
+            if (gameState[56].toNumber() === -1) {
+              board.enableUserInput(false);
             }
           }
+
+
+          SoliChess.Move(eventMove);
+        }
+
         );
-
-        let gamer;
-        if (gameState[56].toNumber() === 1) {
-          gamer = 'white';
-        } else {
-          gamer = 'black';
-        }
-
-        updateGameInfo('Next player is ' + gamer + '.' , false);
-
-        position = generateMapping();
-
-        // opponent starts game
-        if (game.self.color === 'black') {
-          board.setOrientation(ChessUtils.ORIENTATION.black);
-          if (gameState[56].toNumber() === 1){
-            board.enableUserInput(false);
-          }
-        } else {
-          if (gameState[56].toNumber() === -1){
-            board.enableUserInput(false);
-          }
-        }
-
-
-        SoliChess.Move(eventMove);
-      });
+      }
+      else {
+        navigation.goto(navigation.welcomePage);
+        $rootScope.$broadcast('message', 'No game with the specified id exists', 
+          'error', 'playgame');
+      }
     }
   }
 );
