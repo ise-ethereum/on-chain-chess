@@ -200,6 +200,26 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     }
 
+    function claimWin(){
+      let game = $scope.getGame();
+      try {
+        SoliChess.claimWin(game.gameId, {from: game.self.accountId});
+        console.log('CLAIMWIN!');
+      } catch(e) {
+        console.log('CLAIMWIN ERROR: ', e);
+      }
+    }
+
+    function offerDraw(){
+      let game = $scope.getGame();
+      try {
+        SoliChess.offerDraw(game.gameId, {from: game.self.accountId});
+        console.log('OFFERDRAW!');
+      } catch(e) {
+        console.log('OFFERDRAW! ERROR: ', e);
+      }
+    }
+
     function processChessMove(chessMove) {
 
       let game = $scope.getGame();
@@ -275,17 +295,25 @@ angular.module('dappChess').controller('PlayGameCtrl',
         // game over?
         if (chess.in_checkmate() === true) { // jshint ignore:line
           status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+          if (chess.turn() === 'b' && game.self.color === 'white') {
+            claimWin();
+          }
+          if (chess.turn() === 'w' && game.self.color === 'black') {
+            claimWin();
+          }
 
         }
 
         // draw?
         else if (chess.in_draw() === true) { // jshint ignore:line
           status = 'DRAW!';
+          claimWin();
         }
 
         // stalemate?
         else if (chess.in_stalemate() === true) { // jshint ignore:line
           status = 'STALEMATE!';
+          offerDraw();
         }
 
         // game is still on
@@ -301,6 +329,32 @@ angular.module('dappChess').controller('PlayGameCtrl',
         }
       }
       updateGameInfo(status);
+    }
+
+    function eventGameTimeoutStarted(err, data) {
+      console.log('eventTimeoutStarted ', err, data);
+      if (err){
+        console.log('EVENTGAMETIMEOUTERROR: ', err);
+      } else {
+        let game = $scope.getGame();
+        if (chess.turn() === 'w' && game.self.color === 'white'){
+          console.log('Black win');
+          try {
+            SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+          } catch(e){
+            console.log(e);
+          }
+        }
+        else if (chess.turn() === 'b' && game.self.color === 'black') {
+          console.log('White win');
+          try {
+            SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+          } catch(e) {
+            console.log(e);
+          }
+        }
+      }
+
     }
 
     function eventMove(err, data) {
@@ -512,7 +566,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           updateGameInfo('Next player is ' + gamer + '.', false);
 
           position = generateMapping();
-
+          
           // opponent starts game
           if (game.self.color === 'black') {
             board.setOrientation(ChessUtils.ORIENTATION.black);
@@ -527,13 +581,14 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
 
           SoliChess.Move(eventMove);
+          SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
         }
 
         );
       }
       else {
         navigation.goto(navigation.welcomePage);
-        $rootScope.$broadcast('message', 'No game with the specified id exists', 
+        $rootScope.$broadcast('message', 'No game with the specified id exists',
           'error', 'playgame');
       }
     }
