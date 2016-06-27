@@ -26,6 +26,15 @@ angular.module('dappChess').controller('PlayGameCtrl',
       };
     }
 
+    function generateState(fen){
+      let x = fen.split(' ');
+      // let board, currentPlayer, enPassant, castling, moveCount = fen.split(' ');
+      console.log(x);
+
+
+    }
+
+
     function generateFen(state) {
       let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
 
@@ -266,11 +275,17 @@ angular.module('dappChess').controller('PlayGameCtrl',
         // game over?
         if (chess.in_checkmate() === true) { // jshint ignore:line
           status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+
         }
 
         // draw?
         else if (chess.in_draw() === true) { // jshint ignore:line
           status = 'DRAW!';
+        }
+
+        // stalemate?
+        else if (chess.in_stalemate() === true) { // jshint ignore:line
+          status = 'STALEMATE!';
         }
 
         // game is still on
@@ -443,14 +458,15 @@ angular.module('dappChess').controller('PlayGameCtrl',
         try {
           gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
           currentFen = generateFen(gameState);
+
+          generateState(currentFen);
+
           console.log('REAL FEN: ', chess.fen());
           console.log('GAMESTATE FEN: ', currentFen);
           console.log('GAMESTATE: ', gameState);
         } catch(e) {
           console.log(e);
         }
-
-        let x = chess.load(currentFen);
 
         board = new Chessboard('my-board', {
             position: currentFen,
