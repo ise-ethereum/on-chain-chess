@@ -25,10 +25,16 @@ angular.module('dappChess').factory('accounts', function () {
       return false;
     },
     getBlockie: function(account) {
-      return {
-        'background-image': 'url(\'' + blockies.create(account).toDataURL() + '\')',
-        'padding-left': '40px'
-      };
+      if(account) {
+        return {
+          'background-image': 'url(\'' + blockies.create({
+            seed: account
+          }).toDataURL() + '\')'
+        };
+      }
+      else {
+        return {};
+      }
     }
   };
 });
