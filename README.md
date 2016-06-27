@@ -17,6 +17,8 @@ This is loosely based on [ethereum-webpack-example-dapp](https://github.com/uzyn
   # Using testrpc (recommended)
   testrpc
 
+  # -----------OR-----------
+
   # If you are running Geth, 
   # make sure to run in testnet or private net and enable rpc
   geth --testnet --rpc
