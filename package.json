@@ -4,7 +4,7 @@
   "description": "Chess as a Ethereum (Solidity) smart contract decentralized app",
   "main": "index.js",
   "scripts": {
-    "start": "webpack --watch",
+    "start": "webpack-dev-server --content-base static/",
     "build": "webpack --bail",
     "build-production": "webpack --bail --config webpack.config-production.js",
     "test": "mocha-webpack --growl",
@@ -52,6 +52,7 @@
     "web3": "^0.15.3",
     "web3-loader": "git://github.com/Antanukas/web3-loader.git#af4e4ad57fb409360aa5c72866e31be230a2b162",
     "webpack": "^1.13.0",
+    "webpack-dev-server": "^1.14.1",
     "webpack-node-externals": "*"
   }
 }
