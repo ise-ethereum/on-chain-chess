@@ -1,9 +1,9 @@
 /* global angular, Chess, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('PlayGameCtrl',
-  function (games, $route, $scope, $rootScope) {
+  function (games, $route, navigation, $scope, $rootScope) {
     // init chess validation
-    var chess, board, position, highlight, lastFrom, lastTo, game, currentFen, chessMove, gameState;
+    var chess, board, position, highlight, lastFrom, lastTo, currentFen, chessMove, gameState;
 
     $scope.gamePgn = '';
     $scope.gameStatus = '';
@@ -25,6 +25,15 @@ angular.module('dappChess').controller('PlayGameCtrl',
         '6': 'K'
       };
     }
+
+    function generateState(fen){
+      let x = fen.split(' ');
+      // let board, currentPlayer, enPassant, castling, moveCount = fen.split(' ');
+      console.log(x);
+
+
+    }
+
 
     function generateFen(state) {
       let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
@@ -191,6 +200,26 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     }
 
+    function claimWin(){
+      let game = $scope.getGame();
+      try {
+        SoliChess.claimWin(game.gameId, {from: game.self.accountId});
+        console.log('CLAIMWIN!');
+      } catch(e) {
+        console.log('CLAIMWIN ERROR: ', e);
+      }
+    }
+
+    function offerDraw(){
+      let game = $scope.getGame();
+      try {
+        SoliChess.offerDraw(game.gameId, {from: game.self.accountId});
+        console.log('OFFERDRAW!');
+      } catch(e) {
+        console.log('OFFERDRAW! ERROR: ', e);
+      }
+    }
+
     function processChessMove(chessMove) {
 
       let game = $scope.getGame();
@@ -266,11 +295,25 @@ angular.module('dappChess').controller('PlayGameCtrl',
         // game over?
         if (chess.in_checkmate() === true) { // jshint ignore:line
           status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+          if (chess.turn() === 'b' && game.self.color === 'white') {
+            claimWin();
+          }
+          if (chess.turn() === 'w' && game.self.color === 'black') {
+            claimWin();
+          }
+
         }
 
         // draw?
         else if (chess.in_draw() === true) { // jshint ignore:line
           status = 'DRAW!';
+          claimWin();
+        }
+
+        // stalemate?
+        else if (chess.in_stalemate() === true) { // jshint ignore:line
+          status = 'STALEMATE!';
+          offerDraw();
         }
 
         // game is still on
@@ -286,6 +329,32 @@ angular.module('dappChess').controller('PlayGameCtrl',
         }
       }
       updateGameInfo(status);
+    }
+
+    function eventGameTimeoutStarted(err, data) {
+      console.log('eventTimeoutStarted ', err, data);
+      if (err){
+        console.log('EVENTGAMETIMEOUTERROR: ', err);
+      } else {
+        let game = $scope.getGame();
+        if (chess.turn() === 'w' && game.self.color === 'white'){
+          console.log('Black win');
+          try {
+            SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+          } catch(e){
+            console.log(e);
+          }
+        }
+        else if (chess.turn() === 'b' && game.self.color === 'black') {
+          console.log('White win');
+          try {
+            SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+          } catch(e) {
+            console.log(e);
+          }
+        }
+      }
+
     }
 
     function eventMove(err, data) {
@@ -409,7 +478,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         'loading', 'playgame');
       try {
         console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
-        Chess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
+        SoliChess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
       }
       catch(e) {
         $rootScope.$broadcast('message', 'Could not submit your surrender', 'loading', 'playgame');
@@ -418,75 +487,110 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     $scope.gameIsWon = function() {
       let game = $scope.getGame();
-      return typeof(game.winner) !== 'undefined' && game.winner === 'self';
+      if(game) {
+        return typeof(game.winner) !== 'undefined' && game.winner === 'self';
+      }
+      else {
+        return false;
+      }
     };
 
     $scope.gameIsLost = function() {
       let game = $scope.getGame();
-      return typeof(game.winner) !== 'undefined' && game.winner === 'opponent';
+      if(game) {
+        return typeof(game.winner) !== 'undefined' && game.winner === 'opponent';
+      }
+      else {
+        return false;
+      }
     };
 
     $scope.gameIsActive = function() {
-      return typeof($scope.getGame().winner) === 'undefined';
+      let game = $scope.getGame();
+
+      if(game) {
+        return !game.ended;
+      }
+      else {
+        return false;
+      }
+    };
+
+    $scope.closeGame = function() {
+      SoliChess.closePlayerGame($scope.getGameId(), {from: $scope.getGame().self.accountId});
+      $rootScope.$broadcast('message', 'Closing your game, please wait...',
+        'loading', 'playgame');
     };
 
     //--- init Chessboard ---
-    if ($scope.isOpenGame !== false) {
-      $(document).ready(function () {
-        chess = new Chess();
+    if (!$scope.isOpenGame()) {
+      let game = $scope.getGame();
+      if(game) {
+        $(document).ready(function () {
+          chess = new Chess();
 
-        game = $scope.getGame();
-        highlight = lightItUp();
-        position = generateMapping();
+          game = $scope.getGame();
+          highlight = lightItUp();
+          position = generateMapping();
 
-        // set current fen
-        try {
-          gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
-          currentFen = generateFen(gameState);
-          console.log('REAL FEN: ', chess.fen());
-          console.log('GAMESTATE FEN: ', currentFen);
-          console.log('GAMESTATE: ', gameState);
-        } catch(e) {
-          console.log(e);
-        }
+          // set current fen
+          try {
+            gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+            currentFen = generateFen(gameState);
 
-        chess.load(currentFen);
+            generateState(currentFen);
 
-        board = new Chessboard('my-board', {
-            position: currentFen,
-            eventHandlers: {
-              onPieceSelected: pieceSelected,
-              onMove: pieceMove
+            console.log('REAL FEN: ', chess.fen());
+            console.log('GAMESTATE FEN: ', currentFen);
+            console.log('GAMESTATE: ', gameState);
+          } catch (e) {
+            console.log(e);
+          }
+
+          board = new Chessboard('my-board', {
+              position: currentFen,
+              eventHandlers: {
+                onPieceSelected: pieceSelected,
+                onMove: pieceMove
+              }
+            }
+          );
+
+          let gamer;
+          if (gameState[56].toNumber() === 1) {
+            gamer = 'white';
+          } else {
+            gamer = 'black';
+          }
+
+          updateGameInfo('Next player is ' + gamer + '.', false);
+
+          position = generateMapping();
+          
+          // opponent starts game
+          if (game.self.color === 'black') {
+            board.setOrientation(ChessUtils.ORIENTATION.black);
+            if (gameState[56].toNumber() === 1) {
+              board.enableUserInput(false);
+            }
+          } else {
+            if (gameState[56].toNumber() === -1) {
+              board.enableUserInput(false);
             }
           }
+
+
+          SoliChess.Move(eventMove);
+          SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
+        }
+
         );
-
-        let gamer;
-        if (gameState[56].toNumber() === 1) {
-          gamer = 'white';
-        } else {
-          gamer = 'black';
-        }
-
-        updateGameInfo('Next player is ' + gamer + '.' , false);
-
-        position = generateMapping();
-
-        // opponent starts game
-        if (game.self.color === 'black') {
-          board.setOrientation(ChessUtils.ORIENTATION.black);
-          if (gameState[56].toNumber() === 1){
-            board.enableUserInput(false);
-          }
-        } else {
-          if (gameState[56].toNumber() === -1){
-            board.enableUserInput(false);
-          }
-        }
-
-
-        SoliChess.Move(eventMove);
-      });
+      }
+      else {
+        navigation.goto(navigation.welcomePage);
+        $rootScope.$broadcast('message', 'No game with the specified id exists',
+          'error', 'playgame');
+      }
     }
   }
 );
