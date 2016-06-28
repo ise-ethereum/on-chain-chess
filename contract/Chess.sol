@@ -34,9 +34,8 @@ contract Chess is TurnBasedGame {
         bytes32 gameId = super.initGame(player1Alias, playAsWhite);
 
         // Setup game state
-        int8 nextPlayerColor = playAsWhite ? int8(1) : int8(-1);
+        int8 nextPlayerColor = int8(1);
         gameStates[gameId].setupState(nextPlayerColor);
-
         if (playAsWhite) {
             // Player 1 will play as white
             gameStates[gameId].playerWhite = msg.sender;
