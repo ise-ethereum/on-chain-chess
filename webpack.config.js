@@ -10,8 +10,8 @@ module.exports = {
   devtool: 'source-map',
   entry: ['./index'],
   output: {
-    path: path.resolve('./static/bundles/'),
-    publicPath: './',
+    path: path.resolve('./static/'),
+    publicPath: '/bundles/',
     filename: '[name].js'
   },
   web3Loader: {
