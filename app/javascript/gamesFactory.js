@@ -5,26 +5,6 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     list: [],
     openGames: []
   };
-  /*
-   * Structure of games list:
-   * [
-   *  gameId: <string>,
-   *  {
-   *    self: {
-   *      username: <string>,
-   *      accountId: <string>,
-   *      color: <string>
-   *    },
-   *    opponent: {
-   *      username: <string>,
-   *      accountId: <string>,
-   *      color: <string>
-   *    }
-   *  },
-   *  ended: <boolean>,
-   *  value: <number>
-   * ]
-   */
 
   games.getGame = function (id) {
     return games.list.find(function (game) {
@@ -45,9 +25,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
    * Convert an array to a game object as seen in the contract with the given gameId.
    * @param gameId of the game
    * @param array containing the data
-   * @returns object as seen in the contract
+   * @returns object as seen in the contract (contractGameObject)
    */
-  games.convertArrayToGame = function (gameId, array) {
+  games.parseContractGameArray = function (gameId, array) {
     let playerWhite = Chess.getWhitePlayer(gameId);
     return {
       gameId: gameId,
@@ -66,12 +46,29 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
   };
 
   /**
-   * Add a game to the list, if there is no game with the same id.
-   * @param contractGameObject An object with the structure of a Game in the contract<br>
-   *     { player1: "<address>", player2: "<address>", ... }
-   * @returns the new created game or undefined, if the gameId is already in the list
-   */
-  games.add = function (contractGameObject) {
+   * Convert a game array to a game for the games list
+   * Structure of the game:
+   *  gameId: <string>,
+   *  {
+   *    self: {
+   *      username: <string>,
+   *      accountId: <string>,
+   *      color: <string>,
+   *      wonEther: <int>
+   *    },
+   *    opponent: {
+   *      username: <string>,
+   *      accountId: <string>,
+   *      color: <string>,
+   *      wonEther: <int>
+   *    }
+   *  },
+   *  ended: <boolean>,
+   *  pot: <number>
+   * @param contractGameObject
+   * @returns game
+     */
+  games.convertGameToObject = function(contractGameObject) {
     if (typeof games.getGame(contractGameObject.gameId) !== 'undefined') {
       return;
     }
@@ -138,6 +135,18 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     game.ended = contractGameObject.ended;
     game.pot = web3.fromWei(contractGameObject.pot, 'ether').toDigits().toString();
 
+    return game;
+  };
+
+  /**
+   * Add a game to the list, if there is no game with the same id.
+   * @param contractGameObject An object with the structure of a Game in the contract<br>
+   *     { player1: "<address>", player2: "<address>", ... }
+   * @returns the new created game or undefined, if the gameId is already in the list
+   */
+  games.add = function (contractGameObject) {
+    let game = games.convertGameToObject(contractGameObject);
+
     console.log('game added', game);
 
     games.list.push(game);
@@ -145,7 +154,25 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     return game;
   };
 
+  games.update = function (contractGameObject) {
+    let game = games.convertGameToObject(contractGameObject);
+
+    for(let i in games.list) {
+      if(games.list[i].gameId === game.gameId) {
+        console.log('updated game with id ' + game.gameId);
+        games.list[i] = game;
+        return game;
+      }
+    }
+
+    console.log('not existing game added', game);
+    games.list.push(game);
+
+    return game;
+  };
+
   games.showWinner = function(game) {
+    console.log('claim ether', game);
     // Only do this if we are part of this game
     if(accounts.availableAccounts.indexOf(game.self.accountId)) {
       // Perform actions if game is won
@@ -169,6 +196,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
   };
 
   games.claimEther = function(game) {
+    console.log('claim ether', game);
     // Only do this if we are part of this game
     if(accounts.availableAccounts.indexOf(game.self.accountId)) {
       // When the player has won ether, claim this
@@ -305,12 +333,13 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       if(gameInContract) {
         for(let i in games.list) {
           if (games.list[i].gameId === data.args.gameId) {
-            let game = games.convertArrayToGame(data.args.gameId, gameInContract);
+            let game = games.parseContractGameArray(data.args.gameId, gameInContract);
+            console.log('updated game after close', game);
             games.list[i] = game;
 
             // Show the winner of the game
             games.showWinner(game);
-            //games.claimEther(game);
+            games.claimEther(game);
 
             $rootScope.$apply();
           }
@@ -333,7 +362,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       if(gameInContract) {
         for(let i in games.list) {
           if (games.list[i].gameId === data.args.gameId) {
-            let game = games.convertArrayToGame(data.args.gameId, gameInContract);
+            let game = games.parseContractGameArray(data.args.gameId, gameInContract);
             games.list[i] = game;
 
             // If the player closed his own game
@@ -376,7 +405,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       // Check if the game already exists in the games list
       let game = games.getGame(currentGameId);
       if (typeof game === 'undefined') {
-        games.add(games.convertArrayToGame(currentGameId, Chess.games(currentGameId)));
+        games.add(games.parseContractGameArray(currentGameId, Chess.games(currentGameId)));
       }
     }
   }
@@ -386,7 +415,10 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     // Check if the game already exists in the games list
     let game = games.getGame(openGameId);
     if (typeof game === 'undefined') {
-      games.add(games.convertArrayToGame(openGameId, Chess.games(openGameId)));
+      games.add(games.parseContractGameArray(openGameId, Chess.games(openGameId)));
+    }
+    if(games.openGames.indexOf(openGameId) === -1) {
+      games.openGames.push(openGameId);
     }
   }
 
