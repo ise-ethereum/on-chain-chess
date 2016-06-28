@@ -227,6 +227,16 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return false;
     };
 
+    $scope.gameIsDraw = function() {
+      let game = $scope.getGame();
+      if(game) {
+        return game.ended && (typeof(game.winner) === 'undefined' ||
+          (game.winner !== 'self' && game.winner !== 'opponent'));
+      }
+
+      return false;
+    };
+
     $scope.gameIsActive = function() {
       let game = $scope.getGame();
 
