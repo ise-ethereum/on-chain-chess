@@ -17,6 +17,8 @@ This is loosely based on [ethereum-webpack-example-dapp](https://github.com/uzyn
   # Using testrpc (recommended)
   testrpc
 
+  # -----------OR-----------
+
   # If you are running Geth, 
   # make sure to run in testnet or private net and enable rpc
   geth --testnet --rpc
@@ -34,9 +36,9 @@ This is loosely based on [ethereum-webpack-example-dapp](https://github.com/uzyn
   npm start
   ```
 
-  Once webpack build is done (`static/bundles/` files are generated), open `static/index.html` in your favorite web browser.
+  This starts the build process and also a local dev server. Open the given URL in your favorite web browser.
 
-  Webpack is now started in `--watch` mode, any changes done at JavaScript or Solidity files would automatically rebuild the affected modules.
+  Webpack is now started in `watch` mode, any changes done at JavaScript or Solidity files will automatically rebuild the affected modules.
 
 1. Build, for deployment
 
