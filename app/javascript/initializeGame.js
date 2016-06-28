@@ -16,6 +16,11 @@ angular.module('dappChess').controller('InitializeGameCtrl',
       $rootScope.$broadcast('message', 'Your game is being created, please wait a moment...',
                             'loading', 'startgame');
       try {
+        console.log('Trying to initialize game', $scope.username,
+          {
+            from: $scope.selectedAccount,
+            value: web3.toWei($scope.etherbet, 'ether')
+          });
         Chess.initGame($scope.username, $scope.startcolor === 'white',
          {
            from: $scope.selectedAccount,
@@ -23,6 +28,7 @@ angular.module('dappChess').controller('InitializeGameCtrl',
          });
       }
       catch(e) {
+        console.log('Error on initialize game', e);
         $rootScope.$broadcast('message', 'Could not initialize the game', 'loading', 'startgame');
       }
     }

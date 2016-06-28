@@ -43,6 +43,7 @@ angular.module('dappChess').controller('JoinGameCtrl',
           });
       }
       catch(e) {
+        console.log('Error joining the game', e);
         $rootScope.$broadcast('message', 'Could not join the game', 'loading', 'joingame');
       }
     }
@@ -55,5 +56,5 @@ angular.module('dappChess').controller('JoinGameCtrl',
       }
     };
 
-    
+
   });
