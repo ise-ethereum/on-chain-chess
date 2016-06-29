@@ -13,8 +13,8 @@ import "ChessLogic.sol";
 contract Chess is TurnBasedGame {
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
-
-
+    //using ELO for eloScores;
+    //mapping (address => ELO.Score) eloScores;
 
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint value);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint value);
