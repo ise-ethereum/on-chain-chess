@@ -27,9 +27,9 @@ angular.module('dappChess').controller('PlayGameCtrl',
     }
 
     function generateState(fen){
-      let x = fen.split(' ');
+      let fenComponents = fen.split(' ');
       // let board, currentPlayer, enPassant, castling, moveCount = fen.split(' ');
-      console.log(x);
+      console.log(fenComponents);
 
 
     }
@@ -261,20 +261,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
       try {
         gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
         currentFen = generateFen(gameState);
-        console.log('GAMESTATE: ', gameState);
-        console.log('GENERATED FEN: ', currentFen);
-        console.log('REAL FEN: ', chess.fen());
-        console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
-        console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
-        console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
-        console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
-        console.log('WHITE KING POSITION: ', position.toFrontend[gameState[123].toNumber()]);
-        console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
-        console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
-        console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
-        console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
       } catch(e) {
-        console.log('ERROR');
+        console.log(e);
       }
 
 
@@ -307,7 +295,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         // draw?
         else if (chess.in_draw() === true) { // jshint ignore:line
           status = 'DRAW!';
-          claimWin();
+          offerDraw();
         }
 
         // stalemate?
@@ -426,14 +414,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
         let fromIndex = position.toBackend[move.from];
         let toIndex = position.toBackend[move.to];
-        /*
-        console.log('fromIndex Frontend: ', move.from);
-        console.log('toIndex Frontend: ', move.to);
-        console.log('fromIndex Backend: ', fromIndex);
-        console.log('toIndex Backend: ', toIndex);
 
-        console.log('selfId: ', game.self.accountId);
-        */
         SoliChess.move(game.gameId, fromIndex, toIndex, {from: game.self.accountId});
 
       } catch(e) {
@@ -540,12 +521,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
             generateState(currentFen);
 
-            console.log('REAL FEN: ', chess.fen());
-            console.log('GAMESTATE FEN: ', currentFen);
-            console.log('GAMESTATE: ', gameState);
           } catch (e) {
             console.log(e);
           }
+
 
           board = new Chessboard('my-board', {
               position: currentFen,
@@ -555,6 +534,11 @@ angular.module('dappChess').controller('PlayGameCtrl',
               }
             }
           );
+
+          chess.load(currentFen);
+
+          console.log('currentFEN: ', currentFen);
+          console.log('realFEN: ', chess.fen());
 
           let gamer;
           if (gameState[56].toNumber() === 1) {
@@ -566,7 +550,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           updateGameInfo('Next player is ' + gamer + '.', false);
 
           position = generateMapping();
-          
+
           // opponent starts game
           if (game.self.color === 'black') {
             board.setOrientation(ChessUtils.ORIENTATION.black);
