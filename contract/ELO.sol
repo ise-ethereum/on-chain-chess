@@ -46,7 +46,7 @@ library ELO {
      * Returns (scoreChangeA, scoreChangeB)
      */
     function getScoreChange(int difference, int resultA) returns (int, int) {
-        bool reverse = (difference > 0); // note if difference was negative
+        bool reverse = (difference > 0); // note if difference was positive
         uint diff = abs(difference); // take absolute to lookup in positive table
         // Score change lookup table
         int scoreChange = 10;
@@ -66,8 +66,8 @@ library ELO {
                     (reverse ? -scoreChange : -(20-scoreChange)));
         }
         else if (resultA == 1) {
-            return ((reverse ? scoreChange-10 : 10-scoreChange ),
-                   (reverse ? -(scoreChange-10) : -(10-scoreChange)));
+            return ((reverse ? 10-scoreChange : scoreChange-10 ),
+                    (reverse ? -(10-scoreChange) : -(scoreChange-10)));
         }
         else {
             return ((reverse ? scoreChange-20 : -scoreChange ),
