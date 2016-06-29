@@ -9,18 +9,20 @@
 
 import "TurnBasedGame.sol";
 import "ChessLogic.sol";
+import "ELO.sol";
 
 contract Chess is TurnBasedGame {
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
-    //using ELO for eloScores;
-    //mapping (address => ELO.Score) eloScores;
+    using ELO for ELO.Scores;
+    ELO.Scores eloScores;
 
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint value);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint value);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event GameTimeoutStarted(bytes32 indexed gameId,uint timeoutStarted, int8 timeoutState);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
+    event EloScoreUpdate(address indexed player, uint score);
 
     function Chess(bool enableDebugging) TurnBasedGame(enableDebugging) {
     }
@@ -157,10 +159,18 @@ contract Chess is TurnBasedGame {
         if (game.timeoutState == -1){
             game.ended = true;
             GameEnded(gameId, 0);
+            // Update ELO scores
+            eloScores.recordResult(game.player1, game.player2, 0);
+            EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+            EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         } else if (game.timeoutState == 1){
             game.ended = true;
             game.winner = msg.sender;
-            GameEnded(gameId, msg.sender);
+            GameEnded(gameId, game.winner);
+            // Update ELO scores
+            eloScores.recordResult(game.player1, game.player2, game.winner);
+            EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+            EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         } else {
             throw;
         }
@@ -179,11 +189,19 @@ contract Chess is TurnBasedGame {
         if (game.timeoutState == -1){
             game.ended = true;
             GameEnded(gameId, 0);
+            // Update ELO scores
+            eloScores.recordResult(game.player1, game.player2, 0);
+            EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+            EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         } else if (game.timeoutState == 1){
             game.ended = true;
             // other player won
             game.winner = (msg.sender == game.player1 ? game.player2 : game.player1);
             GameEnded(gameId, game.winner);
+            // Update ELO scores
+            eloScores.recordResult(game.player1, game.player2, game.winner);
+            EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+            EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         } else {
             throw;
         }
