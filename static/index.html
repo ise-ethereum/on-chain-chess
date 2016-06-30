@@ -55,13 +55,17 @@
       <div id="view" data-ng-view></div>
     </main>
 
+    <div id="overlay"></div>
+    <div id="layers">
+      <div data-ng-include="'layers/selectAccount.html'"></div>
+    </div>
+
     <!-- For production use -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-route.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-animate.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-    <script type="text/javascript" src="javascript/chessboard.min.js"></script>
 
     <!-- For local tests only -->
     <!--
@@ -72,6 +76,8 @@
     <script type="text/javascript" src="../app/javascript/lib/jquery.js"></script>
     -->
 
+    <script type="text/javascript" src="javascript/blockies.min.js"></script>
+    <script type="text/javascript" src="javascript/chessboard.min.js"></script>
     <script type="text/javascript" src="bundles/main.js"></script>
   </body>
 </html>

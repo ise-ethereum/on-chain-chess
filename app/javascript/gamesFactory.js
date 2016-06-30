@@ -420,6 +420,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     if(games.openGames.indexOf(openGameId) === -1) {
       games.openGames.push(openGameId);
     }
+    if(games.openGames.indexOf(openGameId) === -1) {
+      games.openGames.push(openGameId);
+    }
   }
 
 

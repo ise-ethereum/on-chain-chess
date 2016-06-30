@@ -1,0 +1,14 @@
+<div class="layer small" data-ng-controller="accountsCtrl" id="selectAccountLayer">
+  <p>Available accounts:</p>
+  <ul id="accounts-list">
+    <li
+      data-ng-repeat="account in accounts.availableAccounts"
+      data-ng-style="accounts.getBlockie(account)"
+      data-ng-click="accounts.selectAccount(account)"
+      data-ng-class="{selected: accounts.isSelectedAccount(account)}"
+    >
+      <span>Account {{$index}}</span>
+      {{account}}
+    </li>
+  </ul>
+</div>

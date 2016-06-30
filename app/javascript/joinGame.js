@@ -2,21 +2,14 @@
 import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').controller('JoinGameCtrl',
   function ($rootScope, $scope, games, accounts) {
-    $scope.availableAccounts = accounts.availableAccounts;
-
-    $scope.selectedAccount = accounts.defaultAccount;
     $scope.username = null;
     $scope.gameId = null;
     $scope.games = games.list;
     $scope.openGames = games.openGames;
     $scope.etherbet = 0;
 
-    $scope.isSelectedAccount = function (account) {
-      return $scope.selectedAccount === account;
-    };
-    $scope.selectAccount = function (account) {
-      $scope.selectedAccount = account;
-    };
+    $scope.accounts = accounts;
+
     $scope.setSelectedGame = function($event, game) {
       $scope.gameId = game.gameId;
       $scope.etherbet = game.value;
@@ -43,11 +36,10 @@ angular.module('dappChess').controller('JoinGameCtrl',
           });
       }
       catch(e) {
+        console.log('Error joining the game', e);
         $rootScope.$broadcast('message', 'Could not join the game', 'loading', 'joingame');
       }
     }
-
-    $scope.getBalance = accounts.getBalance;
 
     $scope.joinGame = function (form) {
       if(form.$valid) {
@@ -55,5 +47,5 @@ angular.module('dappChess').controller('JoinGameCtrl',
       }
     };
 
-    
+
   });
