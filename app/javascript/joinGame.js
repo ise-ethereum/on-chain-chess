@@ -26,12 +26,12 @@ angular.module('dappChess').controller('JoinGameCtrl',
       try {
         console.log('Trying to join game', $scope.gameId, $scope.username,
           {
-            from: $scope.selectedAccount,
+            from: accounts.selectedAccount,
             value: web3.toWei($scope.etherbet.replace(',', '.'), 'ether')
           });
         Chess.joinGame($scope.gameId, $scope.username,
           {
-            from: $scope.selectedAccount,
+            from: accounts.selectedAccount,
             value: web3.toWei($scope.etherbet.replace(',', '.'), 'ether')
           });
       }
