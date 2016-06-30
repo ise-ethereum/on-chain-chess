@@ -17,7 +17,7 @@
         <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>
       </div>
 
-      <span data-ng-show="selectedAccount">Balance: {{accounts.getBalance(selectedAccount)}}</span>
+      <span data-ng-show="accounts.selectedAccount">Balance: {{accounts.getBalance(accounts.selectedAccount)}}</span>
 
       <label for="etherbet">Bet (in ether)</label>
       <input id="etherbet" type="number" name="etherbet" data-ng-model="etherbet" required>
