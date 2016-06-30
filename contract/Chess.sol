@@ -77,6 +77,11 @@ contract Chess is TurnBasedGame, Auth{
     */
     function moveFromState(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) notEnded(gameId) public {
         
+        if (games[gameId].winner != 0) {
+            // Game already ended
+            throw;
+        }
+
         // check whether sender is a member of this game
         if (games[gameId].player1 != msg.sender && games[gameId].player2 != msg.sender) {
             throw;
@@ -111,15 +116,16 @@ contract Chess is TurnBasedGame, Auth{
 
 
         // check move count. New state should have a higher move count. 
-        if (state[9] * int8(128) + state[8] <= gameStates[gameId].fields[9] * int8(128) + gameStates[gameId].fields[8]) {
+        if (state[9] * int8(128) + state[8] < gameStates[gameId].fields[9] * int8(128) + gameStates[gameId].fields[8]) {
             throw;
         }
-        
+   
         // apply state
         gameStates[gameId].setState(state, playerColor);
         games[gameId].nextPlayer =  msg.sender;
     
         // GameStateChanged(gameId, gameStates[gameId].fields); //  hier?       
+
         // verify move
         move(gameId, fromIndex, toIndex);
         

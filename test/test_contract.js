@@ -195,6 +195,246 @@ describe('Chess contract', function() {
     });
   });
 
+  describe('moveFromState()', function () {
+    let gameId1,gameId2, gameId3;
+    beforeEach((done) => {
+      // runs before each test in this block
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+
+      // Watch for event from contract to check if it worked
+      var filter = Chess.GameInitialized({});
+      filter.watch((error, result) => {
+        gameId1 = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching();
+        Chess.joinGame(gameId1, 'Bob', {from: player2, gas: 500000});
+        done();
+      });
+    });
+
+    it('should accept a valid move with valid signatures', function (done) {
+        let fromIndex = 100;
+        let toIndex = 84;
+        let hashState = web3.sha3(defaultBoard);
+        let sigState = web3.eth.sign(player2, hashState);
+        let hashFromIndex = web3.sha3(fromIndex);
+        let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+        let hashToIndex = web3.sha3(toIndex);
+        let sigToIndex = web3.eth.sign(player1, hashToIndex);
+        // As player1 is the next player, this move should be valid
+        assert.doesNotThrow(function () {
+          // white pawn e7e6
+          Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+        }, Error);
+
+        // Helper to wait for multiple async callbacks
+        let numberOfDone = 0;
+        const allDone = function() {
+          numberOfDone++;
+          if (numberOfDone >= 2) {
+            done();
+          }
+        };
+
+        // Watch for event from contract to check if the Move worked
+        var filter = Chess.Move({gameId: gameId1});
+        filter.watch(function(error, result){
+          assert.equal(player1, result.args.player);
+          assert.equal(100, result.args.fromIndex);
+          assert.equal(84, result.args.toIndex);
+          filter.stopWatching(); // Need to remove filter again
+          allDone();
+        });
+
+        // Watch for GameStateChanged event to check that all pieces and flags
+        // were updated
+        let expectedState = [...defaultBoard];
+        expectedState[100] = 0; // moved piece away
+        expectedState[84] = defaultBoard[100];
+        expectedState[56] = -1; // next player black
+        expectedState[8] = 1 >> 7; // updated move count
+        expectedState[9] = 1 % 128; // updated move count
+        var filter2 = Chess.GameStateChanged({gameId: gameId1});
+        filter2.watch(function(error, result){
+          assert.deepEqual(gameStateDisplay(expectedState), gameStateDisplay(result.args.state));
+          filter2.stopWatching(); // Need to remove filter again
+          allDone();
+        });
+      });
+
+
+    it('should throw an exception for message from non-participant', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = web3.sha3(defaultBoard);
+      let sigState = web3.eth.sign(player2, hashState);
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex);
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player3, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw an exception when opponent is not a member of the game', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = web3.sha3(defaultBoard);
+      let sigState = web3.eth.sign(player2, hashState);
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex);
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player3, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw an exception when it is not the turn of the message sender', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = web3.sha3(defaultBoard);
+      let sigState = web3.eth.sign(player2, hashState);
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex);
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player1, sigState, sigFromIndex, sigToIndex , {from: player2, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when state is not signed by opponent', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = web3.sha3(defaultBoard);
+      let sigState = web3.eth.sign(player3, hashState); //SIGNED BY PLAYER 3 INSTEAD OF PLAYER 2
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex);
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+
+    it('should throw when signed state and state in call do not match 1/2', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let differentBoard = [...defaultBoard]; //CHANGE BOARD
+      differentBoard[5] = 0;
+      differentBoard[6] = 0;
+      let hashState = web3.sha3(defaultBoard); //HASH OF DEFAULTBOARD
+      let sigState = web3.eth.sign(player2, hashState); 
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex);
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, differentBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when signed state and state in call do not match 2/2', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let differentBoard = [...defaultBoard]; //CHANGE BOARD
+      differentBoard[5] = 0;
+      differentBoard[6] = 0;
+      let hashState = web3.sha3(differentBoard); // HASH OF DIFFERENTBOARD
+      let sigState = web3.eth.sign(player2, hashState); 
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex);
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+     it('should throw when signed toIndex and toIndex in call do not match', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = web3.sha3(defaultBoard); 
+      let sigState = web3.eth.sign(player2, hashState); 
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex+2); // DIFFERENT TOINDEX USED FOR HASH
+      let sigToIndex = web3.eth.sign(player1, hashToIndex);
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+     it('should throw when toIndex is not signed by currentPlayer', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = web3.sha3(defaultBoard); 
+      let sigState = web3.eth.sign(player2, hashState); 
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player2, hashToIndex); //TOINDEX SIGNED BY OTHER PLAYER
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+     it('should throw when msg.sender and opponent are identical', function() {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = web3.sha3(defaultBoard); 
+      let sigState = web3.eth.sign(player2, hashState); 
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex); 
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player1, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when game already ended', function() {
+      Chess.surrender(gameId1, {from: player1, gas: 500000});
+      assert.isTrue(Chess.isGameEnded(gameId1));
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = web3.sha3(defaultBoard); 
+      let sigState = web3.eth.sign(player2, hashState); 
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex); 
+
+      assert.throws(function(){
+        //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+  });  
+
+
   describe('closePlayerGame()', function () {
     let gameId, gameId2;
     it('should initialize a game with 1 player only', function(done) {
