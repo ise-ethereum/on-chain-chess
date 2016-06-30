@@ -18,13 +18,19 @@
       You are in an ongoing chess game, the pot is at {{getGame().pot}}.
     </p>
     <p data-ng-show="gameIsWon()">
-      You have won this game. The pot of {{getGame().pot}} is being transferred to you.
+      You have won this game.
+      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} is being transferred to you.</span>
+      <span data-ng-hide="getGame().pot > 0">The pot was transferred to you.</span>
     </p>
     <p data-ng-show="gameIsLost()">
-      You have lost this game. The pot of {{getGame().pot}} is transferred to your opponent.
+      You have lost this game.
+      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} is transferred to your opponent.</span>
+      <span data-ng-hide="getGame().pot > 0">The pot was transferred to your opponent.</span>
     </p>
     <p data-ng-show="gameIsDraw()">
-      The game has been declared a draw. Your bet {{getGame().self.wonEther}} is transferred back to you.
+      The game has been declared a draw.
+      <span data-ng-show="getGame().self.wonEther > 0">Your bet {{getGame().self.wonEther}} is transferred back to you.</span>
+      <span data-ng-hide="getGame().self.wonEther > 0">Your bet was transferred back to you.</span>
     </p>
     <!--<p>Game data:</p>
     <ul>
