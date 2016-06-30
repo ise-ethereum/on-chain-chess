@@ -12,10 +12,10 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     });
   };
 
-  games.removeGame = function(id) {
+  games.removeGame = function(gameId) {
     for(let i in games.list) {
-      if(games.list[i].gameId === id) {
-        games.list.splice(i, 1);
+      if(games.list[i].gameId === gameId) {
+        console.log('game removed', games.list.splice(i, 1));
         break;
       }
     }
@@ -69,9 +69,6 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
    * @returns game
      */
   games.convertGameToObject = function(contractGameObject) {
-    if (typeof games.getGame(contractGameObject.gameId) !== 'undefined') {
-      return;
-    }
     let game = {gameId: contractGameObject.gameId};
 
     if (accounts.availableAccounts.indexOf(contractGameObject.player2) !== -1) {
@@ -135,46 +132,52 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     game.ended = contractGameObject.ended;
     game.pot = web3.fromWei(contractGameObject.pot, 'ether').toDigits().toString();
 
+    console.log(game);
+
     return game;
   };
 
   /**
    * Add a game to the list, if there is no game with the same id.
-   * @param contractGameObject An object with the structure of a Game in the contract<br>
-   *     { player1: "<address>", player2: "<address>", ... }
-   * @returns the new created game or undefined, if the gameId is already in the list
+   * @param game A game in the format required for the game list
    */
-  games.add = function (contractGameObject) {
-    let game = games.convertGameToObject(contractGameObject);
-
-    console.log('game added', game);
-
-    games.list.push(game);
-
-    return game;
-  };
-
-  games.update = function (contractGameObject) {
-    let game = games.convertGameToObject(contractGameObject);
+  games.add = function (game) {
+    console.log('game add called', game);
 
     for(let i in games.list) {
+      if (games.list[i].gameId === game.gameId) {
+        console.log('game with id ' + game.gameId + ' already exists');
+        return;
+      }
+    }
+    games.list.push(game);
+
+    console.log('added game with id ' + game.gameId);
+  };
+
+  /**
+   * Add a game to the list, if there is no game with the same id;
+   * otherwise update it
+   * @param game A game in the format required for the game list
+   */
+  games.update = function (game) {
+    console.log('update game called', game);
+    for(let i in games.list) {
       if(games.list[i].gameId === game.gameId) {
-        console.log('updated game with id ' + game.gameId);
         games.list[i] = game;
-        return game;
+        console.log('updated game with id ' + game.gameId);
+        return;
       }
     }
 
-    console.log('not existing game added', game);
     games.list.push(game);
-
-    return game;
+    console.log('not existing game added', game);
   };
 
   games.showWinner = function(game) {
     console.log('claim ether', game);
     // Only do this if we are part of this game
-    if(accounts.availableAccounts.indexOf(game.self.accountId)) {
+    if(accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
       // Perform actions if game is won
       if(game.winner === 'self') {
         $rootScope.$broadcast('message',
@@ -193,33 +196,49 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
           'message', 'playgame');
       }
     }
+    else {
+      console.log(game.self.accountId + ' not in account ids', accounts.availableAccounts);
+    }
   };
 
   games.claimEther = function(game) {
     console.log('claim ether', game);
     // Only do this if we are part of this game
-    if(accounts.availableAccounts.indexOf(game.self.accountId)) {
+    if(accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
       // When the player has won ether, claim this
       if (game.self.wonEther > 0) {
-        $rootScope.$broadcast('message',
-          'Claiming your won ether in the game against ' + game.opponent.username,
-          'message', 'claimpot');
+        if(game.opponent) {
+          $rootScope.$broadcast('message',
+            'Claiming your won ether in the game against ' + game.opponent.username,
+            'message', 'claimpot');
+        }
+        else {
+          $rootScope.$broadcast('message',
+            'Reclaiming your ether in your game with the id ' + game.gameId,
+            'message', 'claimpot');
+        }
 
         try {
           console.log('Trying to claim ether for game ', game);
-          Chess.claimWin(game.gameId, {from: game.self.accountId});
+          Chess.withdraw(game.gameId, {from: game.self.accountId});
           $rootScope.$broadcast('message',
-            'Your won ether with the amount of ' +
+            'Your ether with the amount of ' +
             game.self.wonEther +
             ' has been added to your account',
             'success', 'claimpot');
         }
         catch (e) {
           $rootScope.$broadcast('message',
-            'Could not claim your won ether',
+            'Could not claim your ether',
             'error', 'claimpot');
         }
       }
+      else {
+        console.log('no ether to claim for self: ', game.self);
+      }
+    }
+    else {
+      console.log(game.self.accountId + ' not in account ids', accounts.availableAccounts);
     }
   };
 
@@ -231,7 +250,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
        'Your game could not be created, the following error occured: ' + err,
        'error', 'startgame');*/
     } else {
-      let game = games.add(data.args);
+      let game = games.convertGameToObject(data.args);
+      games.add(game);
       games.openGames.push(game.gameId);
 
       if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
@@ -262,7 +282,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
 
       let game = games.getGame(gameId);
       if (typeof game === 'undefined') {
-        game = games.add(data.args);
+        game = games.convertGameToObject(data.args);
+        games.add(game);
       } else {
         // remove game from openGames
         let gameIndex = games.openGames.indexOf(gameId);
@@ -333,9 +354,11 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       if(gameInContract) {
         for(let i in games.list) {
           if (games.list[i].gameId === data.args.gameId) {
-            let game = games.parseContractGameArray(data.args.gameId, gameInContract);
+            let game = games.convertGameToObject(
+              games.parseContractGameArray(data.args.gameId, gameInContract)
+            );
             console.log('updated game after close', game);
-            games.list[i] = game;
+            games.update(game);
 
             // Show the winner of the game
             games.showWinner(game);
@@ -362,8 +385,10 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       if(gameInContract) {
         for(let i in games.list) {
           if (games.list[i].gameId === data.args.gameId) {
-            let game = games.parseContractGameArray(data.args.gameId, gameInContract);
-            games.list[i] = game;
+            let game = games.convertGameToObject(
+              games.parseContractGameArray(data.args.gameId, gameInContract
+            ));
+            games.update(game);
 
             // If the player closed his own game
             if (accounts.availableAccounts.indexOf(data.args.player) !== -1) {
@@ -405,7 +430,10 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       // Check if the game already exists in the games list
       let game = games.getGame(currentGameId);
       if (typeof game === 'undefined') {
-        games.add(games.parseContractGameArray(currentGameId, Chess.games(currentGameId)));
+        games.add(
+          games.convertGameToObject(
+            games.parseContractGameArray(currentGameId, Chess.games(currentGameId))
+        ));
       }
     }
   }
@@ -415,7 +443,10 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     // Check if the game already exists in the games list
     let game = games.getGame(openGameId);
     if (typeof game === 'undefined') {
-      games.add(games.parseContractGameArray(openGameId, Chess.games(openGameId)));
+      games.add(
+        games.convertGameToObject(
+          games.parseContractGameArray(openGameId, Chess.games(openGameId))
+        ));
     }
     if(games.openGames.indexOf(openGameId) === -1) {
       games.openGames.push(openGameId);
