@@ -151,10 +151,13 @@ contract Chess is TurnBasedGame {
             throw;
         if (msg.sender == game.nextPlayer)
             throw;
-        if (game.timeoutState == 0)
-            throw;
         if (now < game.timeoutStarted + 10 minutes)
             throw;
+        if (game.timeoutState == 0)
+            game.ended = true;
+            game.winner = msg.sender;
+            GameEnded(gameId, msg.sender);
+
         if (game.timeoutState == -1){
             game.ended = true;
             GameEnded(gameId, 0);
