@@ -4,23 +4,14 @@
 <div class="container">
   <div class="four columns">
     <form name="form" novalidate data-ng-submit="joinGame(form)">
-      <label>Account to use</label>
-      <select
-        name="selectedAccount"
-        data-ng-model="selectedAccount"
-        data-ng-style="getBlockie(selectedAccount)"
-        required>
-        <option value="">Select account</option>
-        <option
-          data-ng-repeat="account in availableAccounts"
-          data-ng-value="account"
-          data-ng-style="getBlockie(account)">
-          Account {{$index}}
-        </option>
-      </select>
-      <!-- Does not work in the current version of Mist / only creates new accounts, although it should select or create an account -->
-      <!--<button data-ng-click="selectOrCreateAccount()">Create new account</button>
-      <input name="selectedAccount" type="hidden" data-ng-model="selectedAccount" required />-->
+      <input name="selectedAccount" type="hidden" data-ng-model="accounts.selectedAccount" required />
+      <button data-ng-click="accounts.selectOrCreateAccount($event)" class="small">Select account</button>
+      <div
+        class="selectedAccount"
+        data-ng-show="accounts.selectedAccount"
+        data-ng-style="accounts.getBlockie(accounts.selectedAccount)">
+        {{accounts.selectedAccountName}}
+      </div>
 
       <div data-ng-show="form.$submitted || form.selectedAccount.$touched">
         <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>

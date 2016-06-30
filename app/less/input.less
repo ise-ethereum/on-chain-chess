@@ -2,6 +2,9 @@ button, input[type="submit"] {
 	background:linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(247,247,247,1) 100%);
 	color:#000;
 	font-size:1.1em;
+  &.small {
+    font-size:.8em;
+  }
 }
 input[type="submit"] {
   display:block;
@@ -24,10 +27,4 @@ input + div > div.error, select + div > div.error {
 }
 input[type="hidden"] + div > div.error {
   margin-top:0
-}
-select[name="selectedAccount"], select[name="selectedAccount"] option {
-  background-repeat:no-repeat;
-}
-select[name="selectedAccount"] option, select[name="selectedAccount"].ng-valid.ng-dirty {
-  padding-left:40px;
 }
