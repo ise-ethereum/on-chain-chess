@@ -54,3 +54,11 @@ crashlytics.properties
 crashlytics-build.properties
 
 # Created by .ignore support plugin (hsz.mobi)
+
+.node-xmlhttprequest-sync-1001
+
+.node-xmlhttprequest-sync-1284
+
+.node-xmlhttprequest-sync-1269
+
+.node-xmlhttprequest-sync-1164
