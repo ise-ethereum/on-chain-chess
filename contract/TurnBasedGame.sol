@@ -18,7 +18,7 @@ contract TurnBasedGame {
         address nextPlayer;
         address winner;
         bool ended;
-        uint value; // What this game is worth ether paid into the game
+        uint value; // What this game is worth: ether paid into the game
         uint timeoutStarted; // timer for timeout
         int8 timeoutState; // -1 draw 0 nothing 1 checkmate
     }

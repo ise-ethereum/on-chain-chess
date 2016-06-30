@@ -9,8 +9,9 @@
 
 import "TurnBasedGame.sol";
 import "ChessLogic.sol";
+import "Auth.sol";
 
-contract Chess is TurnBasedGame {
+contract Chess is TurnBasedGame, Auth{
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
 
@@ -66,6 +67,62 @@ contract Chess is TurnBasedGame {
         }
 
         GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, gameStates[gameId].playerWhite, games[gameId].value);
+    }
+
+    /**
+    * 
+    * verify signature of state
+    * verify signature of move
+    * apply state, verify move
+    */
+    function moveFromState(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) notEnded(gameId) public {
+        
+        // check whether sender is a member of this game
+        if (games[gameId].player1 != msg.sender && games[gameId].player2 != msg.sender) {
+            throw;
+        }
+
+        // check whether opponent is a member of this game
+        if (games[gameId].player1 != opponent && games[gameId].player2 != opponent) {
+            throw;
+        }
+
+        if (msg.sender == opponent) {
+            throw;
+        }
+
+        // check whether sender is currentPlayer in state
+        int8 playerColor = msg.sender == gameStates[gameId].playerWhite ? int8(1) : int8(-1);
+     
+        //if (state[ChessLogic.Flags(ChessLogic.Flag.CURRENT_PLAYER)] !=  playerColor) {
+        if (state[56] !=  playerColor) {
+            throw;
+        }
+
+        /*
+        * Verify signatures
+        */
+        // verify state
+        verifySig(opponent, sha3(state), sigState);
+        // verify fromIndex
+        verifySig(msg.sender, sha3(fromIndex), sigFromIndex);
+        // verify toIndex
+        verifySig(msg.sender, sha3(toIndex), sigToIndex);
+
+
+        // check move count. New state should have a higher move count. 
+        if (state[9] * int8(128) + state[8] <= gameStates[gameId].fields[9] * int8(128) + gameStates[gameId].fields[8]) {
+            throw;
+        }
+        
+        // apply state
+        gameStates[gameId].setState(state, playerColor);
+        games[gameId].nextPlayer =  msg.sender;
+    
+        // GameStateChanged(gameId, gameStates[gameId].fields); //  hier?       
+        // verify move
+        move(gameId, fromIndex, toIndex);
+        
     }
 
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {

@@ -327,7 +327,7 @@ describe('Chess contract', function() {
         Chess.closePlayerGame(gameId, {from: player1, gas: 100000});
       }, Error);
     });
-    it('should be able to close a open game', () => {
+    it('should be able to close an open game', () => {
       assert.doesNotThrow(() => {
         Chess.closePlayerGame(gameId2, {from: player1, gas: 100000});
       }, Error);
