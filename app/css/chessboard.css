@@ -45,12 +45,17 @@ div.chess_board div.chess_square_selected div.chess_player_black {
 }
 
 
-/*div.chess_board div.chess_square_light.chess_square_valid_move {
-background-color: #CDE855;
+/*
+Chess move index highlight
+*/
+
+div.chess_board div.chess_square_dark.chess_square_moved {
+  background-color: #A7C600;
 }
-div.chess_board div.chess_square_dark.chess_square_valid_move {
-background-color: #A7C520;
-}*/
+div.chess_board div.chess_square_light.chess_square_moved {
+  background-color: #CDE855;
+}
+
 
 div.chess_board div.chess_square_light.chess_square_valid_move {
   -webkit-box-shadow: inset 0 0 3px 3px #CDE855;

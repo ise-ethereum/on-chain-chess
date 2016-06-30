@@ -345,6 +345,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     if (typeof game === 'undefined') {
       games.add(games.convertArrayToGame(openGameId, Chess.games(openGameId)));
     }
+    if(games.openGames.indexOf(openGameId) === -1) {
+      games.openGames.push(openGameId);
+    }
   }
 
 
