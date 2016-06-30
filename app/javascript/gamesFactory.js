@@ -226,6 +226,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
             game.self.wonEther +
             ' has been added to your account',
             'success', 'claimpot');
+
+          game.self.wonEther = 0;
+          game.pot = 0;
         }
         catch (e) {
           $rootScope.$broadcast('message',
