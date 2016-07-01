@@ -175,7 +175,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
   };
 
   games.showWinner = function(game) {
-    console.log('claim ether', game);
+    console.log('show winner', game);
     // Only do this if we are part of this game
     if(accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
       // Perform actions if game is won
@@ -365,6 +365,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
 
             // Show the winner of the game
             games.showWinner(game);
+
+            // Claim the ether automatically
             games.claimEther(game);
 
             $rootScope.$apply();
