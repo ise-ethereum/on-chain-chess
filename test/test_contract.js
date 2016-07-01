@@ -196,7 +196,7 @@ describe('Chess contract', function() {
   });
 
   describe('moveFromState()', function () {
-    let gameId1,gameId2, gameId3;
+    let gameId1;
     beforeEach((done) => {
       // runs before each test in this block
       Chess.initGame('Alice', true, {from: player1, gas: 2000000});
@@ -215,7 +215,7 @@ describe('Chess contract', function() {
     it('should accept a valid move with valid signatures', function (done) {
         let fromIndex = 100;
         let toIndex = 84;
-        let hashState = web3.sha3(defaultBoard);
+        let hashState = web3.sha3(web3.toHex(defaultBoard), { encoding: 'hex' });
         let sigState = web3.eth.sign(player2, hashState);
         let hashFromIndex = web3.sha3(fromIndex);
         let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
@@ -310,7 +310,7 @@ describe('Chess contract', function() {
         Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player1, sigState, sigFromIndex, sigToIndex , {from: player2, gas: 2000000});
       }, Error);
     });
-
+   
     it('should throw when state is not signed by opponent', function() {
       let fromIndex = 100;
       let toIndex = 84;
@@ -430,6 +430,62 @@ describe('Chess contract', function() {
         //(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) 
         Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
       }, Error);
+    });
+
+    it('should throw an exception when a move is invalid', function () {
+      let fromIndex = 96;
+      let toIndex = 96;
+      let hashState = web3.sha3(defaultBoard); 
+      let sigState = web3.eth.sign(player2, hashState); 
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex); 
+
+      // Test some invalid moves, but from correct player
+      assert.throws(function () {
+        // white pawn a7a7
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+      
+      fromIndex = 112;
+      toIndex = 96;
+      assert.throws(function () {
+        // white rook a8a7
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when moveCount of new state is lower than old state', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let boardHigh= [...defaultBoard]; //BOARD WITH HIGHER MOVE COUNT
+      //boardHigh[8] = 33;
+      let hashState = web3.sha3(boardHigh); 
+      let sigState = web3.eth.sign(player2, hashState); 
+      let hashFromIndex = web3.sha3(fromIndex);
+      let sigFromIndex = web3.eth.sign(player1, hashFromIndex);
+      let hashToIndex = web3.sha3(toIndex);
+      let sigToIndex = web3.eth.sign(player1, hashToIndex); 
+
+      // First set State with moveCount = 33;
+      assert.doesNotThrow(function () {
+       
+        Chess.moveFromState(gameId1, boardHigh, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+     
+      // Now set State with moveCount = 3;
+      let boardLow= [...defaultBoard]; //BOARD WITH LOWER MOVE COUNT
+      //boardLow[8] = 3;
+      hashState = web3.sha3(boardLow); 
+      sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+       
+        Chess.moveFromState(gameId1, boardLow, fromIndex, toIndex , player2, sigState, sigFromIndex, sigToIndex , {from: player1, gas: 2000000});
+      }, Error);
+     
+
     });
 
   });  

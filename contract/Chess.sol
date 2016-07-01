@@ -108,15 +108,15 @@ contract Chess is TurnBasedGame, Auth{
         * Verify signatures
         */
         // verify state
-        verifySig(opponent, sha3(state), sigState);
+        if (!verifySig(opponent, sha3(state), sigState)){throw;}
         // verify fromIndex
-        verifySig(msg.sender, sha3(fromIndex), sigFromIndex);
+        if (!verifySig(msg.sender, sha3(fromIndex), sigFromIndex)) throw;
         // verify toIndex
-        verifySig(msg.sender, sha3(toIndex), sigToIndex);
+        if (!verifySig(msg.sender, sha3(toIndex), sigToIndex)) throw;
 
 
         // check move count. New state should have a higher move count. 
-        if (state[9] * int8(128) + state[8] < gameStates[gameId].fields[9] * int8(128) + gameStates[gameId].fields[8]) {
+        if ((state[8] * int8(128) + state[9]) < (gameStates[gameId].fields[8] * int8(128) + gameStates[gameId].fields[9])) {
             throw;
         }
    

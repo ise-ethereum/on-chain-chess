@@ -3,17 +3,17 @@ contract Auth {
 
     // Written by Alex Beregszaszi (@axic), use it under the terms of the MIT license.
     // slightly modified
-    function verifySig(address account, bytes32 hash, bytes sig) returns (bool) {
+    function verifySig(address account, bytes32 hash, bytes sig) constant returns (bool) {
         bytes32 r;
         bytes32 s;
         uint8 v;
         
         // FIXME: Should this throw, or return 0?
         if (sig.length != 65){
-          //return 0;
-      		throw;
+          return false;
+      		//throw;
       	}
-
+        
         // The signature format is a compact form of:
         //   {bytes32 r}{bytes32 s}{uint8 v}
         // Compact means, uint8 is not padded to 32 bytes.
