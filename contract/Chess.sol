@@ -118,10 +118,27 @@ contract Chess is TurnBasedGame {
         // you can only claim draw / victory in the enemies turn
         if (msg.sender == game.nextPlayer)
             throw;
-        game.timeoutStarted = now;
-        game.timeoutState = 1;
+        // get the color of the player that wants to claim win
+        int8 requestingPlayerColor = 0
+        // the one not sending is white -> the sending player is Black
+        if(gameStates[gameId].playerWhite == msg.sender){
+            requestingPlayerColor = ChessLogic.Players(Player.Black);
+        // else he is white
+        }else{
+            requestingPlayerColor = ChessLogic.Players(Player.WHITE);
+        }
+        // We get the king position of that player
+        int8 kingIndex = gameStates[gameId].getOwnKing(requestingPlayerColor)
+        // if he is in check the request is legal
+        if (gameStates[gameId].checkForCheck(kingIndex, requestingPlayerColor){
+            game.timeoutStarted = now;
+            game.timeoutState = 1;
+            GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
+        // else it is not
+        }else {
+            throw;
+        }
 
-        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
     }
 
     /* The sender offers the other player a draw. Starts a timeout. */
@@ -142,8 +159,24 @@ contract Chess is TurnBasedGame {
         GameTimeoutStarted(gameId,game.timeoutStarted,game.timeoutState);
     }
 
-    /* The sender claims a previously started timeout. */
+    /* the sender claims that the other player is not in the game anymore. Starts a Timeout that can be claimed*/
     function claimTimeout(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started
+        if (game.timeoutState != 0)
+            throw;
+        // you can only claim draw / victory in the enemies turn
+        if (msg.sender == game.nextPlayer)
+            throw;
+        game.timeoutStarted = now;
+        game.timeoutState = 1;
+        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
+
+    /* The sender claims a previously started timeout. */
+    function claimTimeoutEnded(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
