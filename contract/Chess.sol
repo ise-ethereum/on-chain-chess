@@ -108,6 +108,7 @@ contract Chess is TurnBasedGame {
 
     /* The sender claims he has won the game. Starts a timeout. */
     function claimWin(bytes32 gameId) notEnded(gameId) public {
+
         var game = games[gameId];
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
@@ -119,18 +120,25 @@ contract Chess is TurnBasedGame {
         if (msg.sender == game.nextPlayer)
             throw;
         // get the color of the player that wants to claim win
-        int8 requestingPlayerColor = 0
+        int8 requestingPlayerColor = 0;
         // the one not sending is white -> the sending player is Black
+
         if(gameStates[gameId].playerWhite == msg.sender){
-            requestingPlayerColor = ChessLogic.Players(Player.Black);
+
+            // this like causes : Module build failed: Error: Internal compiler error: I sense a disturbance in the stack.
+            // Why no clue, bad choice to set the value explicitly, if the enum changes this line breaks
+            requestingPlayerColor = -1;
         // else he is white
+
         }else{
-            requestingPlayerColor = ChessLogic.Players(Player.WHITE);
+            // same here
+            requestingPlayerColor = 1;
         }
+
         // We get the king position of that player
-        int8 kingIndex = gameStates[gameId].getOwnKing(requestingPlayerColor)
+        uint256 kingIndex = uint256(gameStates[gameId].getOwnKing(requestingPlayerColor));
         // if he is in check the request is legal
-        if (gameStates[gameId].checkForCheck(kingIndex, requestingPlayerColor){
+        if (gameStates[gameId].checkForCheck(kingIndex, requestingPlayerColor)){
             game.timeoutStarted = now;
             game.timeoutState = 1;
             GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
@@ -138,6 +146,7 @@ contract Chess is TurnBasedGame {
         }else {
             throw;
         }
+
 
     }
 
@@ -174,7 +183,7 @@ contract Chess is TurnBasedGame {
         game.timeoutStarted = now;
         game.timeoutState = 1;
         GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
-
+    }
     /* The sender claims a previously started timeout. */
     function claimTimeoutEnded(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
