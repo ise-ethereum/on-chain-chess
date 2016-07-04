@@ -70,11 +70,11 @@ angular.module('dappChess').factory('accounts', function () {
   return accounts;
 }).controller('accountsCtrl', function(accounts, $scope) {
   $scope.accounts = accounts;
+});
 
-  jQuery(document).ready(function($) {
-    $('#overlay').click(function() {
-      $('#layers > .layer').fadeOut();
-      $('#overlay').fadeOut();
-    });
+jQuery(document).ready(function($) {
+  $('#overlay').click(function() {
+    $('#layers  div.layer').fadeOut();
+    $('#overlay').fadeOut();
   });
 });
