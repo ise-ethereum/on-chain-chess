@@ -177,8 +177,8 @@ describe('Chess contract', function() {
     it('should allow surrender from P1 and declare P2 as winner', function(done) {
       Chess.surrender(gameId, {from: player1, gas: 500000});
       var filter = Chess.GameEnded({gameId: gameId});
-      filter.watch(function(error, result){
-        assert.equal(player2, result.args.winner);
+      filter.watch(function(){
+        assert.equal(player2, Chess.games(gameId)[5]);
         filter.stopWatching();
         done();
       });
@@ -494,7 +494,7 @@ describe('Chess contract', function() {
         let filter = Chess.GameEnded({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
-          assert.equal(player2, result.args.winner);
+          assert.equal(player2, Chess.games(result.args.gameId)[5]);
           filter.stopWatching();
           done();
         });
@@ -509,7 +509,7 @@ describe('Chess contract', function() {
         let filter = Chess.GameEnded({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
-          assert.equal(0, result.args.winner);
+          assert.equal(0, Chess.games(result.args.gameId)[5]);
           filter.stopWatching();
           done();
         });
