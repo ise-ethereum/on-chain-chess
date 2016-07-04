@@ -11,7 +11,7 @@ import "TurnBasedGame.sol";
 import "ChessLogic.sol";
 import "Auth.sol";
 
-contract Chess is TurnBasedGame, Auth{
+contract Chess is TurnBasedGame, Auth {
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
 
@@ -70,14 +70,14 @@ contract Chess is TurnBasedGame, Auth{
     }
 
     /**
-    * 
+    *
     * verify signature of state
     * verify signature of move
     * apply state, verify move
     */
-    function moveFromState(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex, address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) notEnded(gameId) public {
-        
-        if (games[gameId].winner != 0) {
+    function moveFromState(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex,
+                           address opponent, bytes sigState, bytes sigFromIndex, bytes sigToIndex) notEnded(gameId) public {
+        if (games[gameId].winner != 0 || games[gameId].ended) {
             // Game already ended
             throw;
         }
@@ -98,7 +98,7 @@ contract Chess is TurnBasedGame, Auth{
 
         // check whether sender is currentPlayer in state
         int8 playerColor = msg.sender == gameStates[gameId].playerWhite ? int8(1) : int8(-1);
-     
+
         //if (state[ChessLogic.Flags(ChessLogic.Flag.CURRENT_PLAYER)] !=  playerColor) {
         if (state[56] !=  playerColor) {
             throw;
@@ -107,28 +107,30 @@ contract Chess is TurnBasedGame, Auth{
         /*
         * Verify signatures
         */
-        // verify state
-        if (!verifySig(opponent, sha3(state), sigState)){throw;}
         // verify fromIndex
-        if (!verifySig(msg.sender, sha3(fromIndex), sigFromIndex)) throw;
+        if (!verifySig(msg.sender, sha3(fromIndex), sigFromIndex)) {
+            throw;
+        }
         // verify toIndex
-        if (!verifySig(msg.sender, sha3(toIndex), sigToIndex)) throw;
+        if (!verifySig(msg.sender, sha3(toIndex), sigToIndex)) {
+            throw;
+        }
+        // verify state
+        if (!verifySig(opponent, sha3(state), sigState)) {
+            throw;
+        }
 
-
-        // check move count. New state should have a higher move count. 
+        // check move count. New state should have a higher move count.
         if ((state[8] * int8(128) + state[9]) < (gameStates[gameId].fields[8] * int8(128) + gameStates[gameId].fields[9])) {
             throw;
         }
-   
+
         // apply state
         gameStates[gameId].setState(state, playerColor);
         games[gameId].nextPlayer =  msg.sender;
-    
-        // GameStateChanged(gameId, gameStates[gameId].fields); //  hier?       
 
-        // verify move
+        // apply move
         move(gameId, fromIndex, toIndex);
-        
     }
 
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {
