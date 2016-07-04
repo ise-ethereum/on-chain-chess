@@ -523,6 +523,39 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return false;
     };
 
+    $scope.gameTimeoutState = function () {
+      let game = $scope.getGame();
+
+      if(game) {
+        return game.timeoutState;
+      }
+    };
+
+    $scope.gameTimeoutReached = function () {
+      let game = $scope.getGame();
+
+      if(game && game.timeoutState !== 0) {
+        console.log('gameTimeoutReached', game.timeoutStarted, new Date(game.timeoutStarted));
+        return false;
+      }
+    };
+
+    $scope.claimWin = function () {
+      games.claimWin($scope.getGame());
+    };
+
+    $scope.offerDraw = function () {
+      games.offerDraw($scope.getGame());
+    };
+
+    $scope.confirmGameEnded = function () {
+      games.confirmGameEnded($scope.getGame());
+    };
+
+    $scope.claimTimeout = function () {
+      games.claimTimeout($scope.getGame());
+    };
+
     $scope.gameHasClaimableEther = function() {
       let game = $scope.getGame();
 
@@ -587,7 +620,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           updateGameInfo('Next player is ' + gamer + '.', false);
 
           position = generateMapping();
-          
+
           // opponent starts game
           if (game.self.color === 'black') {
             board.setOrientation(ChessUtils.ORIENTATION.black);

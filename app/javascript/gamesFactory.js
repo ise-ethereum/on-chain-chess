@@ -41,6 +41,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       pot: array[7],
       player1WonEther: array[8],
       player2WonEther: array[9],
+      timeoutStarted: array[10],
+      timeoutState: array[11],
       playerWhite: playerWhite
     };
   };
@@ -64,12 +66,24 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
    *    }
    *  },
    *  ended: <boolean>,
-   *  pot: <number>
+   *  pot: <number>,
+   *  timeoutStarted: <date>,
+   *  timeoutState: <{-1,0,1}>
    * @param contractGameObject
    * @returns game
      */
   games.convertGameToObject = function(contractGameObject) {
-    let game = {gameId: contractGameObject.gameId};
+    let game = {
+      gameId: contractGameObject.gameId
+    };
+
+    if (typeof game.timeoutState !== 'undefined') {
+      game.timeoutState = contractGameObject.timeoutState.toNumber();
+      game.timeoutStarted = contractGameObject.timeoutStarted.toNumber() || 0;
+    } else {
+      game.timeoutState = 0;
+      game.timeoutStarted = 0;
+    }
 
     if (accounts.availableAccounts.indexOf(contractGameObject.player2) !== -1) {
       game.self = {
@@ -199,6 +213,68 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     else {
       console.log(game.self.accountId + ' not in account ids', accounts.availableAccounts);
     }
+  };
+
+  games.claimWin = function(game) {
+    console.log('claimWin', game);
+
+    if(accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+      if (game.timeoutState !== 0) {
+        $rootScope.$broadcast('message',
+          'Not able to claim win, while other claim is active in game with the id ' + game.gameId,
+          'error', 'claimwin');
+      } else {
+        $rootScope.$broadcast('message',
+          'Claiming win for your game with the id ' + game.gameId,
+          'message', 'claimwin');
+      }
+      try {
+        Chess.claimWin(game.gameId, {from: game.self.accountId});
+      } catch (e) {
+        console.log('claimWin error', e);
+        $rootScope.$broadcast('message',
+          'Could not claim for a win',
+          'error', 'claimwin');
+      }
+    } else {
+      console.log(game.self.accountId + ' not in account ids', accounts.availableAccounts);
+    }
+  };
+
+  games.offerDraw = function(game) {
+    console.log('offerDraw', game);
+
+    if(accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+      if (game.timeoutState !== 0) {
+        $rootScope.$broadcast('message',
+          'Not able to offer draw, while other claim is active in game with the id ' + game.gameId,
+          'error', 'offerdraw');
+      } else {
+        $rootScope.$broadcast('message',
+          'Offering draw for your game with the id ' + game.gameId,
+          'message', 'offerdraw');
+      }
+      try {
+        Chess.offerDraw(game.gameId, {from: game.self.accountId});
+      } catch (e) {
+        console.log('offerDraw error', e);
+        $rootScope.$broadcast('message',
+          'Could not offer a draw',
+          'error', 'offerdraw');
+      }
+    } else {
+      console.log(game.self.accountId + ' not in account ids', accounts.availableAccounts);
+    }
+  };
+
+  games.confirmGameEnded = function(game) {
+    console.log('confirmGameEnded', game);
+
+  };
+
+  games.claimTimeout = function(game) {
+    console.log('claimTimeout', game);
+
   };
 
   games.claimEther = function(game) {
@@ -341,6 +417,12 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
 
   games.eventMove = function (err, data) {
     console.log('eventMove', err, data);
+    let game = games.getGame(data.args.gameId);
+    if (typeof game !== 'undefined') {
+      if (game.timeoutState !== 0) {
+        game.timeoutState = 0;
+      }
+    }
   };
 
   games.eventGameEnded = function(err, data) {
@@ -429,6 +511,21 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     }
   };
 
+  games.eventGameTimeoutStarted = function(err, data) {
+    console.log('eventGameTimeoutStarted', err, data);
+    if (err) {
+      console.log('error occured', err);
+    } else {
+      let game = games.getGame(data.args.gameId);
+      if (typeof game === 'undefined') {
+        return;
+      }
+      game.timeoutStarted = data.args.timeoutStarted;
+      game.timeoutState = data.args.timeoutState;
+      console.log('game', game);
+    }
+  };
+
   // Fetch games of player
   for (let accountId of accounts.availableAccounts) {
     for (let currentGameId of Chess.getGamesOfPlayer(accountId)) {
@@ -469,6 +566,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
   Chess.Move({}, games.eventMove);
   Chess.GameEnded({}, games.eventGameEnded);
   Chess.GameClosed({}, games.eventGameClosed);
+  Chess.GameTimeoutStarted({}, games.eventGameTimeoutStarted);
 
   return games;
 }).filter('ownGames', function (accounts) {

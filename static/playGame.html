@@ -46,6 +46,17 @@
 
   </div>
   <div class="four columns">
+    <button data-ng-click="claimWin()" data-ng-show="gameTimeoutState() === 0">Claim Win</button>
+    <button data-ng-click="offerDraw()" data-ng-show="gameTimeoutState() === 0">Offer Draw</button>
+    <button data-ng-click="confirmGameEnded()" data-ng-show="gameTimeoutState() === 1 && !gameTimeoutReached()">Accept Loose</button>
+    <button data-ng-click="confirmGameEnded()" data-ng-show="gameTimeoutState() === -1 && !gameTimeoutReached()">Accept Draw</button>
+    <button data-ng-click="claimTimeout()" data-ng-show="gameTimeoutState() !== 0 && gameTimeoutReached()">Claim Timeout</button>
+    <!--data-ng-class="{-->
+    <!--metapage:-->
+    <!--navigation.isActivePage(navigation.welcomePage) ||-->
+    <!--navigation.isActivePage(navigation.initializeGamePage) ||-->
+    <!--navigation.isActivePage(navigation.joinGamePage)-->
+    <!--}"-->
     <button data-ng-click="surrender()" data-ng-show="gameIsActive()">Surrender</button>
     <button data-ng-click="closeGame()" data-ng-show="!gameIsActive()">Close</button>
     <button data-ng-click="claimEther()" data-ng-show="gameHasClaimableEther()">Claim ether</button>
