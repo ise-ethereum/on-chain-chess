@@ -6,7 +6,7 @@ contract TurnBasedGame {
         _
     }
 
-    event GameEnded(bytes32 indexed gameId, address indexed winner);
+    event GameEnded(bytes32 indexed gameId);
     event GameClosed(bytes32 indexed gameId, address indexed player);
     event DebugInts(string message, int value1, int value2, int value3);
 
@@ -18,7 +18,9 @@ contract TurnBasedGame {
         address nextPlayer;
         address winner;
         bool ended;
-        uint value; // What this game is worth ether paid into the game
+        uint pot; // What this game is worth ether paid into the game
+        uint player1Winnings;
+        uint player2Winnings;
         uint timeoutStarted; // timer for timeout
         int8 timeoutState; // -1 draw 0 nothing 1 checkmate
     }
@@ -88,6 +90,8 @@ contract TurnBasedGame {
                     }
                 }
             }
+            games[gameId].player1Winnings = games[gameId].pot;
+            games[gameId].pot = 0;
         }
 
         // Remove from gamesOfPlayers
@@ -121,16 +125,20 @@ contract TurnBasedGame {
         if (games[gameId].player1 == msg.sender) {
             // Player 1 surrendered, player 2 won
             games[gameId].winner = games[gameId].player2;
+            games[gameId].player2Winnings = games[gameId].pot;
+            games[gameId].pot = 0;
         } else if(games[gameId].player2 == msg.sender) {
             // Player 2 surrendered, player 1 won
             games[gameId].winner = games[gameId].player1;
+            games[gameId].player1Winnings = games[gameId].pot;
+            games[gameId].pot = 0;
         } else {
             // Sender is not a participant of this game
             throw;
         }
 
         games[gameId].ended = true;
-        GameEnded(gameId, games[gameId].winner);
+        GameEnded(gameId);
     }
 
     /**
@@ -138,14 +146,22 @@ contract TurnBasedGame {
      * bytes32 gameId: ID of the game they have won
      */
     function withdraw(bytes32 gameId) public {
-        if (games[gameId].winner != msg.sender){
-            throw;
+        uint payout = 0;
+        if(games[gameId].player1 == msg.sender && games[gameId].player1Winnings > 0) {
+            payout = games[gameId].player1Winnings;
+            games[gameId].player1Winnings = 0;
+            if (!msg.sender.send(payout)) {
+                throw;
+            }
         }
-
-        // send money
-        uint payout = games[gameId].value;
-        games[gameId].value = 0;
-        if (!msg.sender.send(payout)){
+        else if(games[gameId].player2 == msg.sender && games[gameId].player2Winnings > 0) {
+            payout = games[gameId].player2Winnings;
+            games[gameId].player2Winnings = 0;
+            if (!msg.sender.send(payout)) {
+                throw;
+            }
+        }
+        else {
             throw;
         }
     }
@@ -169,9 +185,11 @@ contract TurnBasedGame {
         // Initialize participants
         games[gameId].player1 = msg.sender;
         games[gameId].player1Alias = player1Alias;
+        games[gameId].player1Winnings = 0;
+        games[gameId].player2Winnings = 0;
 
         // Initialize game value
-        games[gameId].value = msg.value;
+        games[gameId].pot = msg.value;
 
         // Add game to gamesOfPlayers
         gamesOfPlayers[msg.sender][gameId] = gamesOfPlayersHeads[msg.sender];
@@ -196,10 +214,10 @@ contract TurnBasedGame {
         }
 
         // throw if the second player did not match the bet.
-        if (msg.value != games[gameId].value) {
+        if (msg.value != games[gameId].pot) {
             throw;
         }
-        games[gameId].value += msg.value;
+        games[gameId].pot += msg.value;
 
         games[gameId].player2 = msg.sender;
         games[gameId].player2Alias = player2Alias;

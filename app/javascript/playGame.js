@@ -586,9 +586,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
       if(game) {
         return typeof(game.winner) !== 'undefined' && game.winner === 'self';
       }
-      else {
-        return false;
-      }
+
+      return false;
     };
 
     $scope.gameIsLost = function() {
@@ -596,9 +595,18 @@ angular.module('dappChess').controller('PlayGameCtrl',
       if(game) {
         return typeof(game.winner) !== 'undefined' && game.winner === 'opponent';
       }
-      else {
-        return false;
+
+      return false;
+    };
+
+    $scope.gameIsDraw = function() {
+      let game = $scope.getGame();
+      if(game) {
+        return game.ended && (typeof(game.winner) === 'undefined' ||
+          (game.winner !== 'self' && game.winner !== 'opponent'));
       }
+
+      return false;
     };
 
     $scope.gameIsActive = function() {
@@ -607,9 +615,22 @@ angular.module('dappChess').controller('PlayGameCtrl',
       if(game) {
         return !game.ended;
       }
-      else {
-        return false;
+
+      return false;
+    };
+
+    $scope.gameHasClaimableEther = function() {
+      let game = $scope.getGame();
+
+      if(game) {
+        return game.self.wonEther > 0;
       }
+
+      return false;
+    };
+
+    $scope.claimEther = function() {
+      games.claimEther($scope.getGame());
     };
 
     $scope.closeGame = function() {

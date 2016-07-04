@@ -16,8 +16,8 @@ contract Chess is TurnBasedGame {
 
 
 
-    event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint value);
-    event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint value);
+    event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint pot);
+    event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint pot);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event GameTimeoutStarted(bytes32 indexed gameId,uint timeoutStarted, int8 timeoutState);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
@@ -45,7 +45,7 @@ contract Chess is TurnBasedGame {
         }
 
         // Sent notification events
-        GameInitialized(gameId, games[gameId].player1, player1Alias, gameStates[gameId].playerWhite, games[gameId].value);
+        GameInitialized(gameId, games[gameId].player1, player1Alias, gameStates[gameId].playerWhite, games[gameId].pot);
         GameStateChanged(gameId, gameStates[gameId].fields);
         return gameId;
     }
@@ -65,7 +65,7 @@ contract Chess is TurnBasedGame {
             games[gameId].nextPlayer = games[gameId].player2;
         }
 
-        GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, gameStates[gameId].playerWhite, games[gameId].value);
+        GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, gameStates[gameId].playerWhite, games[gameId].pot);
     }
 
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {
@@ -154,13 +154,26 @@ contract Chess is TurnBasedGame {
             throw;
         if (now < game.timeoutStarted + 10 minutes)
             throw;
+        // Game is a draw, transfer ether back
         if (game.timeoutState == -1){
             game.ended = true;
-            GameEnded(gameId, 0);
+            games[gameId].player1Winnings = games[gameId].pot / 2;
+            games[gameId].player2Winnings = games[gameId].pot / 2;
+            games[gameId].pot = 0;
+            GameEnded(gameId);
         } else if (game.timeoutState == 1){
             game.ended = true;
             game.winner = msg.sender;
-            GameEnded(gameId, msg.sender);
+            if(msg.sender == game.player1) {
+                games[gameId].player1Winnings = games[gameId].pot;
+                games[gameId].pot = 0;
+            }
+            else {
+                games[gameId].player2Winnings = games[gameId].pot;
+                games[gameId].pot = 0;
+            }
+
+            GameEnded(gameId);
         } else {
             throw;
         }
@@ -176,14 +189,27 @@ contract Chess is TurnBasedGame {
             throw;
         if (game.timeoutState == 0)
             throw;
+        // Game is a draw, transfer ether back
         if (game.timeoutState == -1){
             game.ended = true;
-            GameEnded(gameId, 0);
+            games[gameId].player1Winnings = games[gameId].pot / 2;
+            games[gameId].player2Winnings = games[gameId].pot / 2;
+            games[gameId].pot = 0;
+            GameEnded(gameId);
         } else if (game.timeoutState == 1){
             game.ended = true;
             // other player won
-            game.winner = (msg.sender == game.player1 ? game.player2 : game.player1);
-            GameEnded(gameId, game.winner);
+            if(msg.sender == game.player1) {
+                game.winner = game.player2;
+                games[gameId].player2Winnings = games[gameId].pot;
+                games[gameId].pot = 0;
+            }
+            else {
+                game.winner = game.player1;
+                games[gameId].player1Winnings = games[gameId].pot;
+                games[gameId].pot = 0;
+            }
+            GameEnded(gameId);
         } else {
             throw;
         }
