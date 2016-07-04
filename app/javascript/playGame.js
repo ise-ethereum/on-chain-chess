@@ -331,7 +331,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       updateGameInfo(status);
     }
 
-    function eventGameTimeoutStarted(err, data) {
+    /*function eventGameTimeoutStarted(err, data) {
       console.log('eventTimeoutStarted ', err, data);
       if (err){
         console.log('EVENTGAMETIMEOUTERROR: ', err);
@@ -355,7 +355,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         }
       }
 
-    }
+    }*/
 
     function eventMove(err, data) {
       console.log('eventMove', err, data);
@@ -451,10 +451,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return chess.fen();
     }
 
-
     $scope.getGameId = function() {
       return $route.current.params.id;
     };
+
     $scope.isOpenGame = function() {
       let gameId = $scope.getGameId();
 
@@ -464,6 +464,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
       return false;
     };
+
     $scope.getGame = function() {
       let gameId = $scope.getGameId();
 
@@ -473,6 +474,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
       return false;
     };
+
     $scope.surrender = function() {
       $rootScope.$broadcast('message', 'Submitting your surrender, please wait...',
         'loading', 'playgame');
@@ -523,20 +525,41 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return false;
     };
 
-    $scope.gameTimeoutState = function () {
+    $scope.gameCanConfirmDraw = function () {
       let game = $scope.getGame();
 
       if(game) {
-        return game.timeoutState;
+        return game.timeoutState === -1 && game.nextPlayer === game.self.accountId;
       }
     };
 
-    $scope.gameTimeoutReached = function () {
+    $scope.gameCanConfirmLoose = function () {
+      let game = $scope.getGame();
+
+      if(game) {
+        return game.timeoutState === 1 && game.nextPlayer === game.self.accountId;
+      }
+    };
+
+    $scope.gameCanOfferEndGame = function () {
+      let game = $scope.getGame();
+
+      if(game) {
+        return game.timeoutState === 0 && game.nextPlayer !== game.self.accountId;
+      }
+    };
+
+    $scope.gameCanClaimTimeout = function () {
       let game = $scope.getGame();
 
       if(game && game.timeoutState !== 0) {
-        console.log('gameTimeoutReached', game.timeoutStarted, new Date(game.timeoutStarted));
-        return false;
+        let timeoutDatePlus10Minutes = new Date(game.timeoutStarted * 1000 + 10 * 60000);
+        // TODO show button dynamically, i think now it is only shown after reload when time greater
+        // 10 minutes
+        console.log('game.nextPlayer', game.nextPlayer);
+        return game.timeoutState !== 0 &&
+            game.nextPlayer !== game.self.accountId &&
+            timeoutDatePlus10Minutes < new Date();
       }
     };
 
@@ -635,7 +658,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
 
           SoliChess.Move(eventMove);
-          SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
+          //SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
         }
 
         );

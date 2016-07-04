@@ -74,10 +74,11 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
      */
   games.convertGameToObject = function(contractGameObject) {
     let game = {
-      gameId: contractGameObject.gameId
+      gameId: contractGameObject.gameId,
+      nextPlayer: contractGameObject.nextPlayer
     };
 
-    if (typeof game.timeoutState !== 'undefined') {
+    if (typeof contractGameObject.timeoutState !== 'undefined') {
       game.timeoutState = contractGameObject.timeoutState.toNumber();
       game.timeoutStarted = contractGameObject.timeoutStarted.toNumber() || 0;
     } else {
@@ -269,12 +270,12 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
 
   games.confirmGameEnded = function(game) {
     console.log('confirmGameEnded', game);
-
+    // TODO implement
   };
 
   games.claimTimeout = function(game) {
     console.log('claimTimeout', game);
-
+    // TODO implement
   };
 
   games.claimEther = function(game) {
@@ -421,6 +422,11 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     if (typeof game !== 'undefined') {
       if (game.timeoutState !== 0) {
         game.timeoutState = 0;
+      }
+      if (game.self.accountId === data.args.player) {
+        game.nextPlayer = game.opponent.accountId;
+      } else {
+        game.nextPlayer = game.self.accountId;
       }
     }
   };
