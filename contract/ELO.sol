@@ -40,7 +40,7 @@ library ELO {
      * Table based expectation formula
      * E = 1 / ( 1 + 10**((difference)/400))
      * Table calculated based on inverse: difference = (400*log(1/E-1))/(log(10))
-     * scoreChange = K * (result - E)
+     * scoreChange = Round( K * (result - E) )
      * K = 20
      * Because curve is mirrored around 0, uses only one table for positive side
      * Returns (scoreChangeA, scoreChangeB)
@@ -50,16 +50,16 @@ library ELO {
         uint diff = abs(difference); // take absolute to lookup in positive table
         // Score change lookup table
         int scoreChange = 10;
-        if (diff >= 798) scoreChange = 20;
-        else if (diff >= 511) scoreChange = 19;
-        else if (diff >= 381) scoreChange = 18;
-        else if (diff >= 301) scoreChange = 17;
-        else if (diff >= 240) scoreChange = 16;
-        else if (diff >= 190) scoreChange = 15;
-        else if (diff >= 147) scoreChange = 14;
-        else if (diff >= 107) scoreChange = 13;
-        else if (diff >= 70) scoreChange = 12;
-        else if (diff >= 34) scoreChange = 11;
+        if (diff >= 635) scoreChange = 20;
+        else if (diff >= 436) scoreChange = 19;
+        else if (diff >= 337) scoreChange = 18;
+        else if (diff >= 269) scoreChange = 17;
+        else if (diff >= 214) scoreChange = 16;
+        else if (diff >= 168) scoreChange = 15;
+        else if (diff >= 126) scoreChange = 14;
+        else if (diff >= 88) scoreChange = 13;
+        else if (diff >= 52) scoreChange = 12;
+        else if (diff >= 17) scoreChange = 11;
         // Depending on result (win/draw/lose), calculate score changes
         if (resultA == 2) {
             return ((reverse ? 20-scoreChange : scoreChange ),
