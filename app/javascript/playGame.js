@@ -1,5 +1,7 @@
 /* global angular, Chess, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
+
+var BigNumber = require('bignumber.js');
 angular.module('dappChess').controller('PlayGameCtrl',
   function (games, $route, navigation, $scope, $rootScope) {
     // init chess validation
@@ -8,9 +10,33 @@ angular.module('dappChess').controller('PlayGameCtrl',
     $scope.gamePgn = '';
     $scope.gameStatus = '';
 
+    function generateMapping() {
+      let x=0, y=8;
+      let toBackend = {};
+      let toFrontend = {};
+      let alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+      for ( let i=0 ; i < 128; i++){
+        toBackend[alphabet[x] + y] = i;
+        toFrontend[i] = alphabet[x] + y;
+
+        x++;
+        if (x===8) {
+          x = 0;
+          y --;
+          i += 8;
+        }
+
+      }
+
+      return {'toBackend':toBackend, 'toFrontend': toFrontend};
+
+    }
 
     function generatePieceMapping(){
       return {
+
+        // for 0x88 to fen
         '-6': 'k',
         '-5': 'q',
         '-4': 'r',
@@ -22,15 +48,133 @@ angular.module('dappChess').controller('PlayGameCtrl',
         '3': 'B',
         '4': 'R',
         '5': 'Q',
-        '6': 'K'
+        '6': 'K',
+
+        // for fen to 0x88
+        'k': '-6',
+        'q': '-5',
+        'r': '-4',
+        'b': '-3',
+        'n': '-2',
+        'p': '-1',
+        'P': '1',
+        'N': '2',
+        'B': '3',
+        'R': '4',
+        'Q': '5',
+        'K': '6'
+
       };
     }
 
     function generateState(fen){
-      let fenComponents = fen.split(' ');
-      // let board, currentPlayer, enPassant, castling, moveCount = fen.split(' ');
-      console.log(fenComponents);
 
+
+      let fenComponents = fen.split(' ');
+      let board = fenComponents[0],
+          activeColor = fenComponents[1],
+          castling =  fenComponents[2],
+          enPassant =  fenComponents[3],
+          halfMoveClock = fenComponents[4],
+          fullMoveCounter = fenComponents[5];
+      console.log('board: ', board);
+      console.log('Color: ',activeColor);
+      console.log('enPAssant: ',enPassant);
+      console.log('castling: ',castling);
+      console.log('halfMove: ',halfMoveClock);
+      console.log('fullmove: ',fullMoveCounter);
+
+      // set board to 0x88
+      let state = [];
+      let counter = 0;
+      let toState = generatePieceMapping();
+      let whiteKing, blackKing;
+      for (let i=0; i < board.length; i++){
+
+        if (isNaN(Number(board[i])) ) {
+          if (board[i] === '/') {
+            for (let k=0; k < 8; k++) {
+              state.push(new BigNumber(0));
+              counter++;
+
+            }
+          } else {
+            state.push(new BigNumber(toState[board[i]]));
+            if (board[i] === 'K') {
+              blackKing = counter;
+            }
+            if (board[i] === 'k') {
+              whiteKing = counter;
+            }
+            counter++;
+          }
+
+        } else {
+          for (let j=0; j < Number(board[i]); j++) {
+            state.push(new BigNumber(0));
+            counter++;
+          }
+        }
+
+
+      }
+      // fill rest of shadow field
+      for (let j=0; j < 8; j++) {
+        state.push(new BigNumber(0));
+      }
+
+      // fullmove
+      console.log('high: ', Math.abs(parseInt(fullMoveCounter / 128)));
+      console.log('low: ',(parseInt(((fullMoveCounter % 128) - 1)/2)));
+      state[8] = new BigNumber(Math.abs(parseInt(fullMoveCounter / 128)));
+      state[9] = new BigNumber(parseInt(((fullMoveCounter % 128) - 1) / 2));
+
+      // set king position
+      console.log('white king ', whiteKing);
+      console.log('black king ', blackKing);
+      state[11] = new BigNumber(blackKing);
+      state[123] = new BigNumber(whiteKing);
+
+      // set color
+      if (activeColor === 'w') {
+        state[56] = new BigNumber(1);
+      } else {
+        state[56] = new BigNumber(-1);
+      }
+
+      // init for castling
+      state[78] = new BigNumber(-1);
+      state[79] = new BigNumber(-1);
+      state[62] = new BigNumber(-1);
+      state[63] = new BigNumber(-1);
+
+      // change state if castling is possible
+      for (var k=0; castling < castling.length; k++) {
+
+        // white right - kleine rochade für weiß
+        if (castling[k] === 'K') {
+          state[79] = new BigNumber(0);
+        }
+        // white left - große rochade für weiß
+        else if (castling[k] === 'Q') {
+          state[78] = new BigNumber(0);
+        }
+        // black right - kleine rochade für schwarz
+        else if (castling[k] === 'k') {
+          state[63] = new BigNumber(0);
+        }
+        // black left - große rochade für schwarz
+        else if (castling[k] === 'q') {
+          state[62] = new BigNumber(0);
+        }
+      }
+
+      // set enpassant
+      let mapping = generateMapping();
+      state[61] = new BigNumber(mapping.toBackend[enPassant]);
+      state[77] = new BigNumber(mapping.toBackend[enPassant]);
+
+      console.log('STATE: ',state);
 
     }
 
@@ -77,7 +221,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         }
       }
 
-
+      /*
       console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
       console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
       console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
@@ -86,7 +230,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
       console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
       console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
-
+      */
       // set current player
 
       if (state[56].toNumber() === 1) {
@@ -133,34 +277,11 @@ angular.module('dappChess').controller('PlayGameCtrl',
       fen +=' 0 ';
 
       // set fullmove number
-      fen += state[9].toNumber() + state[8].toNumber() + 1;
+      fen += ((2 * state[9].toNumber()) + state[8].toNumber()) + 1;
 
 
 
       return fen;
-    }
-
-    function generateMapping() {
-      let x=0, y=8;
-      let toBackend = {};
-      let toFrontend = {};
-      let alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-
-      for ( let i=0 ; i < 128; i++){
-        toBackend[alphabet[x] + y] = i;
-        toFrontend[i] = alphabet[x] + y;
-
-        x++;
-        if (x===8) {
-          x = 0;
-          y --;
-          i += 8;
-        }
-
-      }
-
-      return {'toBackend':toBackend, 'toFrontend': toFrontend};
-
     }
 
     function lightItUp() {
@@ -260,6 +381,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       // TESTING FEN
       try {
         gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+        console.log(gameState);
         currentFen = generateFen(gameState);
       } catch(e) {
         console.log(e);
@@ -348,13 +470,11 @@ angular.module('dappChess').controller('PlayGameCtrl',
     function eventMove(err, data) {
       console.log('eventMove', err, data);
       if(err) {
-
+        //
       }
       else {
         let fromIndex = position.toFrontend[data.args.fromIndex.c[0]];
         let toIndex = position.toFrontend[data.args.toIndex.c[0]];
-
-        console.log(chess.fen());
 
         // display move to enemy
         if (!board.isUserInputEnabled()) {
@@ -366,11 +486,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
           board.move(fromIndex + '-' + toIndex);
         }
         processChessMove(chessMove);
-
-
-        console.log(chess.fen());
-
-
 
         if(board.isUserInputEnabled()) {
           $rootScope.$broadcast('message', 'Your move was successfully transmitted.',
@@ -508,6 +623,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       let game = $scope.getGame();
       if(game) {
         $(document).ready(function () {
+
           chess = new Chess();
 
           game = $scope.getGame();
@@ -518,6 +634,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           try {
             gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
             currentFen = generateFen(gameState);
+            console.log('Soli gamestate: ', gameState);
 
             generateState(currentFen);
 
