@@ -59,7 +59,7 @@ angular.module('dappChess').factory('crypto', function () {
    * @returns{boolean} true, iff the signature matches the account and data
      */
   crypto.verify = function (account, signature, data) {
-    let msgHash = web3.solSha3(data);
+    let msgHash = solSha3(data);
     let r = signature.slice(0, 66);
     let s = '0x' + signature.slice(66, 130);
     let v = '0x' + signature.slice(130, 132);
