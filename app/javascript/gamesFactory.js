@@ -216,10 +216,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     }
   };
 
-  games.claimWin = function(game) {
+  games.claimWin = function (game) {
     console.log('claimWin', game);
-
-    if(accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+    if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
       if (game.timeoutState !== 0) {
         $rootScope.$broadcast('message',
           'Not able to claim win, while other claim is active in game with the id ' + game.gameId,
@@ -228,24 +227,21 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
         $rootScope.$broadcast('message',
           'Claiming win for your game with the id ' + game.gameId,
           'message', 'claimwin');
+        try {
+          Chess.claimWin(game.gameId, {from: game.self.accountId});
+        } catch (e) {
+          console.log('claimWin error', e);
+          $rootScope.$broadcast('message',
+            'Could not claim for a win',
+            'error', 'claimwin');
+        }
       }
-      try {
-        Chess.claimWin(game.gameId, {from: game.self.accountId});
-      } catch (e) {
-        console.log('claimWin error', e);
-        $rootScope.$broadcast('message',
-          'Could not claim for a win',
-          'error', 'claimwin');
-      }
-    } else {
-      console.log(game.self.accountId + ' not in account ids', accounts.availableAccounts);
     }
   };
 
-  games.offerDraw = function(game) {
+  games.offerDraw = function (game) {
     console.log('offerDraw', game);
-
-    if(accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+    if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
       if (game.timeoutState !== 0) {
         $rootScope.$broadcast('message',
           'Not able to offer draw, while other claim is active in game with the id ' + game.gameId,
@@ -254,37 +250,73 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
         $rootScope.$broadcast('message',
           'Offering draw for your game with the id ' + game.gameId,
           'message', 'offerdraw');
+        try {
+          Chess.offerDraw(game.gameId, {from: game.self.accountId});
+        } catch (e) {
+          console.log('offerDraw error', e);
+          $rootScope.$broadcast('message',
+            'Could not offer a draw',
+            'error', 'offerdraw');
+        }
       }
-      try {
-        Chess.offerDraw(game.gameId, {from: game.self.accountId});
-      } catch (e) {
-        console.log('offerDraw error', e);
-        $rootScope.$broadcast('message',
-          'Could not offer a draw',
-          'error', 'offerdraw');
-      }
-    } else {
-      console.log(game.self.accountId + ' not in account ids', accounts.availableAccounts);
     }
   };
 
-  games.confirmGameEnded = function(game) {
+  games.confirmGameEnded = function (game) {
     console.log('confirmGameEnded', game);
-    // TODO implement
+    if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+      if (game.timeoutState === 0) {
+        $rootScope.$broadcast('message',
+          'Not able to comfirm game ended, while no claim is active ' +
+            'in game with the id ' + game.gameId,
+          'error', 'confirmgameended');
+      } else {
+        $rootScope.$broadcast('message',
+          'Sending confirmation to end your game with the id ' + game.gameId,
+          'message', 'confirmgameended');
+        try {
+          Chess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+        } catch (e) {
+          console.log('confirmGameEnded error', e);
+          $rootScope.$broadcast('message',
+            'Could not end the game',
+            'error', 'confirmgameended');
+        }
+      }
+    }
   };
 
-  games.claimTimeout = function(game) {
-    console.log('claimTimeout', game);
-    // TODO implement
+  games.claimTimeoutEnded = function (game) {
+    console.log('claimTimeoutEnded', game);
+    if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+      if (game.timeoutState === 0) {
+        $rootScope.$broadcast('message',
+          'Not able to claim timeout, while no claim is active ' +
+            'in game with the id ' + game.gameId,
+          'error', 'claimtimeoutended');
+      } else {
+        $rootScope.$broadcast('message',
+          'Claiming timeout for your game with the id ' + game.gameId,
+          'message', 'claimtimeoutended');
+        try {
+          Chess.claimTimeoutEnded(game.gameId, {from: game.self.accountId});
+        } catch (e) {
+          console.log('claimTimeoutEnded error', e);
+          $rootScope.$broadcast('message',
+            'Could not claime timeout',
+            'error', 'claimtimeoutended');
+        }
+      }
+    }
   };
 
-  games.claimEther = function(game) {
+  games.claimEther = function (game) {
     console.log('claim ether', game);
     // Only do this if we are part of this game
-    if(accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+    if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
       // When the player has won ether, claim this
       if (game.self.wonEther > 0) {
-        if(game.opponent) {
+        if (game.opponent) {
           $rootScope.$broadcast('message',
             'Claiming your won ether in the game against ' + game.opponent.username,
             'message', 'claimpot');
@@ -431,19 +463,19 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     }
   };
 
-  games.eventGameEnded = function(err, data) {
+  games.eventGameEnded = function (err, data) {
     console.log('eventGameEnded', err, data);
     if (err) {
       console.log('error occured', err);
-      /*$rootScope.$broadcast('message',
+      /* $rootScope.$broadcast('message',
        'The surrender could not be saved, the following error occurred: ' + err,
        'error', 'playgame');*/
     } else {
       // Update game in games list
       let gameInContract = Chess.games(data.args.gameId);
 
-      if(gameInContract) {
-        for(let i in games.list) {
+      if (gameInContract) {
+        for (let i in games.list) {
           if (games.list[i].gameId === data.args.gameId) {
             let game = games.convertGameToObject(
               games.parseContractGameArray(data.args.gameId, gameInContract)

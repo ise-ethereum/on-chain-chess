@@ -26,9 +26,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
     }
 
     function generateState (fen) {
-      let x = fen.split(' ');
+      console.log('generateState', fen);
+      // let x = fen.split(' ');
       // let board, currentPlayer, enPassant, castling, moveCount = fen.split(' ');
-      console.log(x);
+      // console.log(x);
     }
 
 
@@ -74,14 +75,14 @@ angular.module('dappChess').controller('PlayGameCtrl',
       }
 
 
-      console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
-      console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
-      console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
-      console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
-      console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
-      console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
-      console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
-      console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
+      //console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
+      //console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
+      //console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
+      //console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
+      //console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
+      //console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
+      //console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
+      //console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
 
       // set current player
 
@@ -199,21 +200,21 @@ angular.module('dappChess').controller('PlayGameCtrl',
     function processChessMove(chessMove) {
 
       let game = $scope.getGame();
-      console.log('chessMove');
+      //console.log('chessMove');
 
 
       /*
-      console.log(chessMove);
-      console.log('from: ' + chessMove.from);
-      console.log('to: ' + chessMove.to);
+      //console.log(chessMove);
+      //console.log('from: ' + chessMove.from);
+      //console.log('to: ' + chessMove.to);
       */
       var fromW = highlight.playerWhite[chessMove.from];
       var toW = highlight.playerWhite[chessMove.to];
       var fromB = highlight.playerBlack[chessMove.from];
       var toB = highlight.playerBlack[chessMove.to];
       /*
-      console.log('fromW: ', fromW, ' toW: ', toW);
-      console.log('fromW: ', fromB, ' toW: ', toB);
+      //console.log('fromW: ', fromW, ' toW: ', toW);
+      //console.log('fromW: ', fromB, ' toW: ', toB);
       */
       if (lastFrom !== null){
         $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
@@ -237,27 +238,27 @@ angular.module('dappChess').controller('PlayGameCtrl',
       try {
         gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
         currentFen = generateFen(gameState);
-        console.log('GAMESTATE: ', gameState);
-        console.log('GENERATED FEN: ', currentFen);
-        console.log('REAL FEN: ', chess.fen());
-        console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
-        console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
-        console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
-        console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
-        console.log('WHITE KING POSITION: ', position.toFrontend[gameState[123].toNumber()]);
-        console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
-        console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
-        console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
-        console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
+        //console.log('GAMESTATE: ', gameState);
+        //console.log('GENERATED FEN: ', currentFen);
+        //console.log('REAL FEN: ', chess.fen());
+        //console.log('CURRENT_PLAYER: ', gameState[56].toNumber());
+        //console.log('BLACK_EN_PASSANT : ',  gameState[61].toNumber());
+        //console.log('WHITE_EN_PASSANT 7', gameState[77].toNumber());
+        //console.log('BLACK KING POSITION: ', position.toFrontend[gameState[11].toNumber()]);
+        //console.log('WHITE KING POSITION: ', position.toFrontend[gameState[123].toNumber()]);
+        //console.log('BLACK CASTLING LEFT: ', gameState[62].toNumber());
+        //console.log('BLACK CASTLING RIGHT: ', gameState[63].toNumber());
+        //console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
+        //console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
       } catch(e) {
-        console.log('ERROR');
+        //console.log('ERROR');
       }
 
 
       let nextPlayer, status,
         userColor = (game.self.color === 'white') ? 'w' :  'b';
       if (chessMove !== null) {
-        console.log('chessMove !== null');
+        //console.log('chessMove !== null');
         // define next player
         if (userColor === chess.turn()) {
           nextPlayer = game.self.username;
@@ -299,7 +300,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           if (chess.in_check() === true) { // jshint ignore:line
             status = 'CHECK! ' + status;
             // ToDo: set 'danger' color for king
-            console.log('css');
+            //console.log('css');
           }
         }
       }
@@ -307,25 +308,25 @@ angular.module('dappChess').controller('PlayGameCtrl',
     }
 
     /*function eventGameTimeoutStarted(err, data) {
-      console.log('eventTimeoutStarted ', err, data);
+      //console.log('eventTimeoutStarted ', err, data);
       if (err){
-        console.log('EVENTGAMETIMEOUTERROR: ', err);
+        //console.log('EVENTGAMETIMEOUTERROR: ', err);
       } else {
         let game = $scope.getGame();
         if (chess.turn() === 'w' && game.self.color === 'white'){
-          console.log('Black win');
+          //console.log('Black win');
           try {
             SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
           } catch(e){
-            console.log(e);
+            //console.log(e);
           }
         }
         else if (chess.turn() === 'b' && game.self.color === 'black') {
-          console.log('White win');
+          //console.log('White win');
           try {
             SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
           } catch(e) {
-            console.log(e);
+            //console.log(e);
           }
         }
       }
@@ -333,7 +334,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
     }*/
 
     function eventMove(err, data) {
-      console.log('eventMove', err, data);
+      //console.log('eventMove', err, data);
       if(err) {
 
       }
@@ -341,7 +342,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         let fromIndex = position.toFrontend[data.args.fromIndex.c[0]];
         let toIndex = position.toFrontend[data.args.toIndex.c[0]];
 
-        console.log(chess.fen());
+        //console.log(chess.fen());
 
         // display move to enemy
         if (!board.isUserInputEnabled()) {
@@ -355,7 +356,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         processChessMove(chessMove);
 
 
-        console.log(chess.fen());
+        //console.log(chess.fen());
 
 
 
@@ -402,17 +403,17 @@ angular.module('dappChess').controller('PlayGameCtrl',
         let fromIndex = position.toBackend[move.from];
         let toIndex = position.toBackend[move.to];
         /*
-        console.log('fromIndex Frontend: ', move.from);
-        console.log('toIndex Frontend: ', move.to);
-        console.log('fromIndex Backend: ', fromIndex);
-        console.log('toIndex Backend: ', toIndex);
+        //console.log('fromIndex Frontend: ', move.from);
+        //console.log('toIndex Frontend: ', move.to);
+        //console.log('fromIndex Backend: ', fromIndex);
+        //console.log('toIndex Backend: ', toIndex);
 
-        console.log('selfId: ', game.self.accountId);
+        //console.log('selfId: ', game.self.accountId);
         */
         SoliChess.move(game.gameId, fromIndex, toIndex, {from: game.self.accountId});
 
       } catch(e) {
-        console.log(e);
+        //console.log(e);
 
         // undo move if error
         chess.undo();
@@ -454,7 +455,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       $rootScope.$broadcast('message', 'Submitting your surrender, please wait...',
         'loading', 'playgame');
       try {
-        console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
+        //console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
         SoliChess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
       }
       catch(e) {
@@ -480,7 +481,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return false;
     };
 
-    $scope.gameIsDraw = function() {
+    $scope.gameIsDraw = function () {
       let game = $scope.getGame();
       if(game) {
         return game.ended && (typeof(game.winner) === 'undefined' ||
@@ -490,10 +491,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return false;
     };
 
-    $scope.gameIsActive = function() {
+    $scope.gameIsActive = function () {
       let game = $scope.getGame();
 
-      if(game) {
+      if (game) {
         return !game.ended;
       }
 
@@ -502,16 +503,19 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     $scope.gameCanConfirmDraw = function () {
       let game = $scope.getGame();
-
-      if(game) {
-        return game.timeoutState === -1 && game.nextPlayer === game.self.accountId;
+      if (game) {
+        return game.timeoutState === -1 &&
+          game.nextPlayer === game.self.accountId &&
+          !game.ended;
       }
     };
 
     $scope.gameCanConfirmLoose = function () {
       let game = $scope.getGame();
       if (game) {
-        return game.timeoutState === 1 && game.nextPlayer === game.self.accountId;
+        return game.timeoutState === 1 &&
+          game.nextPlayer === game.self.accountId &&
+          !game.ended;
       }
     };
 
@@ -520,14 +524,19 @@ angular.module('dappChess').controller('PlayGameCtrl',
       if (game) {
         return game.timeoutState === 0 &&
           game.nextPlayer !== game.self.accountId &&
-          chess.in_check();
+          typeof game.nextPlayer !== 'undefined' &&
+          chess.in_check() && // jshint ignore:line
+          !game.ended;
       }
     };
 
     $scope.gameCanOfferDraw = function () {
       let game = $scope.getGame();
       if (game) {
-        return game.timeoutState === 0 && game.nextPlayer !== game.self.accountId;
+        return game.timeoutState === 0 &&
+          game.nextPlayer !== game.self.accountId &&
+          typeof game.nextPlayer !== 'undefined' &&
+          !game.ended;
       }
     };
 
@@ -539,7 +548,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
         // 10 minutes
         return game.timeoutState !== 0 &&
             game.nextPlayer !== game.self.accountId &&
-            timeoutDatePlus10Minutes < new Date();
+            timeoutDatePlus10Minutes < new Date() &&
+            !game.ended;
       }
     };
 
@@ -555,25 +565,25 @@ angular.module('dappChess').controller('PlayGameCtrl',
       games.confirmGameEnded($scope.getGame());
     };
 
-    $scope.claimTimeout = function () {
-      games.claimTimeout($scope.getGame());
+    $scope.claimTimeoutEnded = function () {
+      games.claimTimeoutEnded($scope.getGame());
     };
 
-    $scope.gameHasClaimableEther = function() {
+    $scope.gameHasClaimableEther = function () {
       let game = $scope.getGame();
 
-      if(game) {
+      if (game) {
         return game.self.wonEther > 0;
       }
 
       return false;
     };
 
-    $scope.claimEther = function() {
+    $scope.claimEther = function () {
       games.claimEther($scope.getGame());
     };
 
-    $scope.closeGame = function() {
+    $scope.closeGame = function () {
       SoliChess.closePlayerGame($scope.getGameId(), {from: $scope.getGame().self.accountId});
       $rootScope.$broadcast('message', 'Closing your game, please wait...',
         'loading', 'playgame');
@@ -584,8 +594,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       let game = $scope.getGame();
       if(game) {
         $(document).ready(function () {
-          chess = new Chess();
-
           game = $scope.getGame();
           highlight = lightItUp();
           position = generateMapping();
@@ -594,12 +602,13 @@ angular.module('dappChess').controller('PlayGameCtrl',
           try {
             gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
             currentFen = generateFen(gameState);
+            chess = new Chess(currentFen);
 
             generateState(currentFen);
 
-            console.log('REAL FEN: ', chess.fen());
-            console.log('GAMESTATE FEN: ', currentFen);
-            console.log('GAMESTATE: ', gameState);
+            //console.log('REAL FEN: ', chess.fen());
+            //console.log('GAMESTATE FEN: ', currentFen);
+            //console.log('GAMESTATE: ', gameState);
           } catch (e) {
             console.log(e);
           }
@@ -636,9 +645,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
             }
           }
 
-
           SoliChess.Move(eventMove);
-          //SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
+          // SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
         }
 
         );
