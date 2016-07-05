@@ -549,7 +549,7 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     }
   };
 
-  games.eventGameTimeoutStarted = function(err, data) {
+  games.eventGameTimeoutStarted = function (err, data) {
     console.log('eventGameTimeoutStarted', err, data);
     if (err) {
       console.log('error occured', err);
@@ -558,9 +558,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       if (typeof game === 'undefined') {
         return;
       }
-      game.timeoutStarted = data.args.timeoutStarted;
-      game.timeoutState = data.args.timeoutState;
-      console.log('game', game);
+      game.timeoutStarted = data.args.timeoutStarted.toNumber();
+      game.timeoutState = data.args.timeoutState.toNumber();
     }
   };
 
