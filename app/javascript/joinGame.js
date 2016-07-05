@@ -12,7 +12,7 @@ angular.module('dappChess').controller('JoinGameCtrl',
 
     $scope.setSelectedGame = function($event, game) {
       $scope.gameId = game.gameId;
-      $scope.etherbet = game.value;
+      $scope.etherbet = game.pot;
 
       $event.preventDefault();
     };
