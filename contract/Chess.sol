@@ -129,7 +129,7 @@ contract Chess is TurnBasedGame, Auth {
         gameStates[gameId].setState(state, playerColor);
         games[gameId].nextPlayer =  msg.sender;
 
-        // apply move
+        // apply and verify move
         move(gameId, fromIndex, toIndex);
     }
 
