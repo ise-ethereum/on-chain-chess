@@ -50,16 +50,16 @@ library ELO {
         uint diff = abs(difference); // take absolute to lookup in positive table
         // Score change lookup table
         int scoreChange = 10;
-        if (diff >= 635) scoreChange = 20;
-        else if (diff >= 436) scoreChange = 19;
-        else if (diff >= 337) scoreChange = 18;
-        else if (diff >= 269) scoreChange = 17;
-        else if (diff >= 214) scoreChange = 16;
-        else if (diff >= 168) scoreChange = 15;
-        else if (diff >= 126) scoreChange = 14;
-        else if (diff >= 88) scoreChange = 13;
-        else if (diff >= 52) scoreChange = 12;
-        else if (diff >= 17) scoreChange = 11;
+        if (diff > 636) scoreChange = 20;
+        else if (diff > 436) scoreChange = 19;
+        else if (diff > 338) scoreChange = 18;
+        else if (diff > 269) scoreChange = 17;
+        else if (diff > 214) scoreChange = 16;
+        else if (diff > 168) scoreChange = 15;
+        else if (diff > 126) scoreChange = 14;
+        else if (diff > 88) scoreChange = 13;
+        else if (diff > 52) scoreChange = 12;
+        else if (diff > 17) scoreChange = 11;
         // Depending on result (win/draw/lose), calculate score changes
         if (resultA == 2) {
             return ((reverse ? 20-scoreChange : scoreChange ),
