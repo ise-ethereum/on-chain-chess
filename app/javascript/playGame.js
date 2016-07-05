@@ -317,7 +317,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
     // Update game information to user
     function updateGameInfo(status) {
       $scope.gameStatus = status;
-      $scope.gamePgn = chess.pgn().replace(/\[.*?\]\s+/g, '');
+      $scope.gamePgn = chess.pgn();
+      //$scope.gamePgn = chess.pgn().replace(/\[.*?\]\s+/g, '');
 
     }
 
@@ -341,105 +342,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       }
     }
 
-    function processChessMove(chessMove) {
-
-      let game = $scope.getGame();
-      console.log('chessMove');
-
-
-      /*
-      console.log(chessMove);
-      console.log('from: ' + chessMove.from);
-      console.log('to: ' + chessMove.to);
-      */
-      var fromW = highlight.playerWhite[chessMove.from];
-      var toW = highlight.playerWhite[chessMove.to];
-      var fromB = highlight.playerBlack[chessMove.from];
-      var toB = highlight.playerBlack[chessMove.to];
-      /*
-      console.log('fromW: ', fromW, ' toW: ', toW);
-      console.log('fromW: ', fromB, ' toW: ', toB);
-      */
-      if (lastFrom !== null){
-        $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
-        $('#my-board_chess_square_' + lastTo).removeClass('chess_square_moved');
-      }
-
-      if (game.self.color === 'white') {
-        $('#my-board_chess_square_' + fromW).addClass('chess_square_moved');
-        $('#my-board_chess_square_' + toW).addClass('chess_square_moved');
-        lastFrom = fromW;
-        lastTo = toW;
-
-      } else {
-        $('#my-board_chess_square_' + fromB).addClass('chess_square_moved');
-        $('#my-board_chess_square_' + toB).addClass('chess_square_moved');
-        lastFrom = fromB;
-        lastTo = toB;
-      }
-
-      // TESTING FEN
-      try {
-        gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
-        console.log(gameState);
-        currentFen = generateFen(gameState);
-      } catch(e) {
-        console.log(e);
-      }
-
-
-      let nextPlayer, status,
-        userColor = (game.self.color === 'white') ? 'w' :  'b';
-      if (chessMove !== null) {
-        console.log('chessMove !== null');
-        // define next player
-        if (userColor === chess.turn()) {
-          nextPlayer = game.self.username;
-
-          //chess.enableUserInput(false);
-        } else {
-          nextPlayer = game.opponent.username;
-          //chess.enableUserInput(true);
-        }
-
-        // game over?
-        if (chess.in_checkmate() === true) { // jshint ignore:line
-          status = 'CHECKMATE! ' + nextPlayer + ' lost.';
-          if (chess.turn() === 'b' && game.self.color === 'white') {
-            claimWin();
-          }
-          if (chess.turn() === 'w' && game.self.color === 'black') {
-            claimWin();
-          }
-
-        }
-
-        // draw?
-        else if (chess.in_draw() === true) { // jshint ignore:line
-          status = 'DRAW!';
-          offerDraw();
-        }
-
-        // stalemate?
-        else if (chess.in_stalemate() === true) { // jshint ignore:line
-          status = 'STALEMATE!';
-          offerDraw();
-        }
-
-        // game is still on
-        else {
-          status = 'Next player is ' + nextPlayer + '.';
-
-          // plaver in check?
-          if (chess.in_check() === true) { // jshint ignore:line
-            status = 'CHECK! ' + status;
-            // ToDo: set 'danger' color for king
-            console.log('css');
-          }
-        }
-      }
-      updateGameInfo(status);
-    }
 
     function eventGameTimeoutStarted(err, data) {
       console.log('eventTimeoutStarted ', err, data);
@@ -511,41 +413,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
     }
 
     // move chess piece if valid
-    function pieceMove(move) {
-      let game = $scope.getGame();
-
-      // move piece from ... to
-      chessMove = chess.move({
-        from: move.from,
-        to: move.to,
-        promotion: 'q'
-      });
-      board.move(move.from+ '-' + move.to);
-
-      try {
-        $rootScope.$broadcast('message', 'Submitting your move, please wait a moment...',
-          'loading', 'playgame-' + game.gameId);
-        $rootScope.$apply();
-
-        let fromIndex = position.toBackend[move.from];
-        let toIndex = position.toBackend[move.to];
-
-        SoliChess.move(game.gameId, fromIndex, toIndex, {from: game.self.accountId});
-
-      } catch(e) {
-        console.log(e);
-
-        // undo move if error
-        chess.undo();
-        board.move(move.to + '-' + move.from);
-
-        $rootScope.$broadcast('message', 'Could not validate your move',
-          'error', 'playgame-' + game.gameId);
-        $rootScope.$apply();
-      }
-
-      return chess.fen();
-    }
 
 
     $scope.getGameId = function() {
@@ -639,74 +506,375 @@ angular.module('dappChess').controller('PlayGameCtrl',
         'loading', 'playgame');
     };
 
+
+    // OFF-CHAIN -------------------------------------------------------------------------------------------------------
+
+    function processChessMoveOffChain(chessMove) {
+
+      board.enableUserInput(!board.isUserInputEnabled());
+      console.log('Set Column color');
+      let game = $scope.getGame();
+      let highlights = lightItUp();
+
+      var fromW = highlights.playerWhite[chessMove.from];
+      var toW = highlights.playerWhite[chessMove.to];
+      var fromB = highlights.playerBlack[chessMove.from];
+      var toB = highlights.playerBlack[chessMove.to];
+
+      if (lastFrom !== null){
+        $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
+        $('#my-board_chess_square_' + lastTo).removeClass('chess_square_moved');
+      }
+
+      if (game.self.color === 'white') {
+        $('#my-board_chess_square_' + fromW).addClass('chess_square_moved');
+        $('#my-board_chess_square_' + toW).addClass('chess_square_moved');
+        lastFrom = fromW;
+        lastTo = toW;
+
+      } else {
+        $('#my-board_chess_square_' + fromB).addClass('chess_square_moved');
+        $('#my-board_chess_square_' + toB).addClass('chess_square_moved');
+        lastFrom = fromB;
+        lastTo = toB;
+      }
+
+
+      let nextPlayer, status,
+        userColor = (game.self.color === 'white') ? 'w' :  'b';
+      if (chessMove !== null) {
+        // define next player
+        if (userColor === chess.turn()) {
+          nextPlayer = game.self.username;
+
+          //chess.enableUserInput(false);
+        } else {
+          nextPlayer = game.opponent.username;
+          //chess.enableUserInput(true);
+        }
+
+        // game over?
+        if (chess.in_checkmate() === true) { // jshint ignore:line
+          status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+          if (chess.turn() === 'b' && game.self.color === 'white') {
+            // ToDo
+          }
+          if (chess.turn() === 'w' && game.self.color === 'black') {
+            // ToDo
+          }
+
+        }
+        // draw?
+        else if (chess.in_draw() === true) { // jshint ignore:line
+          status = 'DRAW!';
+          // ToDo
+        }
+
+        // stalemate?
+        else if (chess.in_stalemate() === true) { // jshint ignore:line
+          status = 'STALEMATE!';
+          // ToDO
+        }
+
+        // game is still on
+        else {
+          status = 'Next player is ' + nextPlayer + '.';
+
+          // plaver in check?
+          if (chess.in_check() === true) { // jshint ignore:line
+            status = 'CHECK! ' + status;
+          }
+        }
+      }
+      updateGameInfo(status);
+    }
+
+    function pieceMoveOffChain(move) {
+      let game = $scope.getGame();
+
+      // move piece from ... to
+      chessMove = chess.move({
+        from: move.from,
+        to: move.to,
+        promotion: 'q'
+      });
+
+      // offchain chess
+      if (chessMove !== null) {
+        games.sendMove(game, move.from, move.to);
+
+        processChessMoveOffChain(chessMove);
+      } else {
+        // ToDo Nothing happens?
+      }
+
+      return chess.fen();
+    }
+
+    let listenForMoves = function() {
+
+      let game = $scope.getGame();
+      games.listenForMoves(game, function(m) {
+
+        let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
+        console.log("proxy move event");
+        console.log(m);
+        console.log(toIndex);
+
+        let opponentChessMove = chess.move({
+          from: fromIndex,
+            to: toIndex,
+            promotion: 'q'
+        });
+
+        if (opponentChessMove !== null) {
+          board.move(fromIndex+ '-' + toIndex);
+          processChessMoveOffChain(opponentChessMove);
+        } else {
+          // ToDo
+        }
+
+      });
+
+    };
+
+    let initGameOffChain = function(game) {
+
+      // init chess.js and chessboard.js
+      chess = new Chess();
+      board = new Chessboard('my-board', {
+          position: chess.fen(),
+          eventHandlers: {
+            onPieceSelected: pieceSelected,
+            onMove: pieceMoveOffChain
+          }
+        }
+      );
+
+      // set board orientation and disable black player to click
+      if (game.self.color === 'black') {
+        board.setOrientation(ChessUtils.ORIENTATION.black);
+        board.enableUserInput(false);
+      }
+
+      // Update game information
+      let gamer;
+      if (chess.turn() === 'w') {
+        gamer = 'white';
+      } else {
+        gamer = 'black';
+      }
+
+      updateGameInfo('Next player is ' + gamer + '.', false);
+
+    };
+
+    // OFF-CHAIN END----------------------------------------------------------------------------------------------------
+
+    // ON-CHAIN -------------------------------------------------------------------------------------------------------
+    /*
+    function processChessMove(chessMove) {
+
+      let game = $scope.getGame();
+      console.log('chessMove');
+
+      var fromW = highlight.playerWhite[chessMove.from];
+      var toW = highlight.playerWhite[chessMove.to];
+      var fromB = highlight.playerBlack[chessMove.from];
+      var toB = highlight.playerBlack[chessMove.to];
+
+      if (lastFrom !== null){
+        $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
+        $('#my-board_chess_square_' + lastTo).removeClass('chess_square_moved');
+      }
+
+      if (game.self.color === 'white') {
+        $('#my-board_chess_square_' + fromW).addClass('chess_square_moved');
+        $('#my-board_chess_square_' + toW).addClass('chess_square_moved');
+        lastFrom = fromW;
+        lastTo = toW;
+
+      } else {
+        $('#my-board_chess_square_' + fromB).addClass('chess_square_moved');
+        $('#my-board_chess_square_' + toB).addClass('chess_square_moved');
+        lastFrom = fromB;
+        lastTo = toB;
+      }
+
+      // TESTING FEN
+      try {
+        gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+        console.log(gameState);
+        currentFen = generateFen(gameState);
+      } catch(e) {
+        console.log(e);
+      }
+
+
+      let nextPlayer, status,
+        userColor = (game.self.color === 'white') ? 'w' :  'b';
+      if (chessMove !== null) {
+        console.log('chessMove !== null');
+        // define next player
+        if (userColor === chess.turn()) {
+          nextPlayer = game.self.username;
+
+          //chess.enableUserInput(false);
+        } else {
+          nextPlayer = game.opponent.username;
+          //chess.enableUserInput(true);
+        }
+
+        // game over?
+        if (chess.in_checkmate() === true) { // jshint ignore:line
+          status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+          if (chess.turn() === 'b' && game.self.color === 'white') {
+            claimWin();
+          }
+          if (chess.turn() === 'w' && game.self.color === 'black') {
+            claimWin();
+          }
+
+        }
+
+        // draw?
+        else if (chess.in_draw() === true) { // jshint ignore:line
+          status = 'DRAW!';
+          offerDraw();
+        }
+
+        // stalemate?
+        else if (chess.in_stalemate() === true) { // jshint ignore:line
+          status = 'STALEMATE!';
+          offerDraw();
+        }
+
+        // game is still on
+        else {
+          status = 'Next player is ' + nextPlayer + '.';
+
+          // plaver in check?
+          if (chess.in_check() === true) { // jshint ignore:line
+            status = 'CHECK! ' + status;
+            // ToDo: set 'danger' color for king
+            console.log('css');
+          }
+        }
+      }
+      updateGameInfo(status);
+    }
+
+
+
+    function pieceMoveOnChain(move) {
+      let game = $scope.getGame();
+
+      // move piece from ... to
+      chessMove = chess.move({
+        from: move.from,
+        to: move.to,
+        promotion: 'q'
+      });
+      board.move(move.from+ '-' + move.to);
+
+      // offchain chess
+      games.sendMove(game, move.from, move.to);
+
+      try {
+        $rootScope.$broadcast('message', 'Submitting your move, please wait a moment...',
+          'loading', 'playgame-' + game.gameId);
+        $rootScope.$apply();
+
+        let fromIndex = position.toBackend[move.from];
+        let toIndex = position.toBackend[move.to];
+
+        SoliChess.move(game.gameId, fromIndex, toIndex, {from: game.self.accountId});
+
+      } catch(e) {
+        console.log(e);
+
+        // undo move if error
+        chess.undo();
+        board.move(move.to + '-' + move.from);
+
+        $rootScope.$broadcast('message', 'Could not validate your move',
+          'error', 'playgame-' + game.gameId);
+        $rootScope.$apply();
+      }
+
+      return chess.fen();
+    }
+
+    let initGameOnChess = function (game) {
+      chess = new Chess();
+      highlight = lightItUp();
+
+      // set current fen
+      try {
+        gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+        currentFen = generateFen(gameState);
+        console.log('Soli gamestate: ', gameState);
+
+      } catch (e) {
+        console.log(e);
+      }
+
+
+      board = new Chessboard('my-board', {
+          position: currentFen,
+          eventHandlers: {
+            onPieceSelected: pieceSelected,
+            onMove: pieceMoveOnChain
+          }
+        }
+      );
+
+      chess.load(currentFen);
+
+      let gamer;
+      if (gameState[56].toNumber() === 1) {
+        gamer = 'white';
+      } else {
+        gamer = 'black';
+      }
+
+      updateGameInfo('Next player is ' + gamer + '.', false);
+
+      position = generateMapping();
+
+      // opponent starts game
+      if (game.self.color === 'black') {
+        board.setOrientation(ChessUtils.ORIENTATION.black);
+        if (gameState[56].toNumber() === 1) {
+          board.enableUserInput(false);
+        }
+      } else {
+        if (gameState[56].toNumber() === -1) {
+          board.enableUserInput(false);
+        }
+      }
+
+      // set events
+      SoliChess.Move(eventMove);
+      SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
+    };
+
+    // ON-CHAIN END----------------------------------------------------------------------------------------------------
+    */
     //--- init Chessboard ---
     if (!$scope.isOpenGame()) {
       let game = $scope.getGame();
+
       if(game) {
         $(document).ready(function () {
 
-          chess = new Chess();
+          // OFF-CAHIN
+          listenForMoves();
+          initGameOffChain(game);
 
-          game = $scope.getGame();
-          highlight = lightItUp();
-          position = generateMapping();
-
-          // set current fen
-          try {
-            gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
-            currentFen = generateFen(gameState);
-            console.log('Soli gamestate: ', gameState);
-
-            generateState(currentFen);
-
-          } catch (e) {
-            console.log(e);
-          }
-
-
-          board = new Chessboard('my-board', {
-              position: currentFen,
-              eventHandlers: {
-                onPieceSelected: pieceSelected,
-                onMove: pieceMove
-              }
-            }
-          );
-
-          chess.load(currentFen);
-
-          console.log('currentFEN: ', currentFen);
-          console.log('realFEN: ', chess.fen());
-
-          let gamer;
-          if (gameState[56].toNumber() === 1) {
-            gamer = 'white';
-          } else {
-            gamer = 'black';
-          }
-
-          updateGameInfo('Next player is ' + gamer + '.', false);
-
-          position = generateMapping();
-
-          // opponent starts game
-          if (game.self.color === 'black') {
-            board.setOrientation(ChessUtils.ORIENTATION.black);
-            if (gameState[56].toNumber() === 1) {
-              board.enableUserInput(false);
-            }
-          } else {
-            if (gameState[56].toNumber() === -1) {
-              board.enableUserInput(false);
-            }
-          }
-
-
-          SoliChess.Move(eventMove);
-          SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
-        }
-
-        );
+          // ON-CHAIN
+          //initGameOnChess(game);
+        });
       }
       else {
         navigation.goto(navigation.welcomePage);

@@ -254,9 +254,10 @@ angular.module('dappChess').factory('games', function (navigation, accounts, cry
   /* Send move and resulting new state to second player */
   games.sendMove = function(game, fromIndex, toIndex) {
     let identity = game.self.accountId;
+    console.log("sign move with", identity);
     // TODO check that this really sends game state
     let payload = [ 'MOVE', game.state, crypto.sign(identity, game.state),
-                   fromIndex, toIndex, crypto.sign([fromIndex, toIndex])
+                   fromIndex, toIndex, crypto.sign(identity, [fromIndex, toIndex])
                   ];
     game.lastSentHash = web3.sha3(payload);
     shh.post({
@@ -303,27 +304,30 @@ angular.module('dappChess').factory('games', function (navigation, accounts, cry
   /* Receive move and resulting new state from opponent */
   /* callback({[state, stateSignature, fromIndex, toIndex, moveSignature], from}) */
   games.listenForMoves = function(game, callback) {
+    shh.register(game.self.accountId);
+
     let moveEvents = shh.watch({
       'topic': [shhTopic, game.gameId],
       'to': game.self.accountId
     });
     moveEvents.arrived(function(m) {
-      if (m[0] === 'ACK') {
+      console.log('moveEvents.arrived', m);
+      if (m.payload[0] === 'ACK') {
         let hash = m.payload[1];
         game.lastAckHash = hash;
       }
-      if (m[0] === 'MOVE') {
+      if (m.payload[0] === 'MOVE') {
         let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
-        if (!crypto.verify(game.self.accountId, stateSignature, state) ||
+        /*if (!crypto.verify(game.self.accountId, stateSignature, state) ||
             !crypto.verify(game.self.accountId, moveSignature, [fromIndex, toIndex])) {
           // Signature FAIL
           console.log('Could not verify opponents move signature, sending last ' +
                       'state and move to blockchain');
           // TODO Send my last known state and move to the blockchain
-        } else {
+        } else {*/
           game.lastReceivedHash = web3.sha3(m.payload);
           callback(m);
-        }
+        /*}*/
       }
     });
 
