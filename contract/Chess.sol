@@ -120,25 +120,24 @@ contract Chess is TurnBasedGame {
         if (msg.sender == game.nextPlayer)
             throw;
         // get the color of the player that wants to claim win
-        int8 requestingPlayerColor = 0;
+        int8 otherPlayerColor = 0;
         // the one not sending is white -> the sending player is Black
 
         if(gameStates[gameId].playerWhite == msg.sender){
 
             // this like causes : Module build failed: Error: Internal compiler error: I sense a disturbance in the stack.
             // Why no clue, bad choice to set the value explicitly, if the enum changes this line breaks
-            requestingPlayerColor = -1;
-        // else he is white
-
+            otherPlayerColor = -1;
+            // else he is white
         }else{
             // same here
-            requestingPlayerColor = 1;
+            otherPlayerColor = 1;
         }
 
         // We get the king position of that player
-        uint256 kingIndex = uint256(gameStates[gameId].getOwnKing(requestingPlayerColor));
+        uint256 kingIndex = uint256(gameStates[gameId].getOwnKing(otherPlayerColor));
         // if he is in check the request is legal
-        if (gameStates[gameId].checkForCheck(kingIndex, requestingPlayerColor)){
+        if (gameStates[gameId].checkForCheck(kingIndex, otherPlayerColor)){
             game.timeoutStarted = now;
             game.timeoutState = 1;
             GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
@@ -184,6 +183,7 @@ contract Chess is TurnBasedGame {
         game.timeoutState = 1;
         GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
     }
+
     /* The sender claims a previously started timeout. */
     function claimTimeoutEnded(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];

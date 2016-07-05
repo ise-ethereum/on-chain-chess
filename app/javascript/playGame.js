@@ -172,11 +172,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
     }
 
 
-    function generateFen(state) {
+    function generateFen (state) {
       let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
 
-      for (var i=0; i < state.length; i++) {
-
+      for (var i = 0; i < state.length; i++) {
         // field is empty
         if (state[i].isZero()) {
           zero += 1;
@@ -224,8 +223,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
       console.log('WHITE CASTLING LEFT: ', gameState[78].toNumber());
       console.log('WHITE CASTLING RIGHT: ', gameState[79].toNumber());
       */
-      // set current player
 
+      // set current player
       if (state[56].toNumber() === 1) {
         // white
         fen += ' w ';
@@ -311,44 +310,24 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     }
 
-    function claimWin(){
-      let game = $scope.getGame();
-      try {
-        SoliChess.claimWin(game.gameId, {from: game.self.accountId});
-        console.log('CLAIMWIN!');
-      } catch(e) {
-        console.log('CLAIMWIN ERROR: ', e);
-      }
-    }
-
-    function offerDraw(){
-      let game = $scope.getGame();
-      try {
-        SoliChess.offerDraw(game.gameId, {from: game.self.accountId});
-        console.log('OFFERDRAW!');
-      } catch(e) {
-        console.log('OFFERDRAW! ERROR: ', e);
-      }
-    }
-
     function processChessMove(chessMove) {
 
       let game = $scope.getGame();
-      console.log('chessMove');
+      //console.log('chessMove');
 
 
       /*
-      console.log(chessMove);
-      console.log('from: ' + chessMove.from);
-      console.log('to: ' + chessMove.to);
+      //console.log(chessMove);
+      //console.log('from: ' + chessMove.from);
+      //console.log('to: ' + chessMove.to);
       */
       var fromW = highlight.playerWhite[chessMove.from];
       var toW = highlight.playerWhite[chessMove.to];
       var fromB = highlight.playerBlack[chessMove.from];
       var toB = highlight.playerBlack[chessMove.to];
       /*
-      console.log('fromW: ', fromW, ' toW: ', toW);
-      console.log('fromW: ', fromB, ' toW: ', toB);
+      //console.log('fromW: ', fromW, ' toW: ', toW);
+      //console.log('fromW: ', fromB, ' toW: ', toB);
       */
       if (lastFrom !== null){
         $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
@@ -381,7 +360,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       let nextPlayer, status,
         userColor = (game.self.color === 'white') ? 'w' :  'b';
       if (chessMove !== null) {
-        console.log('chessMove !== null');
+        //console.log('chessMove !== null');
         // define next player
         if (userColor === chess.turn()) {
           nextPlayer = game.self.username;
@@ -396,24 +375,23 @@ angular.module('dappChess').controller('PlayGameCtrl',
         if (chess.in_checkmate() === true) { // jshint ignore:line
           status = 'CHECKMATE! ' + nextPlayer + ' lost.';
           if (chess.turn() === 'b' && game.self.color === 'white') {
-            claimWin();
+            games.claimWin(game);
           }
           if (chess.turn() === 'w' && game.self.color === 'black') {
-            claimWin();
+            games.claimWin(game);
           }
-
         }
 
         // draw?
         else if (chess.in_draw() === true) { // jshint ignore:line
           status = 'DRAW!';
-          offerDraw();
+          games.offerDraw(game);
         }
 
         // stalemate?
         else if (chess.in_stalemate() === true) { // jshint ignore:line
           status = 'STALEMATE!';
-          offerDraw();
+          games.offerDraw(game);
         }
 
         // game is still on
@@ -424,41 +402,41 @@ angular.module('dappChess').controller('PlayGameCtrl',
           if (chess.in_check() === true) { // jshint ignore:line
             status = 'CHECK! ' + status;
             // ToDo: set 'danger' color for king
-            console.log('css');
+            //console.log('css');
           }
         }
       }
       updateGameInfo(status);
     }
 
-    function eventGameTimeoutStarted(err, data) {
-      console.log('eventTimeoutStarted ', err, data);
+    /*function eventGameTimeoutStarted(err, data) {
+      //console.log('eventTimeoutStarted ', err, data);
       if (err){
-        console.log('EVENTGAMETIMEOUTERROR: ', err);
+        //console.log('EVENTGAMETIMEOUTERROR: ', err);
       } else {
         let game = $scope.getGame();
         if (chess.turn() === 'w' && game.self.color === 'white'){
-          console.log('Black win');
+          //console.log('Black win');
           try {
             SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
           } catch(e){
-            console.log(e);
+            //console.log(e);
           }
         }
         else if (chess.turn() === 'b' && game.self.color === 'black') {
-          console.log('White win');
+          //console.log('White win');
           try {
             SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
           } catch(e) {
-            console.log(e);
+            //console.log(e);
           }
         }
       }
 
-    }
+    }*/
 
     function eventMove(err, data) {
-      console.log('eventMove', err, data);
+      //console.log('eventMove', err, data);
       if(err) {
         //
       }
@@ -523,7 +501,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         SoliChess.move(game.gameId, fromIndex, toIndex, {from: game.self.accountId});
 
       } catch(e) {
-        console.log(e);
+        //console.log(e);
 
         // undo move if error
         chess.undo();
@@ -537,10 +515,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return chess.fen();
     }
 
-
     $scope.getGameId = function() {
       return $route.current.params.id;
     };
+
     $scope.isOpenGame = function() {
       let gameId = $scope.getGameId();
 
@@ -550,6 +528,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
       return false;
     };
+
     $scope.getGame = function() {
       let gameId = $scope.getGameId();
 
@@ -559,11 +538,12 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
       return false;
     };
+
     $scope.surrender = function() {
       $rootScope.$broadcast('message', 'Submitting your surrender, please wait...',
         'loading', 'playgame');
       try {
-        console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
+        //console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
         SoliChess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
       }
       catch(e) {
@@ -589,7 +569,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return false;
     };
 
-    $scope.gameIsDraw = function() {
+    $scope.gameIsDraw = function () {
       let game = $scope.getGame();
       if(game) {
         return game.ended && (typeof(game.winner) === 'undefined' ||
@@ -599,31 +579,99 @@ angular.module('dappChess').controller('PlayGameCtrl',
       return false;
     };
 
-    $scope.gameIsActive = function() {
+    $scope.gameIsActive = function () {
       let game = $scope.getGame();
 
-      if(game) {
+      if (game) {
         return !game.ended;
       }
 
       return false;
     };
 
-    $scope.gameHasClaimableEther = function() {
+    $scope.gameCanConfirmDraw = function () {
+      let game = $scope.getGame();
+      if (game) {
+        return game.timeoutState === -1 &&
+          game.nextPlayer === game.self.accountId &&
+          !game.ended;
+      }
+    };
+
+    $scope.gameCanConfirmLoose = function () {
+      let game = $scope.getGame();
+      if (game) {
+        return game.timeoutState === 1 &&
+          game.nextPlayer === game.self.accountId &&
+          !game.ended;
+      }
+    };
+
+    $scope.gameCanClaimWin = function () {
+      let game = $scope.getGame();
+      if (game) {
+        return game.timeoutState === 0 &&
+          game.nextPlayer !== game.self.accountId &&
+          typeof game.nextPlayer !== 'undefined' &&
+          chess.in_check() && // jshint ignore:line
+          !game.ended;
+      }
+    };
+
+    $scope.gameCanOfferDraw = function () {
+      let game = $scope.getGame();
+      if (game) {
+        return game.timeoutState === 0 &&
+          game.nextPlayer !== game.self.accountId &&
+          typeof game.nextPlayer !== 'undefined' &&
+          !game.ended;
+      }
+    };
+
+    $scope.gameCanClaimTimeout = function () {
+      let game = $scope.getGame();
+      if (game && game.timeoutState !== 0) {
+        let timeoutDatePlus10Minutes = new Date(game.timeoutStarted * 1000 + 10 * 60000);
+        // TODO show button dynamically, i think now it is only shown after reload when time greater
+        // 10 minutes
+        return game.timeoutState !== 0 &&
+            game.nextPlayer !== game.self.accountId &&
+            timeoutDatePlus10Minutes < new Date() &&
+            !game.ended;
+      }
+    };
+
+    $scope.claimWin = function () {
+      games.claimWin($scope.getGame());
+    };
+
+    $scope.offerDraw = function () {
+      games.offerDraw($scope.getGame());
+    };
+
+    $scope.confirmGameEnded = function () {
+      games.confirmGameEnded($scope.getGame());
+    };
+
+    $scope.claimTimeoutEnded = function () {
+      games.claimTimeoutEnded($scope.getGame());
+    };
+
+    $scope.gameHasClaimableEther = function () {
       let game = $scope.getGame();
 
-      if(game) {
+      if (game) {
         return game.self.wonEther > 0;
       }
 
       return false;
     };
 
-    $scope.claimEther = function() {
+    $scope.claimEther = function () {
       games.claimEther($scope.getGame());
     };
 
-    $scope.closeGame = function() {
+    $scope.closeGame = function () {
       SoliChess.closePlayerGame($scope.getGameId(), {from: $scope.getGame().self.accountId});
       $rootScope.$broadcast('message', 'Closing your game, please wait...',
         'loading', 'playgame');
@@ -634,9 +682,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       let game = $scope.getGame();
       if(game) {
         $(document).ready(function () {
-
-          chess = new Chess();
-
           game = $scope.getGame();
           highlight = lightItUp();
           position = generateMapping();
@@ -645,10 +690,13 @@ angular.module('dappChess').controller('PlayGameCtrl',
           try {
             gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
             currentFen = generateFen(gameState);
-            console.log('Soli gamestate: ', gameState);
+            chess = new Chess(currentFen);
 
             generateState(currentFen);
 
+            //console.log('REAL FEN: ', chess.fen());
+            //console.log('GAMESTATE FEN: ', currentFen);
+            //console.log('GAMESTATE: ', gameState);
           } catch (e) {
             console.log(e);
           }
@@ -691,9 +739,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
             }
           }
 
-
           SoliChess.Move(eventMove);
-          SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
+          // SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
         }
 
         );
