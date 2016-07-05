@@ -8,8 +8,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
     $scope.gamePgn = '';
     $scope.gameStatus = '';
 
-
-    function generatePieceMapping(){
+    function generatePieceMapping () {
       return {
         '-6': 'k',
         '-5': 'q',
@@ -26,20 +25,17 @@ angular.module('dappChess').controller('PlayGameCtrl',
       };
     }
 
-    function generateState(fen){
+    function generateState (fen) {
       let x = fen.split(' ');
       // let board, currentPlayer, enPassant, castling, moveCount = fen.split(' ');
       console.log(x);
-
-
     }
 
 
-    function generateFen(state) {
+    function generateFen (state) {
       let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
 
-      for (var i=0; i < state.length; i++) {
-
+      for (var i = 0; i < state.length; i++) {
         // field is empty
         if (state[i].isZero()) {
           zero += 1;
@@ -200,26 +196,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     }
 
-    function claimWin(){
-      let game = $scope.getGame();
-      try {
-        SoliChess.claimWin(game.gameId, {from: game.self.accountId});
-        console.log('CLAIMWIN!');
-      } catch(e) {
-        console.log('CLAIMWIN ERROR: ', e);
-      }
-    }
-
-    function offerDraw(){
-      let game = $scope.getGame();
-      try {
-        SoliChess.offerDraw(game.gameId, {from: game.self.accountId});
-        console.log('OFFERDRAW!');
-      } catch(e) {
-        console.log('OFFERDRAW! ERROR: ', e);
-      }
-    }
-
     function processChessMove(chessMove) {
 
       let game = $scope.getGame();
@@ -296,24 +272,23 @@ angular.module('dappChess').controller('PlayGameCtrl',
         if (chess.in_checkmate() === true) { // jshint ignore:line
           status = 'CHECKMATE! ' + nextPlayer + ' lost.';
           if (chess.turn() === 'b' && game.self.color === 'white') {
-            claimWin();
+            games.claimWin(game);
           }
           if (chess.turn() === 'w' && game.self.color === 'black') {
-            claimWin();
+            games.claimWin(game);
           }
-
         }
 
         // draw?
         else if (chess.in_draw() === true) { // jshint ignore:line
           status = 'DRAW!';
-          claimWin();
+          games.offerDraw(game);
         }
 
         // stalemate?
         else if (chess.in_stalemate() === true) { // jshint ignore:line
           status = 'STALEMATE!';
-          offerDraw();
+          games.offerDraw(game);
         }
 
         // game is still on
@@ -535,28 +510,33 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     $scope.gameCanConfirmLoose = function () {
       let game = $scope.getGame();
-
-      if(game) {
+      if (game) {
         return game.timeoutState === 1 && game.nextPlayer === game.self.accountId;
       }
     };
 
-    $scope.gameCanOfferEndGame = function () {
+    $scope.gameCanClaimWin = function () {
       let game = $scope.getGame();
+      if (game) {
+        return game.timeoutState === 0 &&
+          game.nextPlayer !== game.self.accountId &&
+          chess.in_check();
+      }
+    };
 
-      if(game) {
+    $scope.gameCanOfferDraw = function () {
+      let game = $scope.getGame();
+      if (game) {
         return game.timeoutState === 0 && game.nextPlayer !== game.self.accountId;
       }
     };
 
     $scope.gameCanClaimTimeout = function () {
       let game = $scope.getGame();
-
-      if(game && game.timeoutState !== 0) {
+      if (game && game.timeoutState !== 0) {
         let timeoutDatePlus10Minutes = new Date(game.timeoutStarted * 1000 + 10 * 60000);
         // TODO show button dynamically, i think now it is only shown after reload when time greater
         // 10 minutes
-        console.log('game.nextPlayer', game.nextPlayer);
         return game.timeoutState !== 0 &&
             game.nextPlayer !== game.self.accountId &&
             timeoutDatePlus10Minutes < new Date();

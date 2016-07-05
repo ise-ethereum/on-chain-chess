@@ -12,9 +12,9 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
     });
   };
 
-  games.removeGame = function(gameId) {
-    for(let i in games.list) {
-      if(games.list[i].gameId === gameId) {
+  games.removeGame = function (gameId) {
+    for (let i in games.list) {
+      if (games.list[i].gameId === gameId) {
         console.log('game removed', games.list.splice(i, 1));
         break;
       }
