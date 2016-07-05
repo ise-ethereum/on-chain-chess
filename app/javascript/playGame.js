@@ -10,20 +10,20 @@ angular.module('dappChess').controller('PlayGameCtrl',
     $scope.gamePgn = '';
     $scope.gameStatus = '';
 
-    function generateMapping() {
-      let x=0, y=8;
+    function generateMapping () {
+      let x = 0, y = 8;
       let toBackend = {};
       let toFrontend = {};
       let alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
-      for ( let i=0 ; i < 128; i++){
+      for (let i = 0; i < 128; i++) {
         toBackend[alphabet[x] + y] = i;
         toFrontend[i] = alphabet[x] + y;
 
         x++;
-        if (x===8) {
+        if (x === 8) {
           x = 0;
-          y --;
+          y--;
           i += 8;
         }
 
@@ -89,14 +89,12 @@ angular.module('dappChess').controller('PlayGameCtrl',
       let counter = 0;
       let toState = generatePieceMapping();
       let whiteKing, blackKing;
-      for (let i=0; i < board.length; i++){
-
-        if (isNaN(Number(board[i])) ) {
+      for (let i = 0; i < board.length; i++) {
+        if (isNaN(Number(board[i]))) {
           if (board[i] === '/') {
-            for (let k=0; k < 8; k++) {
+            for (let k = 0; k < 8; k++) {
               state.push(new BigNumber(0));
               counter++;
-
             }
           } else {
             state.push(new BigNumber(toState[board[i]]));
@@ -108,26 +106,22 @@ angular.module('dappChess').controller('PlayGameCtrl',
             }
             counter++;
           }
-
         } else {
-          for (let j=0; j < Number(board[i]); j++) {
+          for (let j = 0; j < Number(board[i]); j++) {
             state.push(new BigNumber(0));
             counter++;
           }
         }
-
-
       }
       // fill rest of shadow field
-      for (let j=0; j < 8; j++) {
+      for (let j = 0; j < 8; j++) {
         state.push(new BigNumber(0));
       }
 
       // fullmove
-      console.log('high: ', Math.abs(parseInt(fullMoveCounter / 128)));
-      console.log('low: ',(parseInt(((fullMoveCounter % 128) - 1)/2)));
-      state[8] = new BigNumber(Math.abs(parseInt(fullMoveCounter / 128)));
-      state[9] = new BigNumber(parseInt(((fullMoveCounter % 128) - 1) / 2));
+      let halfMoveCounter = 2 * fullMoveCounter + (activeColor === 'w' ? -2 : -1);
+      state[8] = new BigNumber(parseInt(halfMoveCounter / 128));
+      state[9] = new BigNumber(parseInt(halfMoveCounter % 128));
 
       // set king position
       console.log('white king ', whiteKing);
@@ -149,8 +143,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       state[63] = new BigNumber(-1);
 
       // change state if castling is possible
-      for (var k=0; castling < castling.length; k++) {
-
+      for (var k = 0; k < castling.length; k++) {
         // white right - kleine rochade für weiß
         if (castling[k] === 'K') {
           state[79] = new BigNumber(0);
@@ -242,8 +235,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
       }
 
       // set Rochade
-      if (state[79].toNumber() === 0 ||
-        state[78].toNumber() === 0 || state[62].toNumber() === 0 || state[63].toNumber() === 0) {
+      if (state[79].toNumber() === 0 || state[78].toNumber() === 0 ||
+          state[62].toNumber() === 0 || state[63].toNumber() === 0) {
         if (state[79].toNumber() === 0) {
           fen += 'K';
         }
@@ -272,21 +265,18 @@ angular.module('dappChess').controller('PlayGameCtrl',
         fen += ' -';
       }
 
-
       // set halfmove clock
-      fen +=' 0 ';
+      fen += ' 0 ';
 
       // set fullmove number
-      fen += ((2 * state[9].toNumber()) + state[8].toNumber()) + 1;
-
-
+      let halfMoveCounter = 128 * state[8].toNumber() + state[9].toNumber();
+      fen += Math.ceil((halfMoveCounter + 1) / 2);
 
       return fen;
     }
 
-    function lightItUp() {
-
-      var xWhite=0, yWhite=8;
+    function lightItUp () {
+      var xWhite = 0, yWhite = 8;
       var xBlack=7, yBlack=1;
       var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
       var playerWhite = {};
