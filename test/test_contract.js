@@ -72,8 +72,8 @@ describe('Chess contract', function() {
 
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
-    it('should initialize a game with player1 playing white', function (done) {
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+    it('should initialize a game with player1 playing white with 1M Wei', function (done) {
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
@@ -123,12 +123,21 @@ describe('Chess contract', function() {
       assert.isTrue(Chess.getGamesOfPlayer(player1).indexOf(testGames[0]) !== -1);
       assert.isTrue(Chess.getGamesOfPlayer(player1).indexOf(testGames[1]) !== -1);
     });
+
+    it('should have the pot of 1M Wei for the first game', () => {
+      assert.equal(1000000, Chess.games(testGames[0])[7]);
+    });
   });
 
   describe('joinGame()', function () {
+    it('should reject join with player with insufficient Ether', () => {
+      assert.throws(function(){
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000, value: 500000});
+      }, Error);
+    });
     it('should join player2 as black if player1 is white', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000, value: 1000000});
       }, Error);
 
       // Watch for event from contract to check if it worked
@@ -175,19 +184,23 @@ describe('Chess contract', function() {
       assert.isTrue(Chess.getGamesOfPlayer(player2).indexOf(testGames[0]) !== -1);
       assert.isTrue(Chess.getGamesOfPlayer(player2).indexOf(testGames[1]) !== -1);
     });
+
+    it('should have the pot of 2M Wei for the first game', () => {
+      assert.equal(2000000, Chess.games(testGames[0])[7]);
+    });
   });
 
   describe('surrender()', function () {
     // Setup a new game for this test
     let gameId;
     it('should initialize a new game and join both players', function(done) {
-      Chess.initGame('Bob', true, {from: player1, gas: 2000000});
+      Chess.initGame('Bob', true, {from: player1, gas: 2000000, value: 1000000});
       var filter = Chess.GameInitialized({});
       filter.watch(function(error, result){
         gameId = result.args.gameId;
         filter.stopWatching();
 
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000, value: 1000000});
         var filter2 = Chess.GameJoined({gameId: gameId});
         filter2.watch(function(){
           filter2.stopWatching();
@@ -205,8 +218,8 @@ describe('Chess contract', function() {
     it('should allow surrender from P1 and declare P2 as winner', function(done) {
       Chess.surrender(gameId, {from: player1, gas: 500000});
       var filter = Chess.GameEnded({gameId: gameId});
-      filter.watch(function(error, result){
-        assert.equal(player2, result.args.winner);
+      filter.watch(function(){
+        assert.equal(player2, Chess.games(gameId)[5]);
         filter.stopWatching();
         done();
       });
@@ -220,6 +233,11 @@ describe('Chess contract', function() {
       assert.throws(function(){
         Chess.surrender(gameId, {from: player2, gas: 500000});
       }, Error);
+    });
+
+    it('should have assigned ether pot to winning player', () => {
+      assert.equal(0, Chess.games(gameId)[7]);
+      assert.equal(2000000, Chess.games(gameId)[9]);
     });
   });
 
@@ -545,7 +563,7 @@ describe('Chess contract', function() {
   describe('closePlayerGame()', function () {
     let gameId, gameId2;
     it('should initialize a game with 1 player only', function(done) {
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       let filter = Chess.GameInitialized({});
@@ -585,6 +603,11 @@ describe('Chess contract', function() {
            currentGameId = Chess.gamesOfPlayers(player1, currentGameId)) {
         assert.notEqual(gameId, currentGameId);
       }
+    });
+
+    it('should have assigned ether pot back to player 1', () => {
+      assert.equal(0, Chess.games(gameId)[7]);
+      assert.equal(1000000, Chess.games(gameId)[8]);
     });
 
     // next test
@@ -716,7 +739,7 @@ describe('Chess contract', function() {
     let gameId;
     beforeEach((done) => {
       // runs before each test in this block
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
@@ -724,15 +747,22 @@ describe('Chess contract', function() {
         gameId = result.args.gameId;
         assert.isOk(result.args.gameId);
         filter.stopWatching();
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000, value: 1000000});
         done();
       });
     });
 
     describe('claimWin()', () => {
-      it('should allow claimWin and send event', (done) => {
+      it('should allow claimwin and send event', (done) => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.move(gameId, 101, 69, {from: player1, gas: 500000});
+          Chess.move(gameId, 20, 52, {from: player2, gas: 500000});
+          Chess.move(gameId, 96, 64, {from: player1, gas: 500000});
+          Chess.move(gameId, 3, 71, {from: player2, gas: 500000});
+        });
+
+        assert.doesNotThrow(() => {
+          Chess.claimWin(gameId, {from: player2, gas: 2000000});
         });
 
         let filter = Chess.GameTimeoutStarted({});
@@ -747,35 +777,90 @@ describe('Chess contract', function() {
 
       it('should reject claimWin from current player', () => {
         assert.throws(() => {
-          Chess.claimWin(gameId, {from: player1, gas: 200000});
+          Chess.claimWin(gameId, {from: player1, gas: 2000000});
         });
       });
 
-      it('should allow move after claimWin and reject claimTimeout afterwards', () => {
+      it('should reject claimWin directly after claimTimeout', () => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.move(gameId, 101, 69, {from: player1, gas: 500000});
+          Chess.move(gameId, 20, 52, {from: player2, gas: 500000});
+          Chess.move(gameId, 96, 64, {from: player1, gas: 500000});
+          Chess.move(gameId, 3, 71, {from: player2, gas: 500000});
+        });
+        assert.doesNotThrow(() => {
+          Chess.claimWin(gameId, {from: player2, gas: 2000000});
+        });
+        assert.throws(() => {
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
+        });
+      });
+
+      it('should reject claimTimeoutEnded from P1 after claimTimeout from P2', () => {
+        assert.doesNotThrow(() => {
+          Chess.move(gameId, 101, 69, {from: player1, gas: 2000000});
+          Chess.move(gameId, 20, 52, {from: player2, gas: 2000000});
+          Chess.move(gameId, 96, 64, {from: player1, gas: 2000000});
+          Chess.move(gameId, 3, 71, {from: player2, gas: 2000000});
+        });
+        assert.doesNotThrow(() => {
+          Chess.claimWin(gameId, {from: player2, gas: 2000000});
+        });
+        assert.throws(() => {
+          Chess.claimTimeoutEnded(gameId, {from: player1, gas: 200000});
+        });
+      });
+    });
+
+    describe('claimTimeout()', () => {
+      it('should allow claimTimeout and send event', (done) => {
+        assert.doesNotThrow(() => {
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+        });
+
+        let filter = Chess.GameTimeoutStarted({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.isAbove(new Date().getTime() / 1000, result.args.timeoutStarted);
+          assert.equal(1, result.args.timeoutState);
+          filter.stopWatching();
+          done();
+        });
+      });
+
+      it('should reject claimTimeout from current player', () => {
+        assert.throws(() => {
+          Chess.claimTimeout(gameId, {from: player1, gas: 200000});
+        });
+      });
+
+      it('should allow move after claimTimeout and reject claimTimeoutEnded afterwards', () => {
+        assert.doesNotThrow(() => {
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+        });
+        assert.doesNotThrow(() => {
           Chess.move(gameId, 100, 68, {from: player1, gas: 500000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
         });
       });
 
-      it('should reject claimTimeout directly after claimWin', () => {
+      it('should reject claimTimeoutEnded directly after claimTimeout', () => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
         });
       });
 
-      it('should reject claimTimeout from P1 after claimWin from P2', () => {
+      it('should reject claimTimeoutEnded from P1 after claimTimeout from P2', () => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player1, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player1, gas: 200000});
         });
       });
     });
@@ -801,16 +886,16 @@ describe('Chess contract', function() {
         });
       });
 
-      it('should reject claimTimeout directly after offerDraw', () => {
+      it('should reject claimTimeoutEnded directly after offerDraw', () => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
         });
       });
 
-      it('should reject claimTimeout from P1 after offerDraw from P2', () => {
+      it('should reject offerdraw from P1 but not from P2', () => {
         assert.doesNotThrow(() => {
           Chess.offerDraw(gameId, {from: player2, gas: 200000});
         });
@@ -820,19 +905,36 @@ describe('Chess contract', function() {
       });
     });
 
-    describe('claimTimeout()', () => {
-      it('should reject claimTimeout only', () => {
+    describe('claimTimeoutEnded()', () => {
+      it('should reject claimTimeoutEnded only', () => {
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player1, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player1, gas: 200000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
         });
       });
     });
 
     describe('confirmGameEnded()', () => {
-      it('should allow confirmGameEnded after claimWin', (done) => {
+      it('should allow confirmGameEnded after claimTimeout', (done) => {
+        assert.doesNotThrow(() => {
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+        });
+        assert.doesNotThrow(() => {
+          Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
+        });
+
+        let filter = Chess.GameEnded({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.equal(player2, Chess.games(result.args.gameId)[5]);
+          filter.stopWatching();
+          done();
+        });
+      });
+
+      it('should assign ether pot to winning player after confirmGameEnded', (done) => {
         assert.doesNotThrow(() => {
           Chess.claimWin(gameId, {from: player2, gas: 200000});
           Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
@@ -841,7 +943,11 @@ describe('Chess contract', function() {
         let filter = Chess.GameEnded({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
-          assert.equal(player2, result.args.winner);
+          assert.equal(player2, Chess.games(result.args.gameId)[5]);
+          // Pot is 0
+          assert.equal(0, Chess.games(result.args.gameId)[7]);
+          // Player 2 got pot
+          assert.equal(2000000, Chess.games(result.args.gameId)[9]);
           filter.stopWatching();
           done();
         });
@@ -856,7 +962,28 @@ describe('Chess contract', function() {
         let filter = Chess.GameEnded({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
-          assert.equal(0, result.args.winner);
+          assert.equal(0, Chess.games(result.args.gameId)[5]);
+          filter.stopWatching();
+          done();
+        });
+      });
+
+      it('should split ether pot after confirmed draw', (done) => {
+        assert.doesNotThrow(() => {
+          Chess.offerDraw(gameId, {from: player2, gas: 200000});
+          Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
+        });
+
+        let filter = Chess.GameEnded({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.equal(0, Chess.games(result.args.gameId)[5]);
+          // Pot is 0
+          assert.equal(0, Chess.games(result.args.gameId)[7]);
+          // Player 1 and player 2 got 1M Wei each
+          assert.equal(1000000, Chess.games(result.args.gameId)[8]);
+          assert.equal(1000000, Chess.games(result.args.gameId)[9]);
+
           filter.stopWatching();
           done();
         });
