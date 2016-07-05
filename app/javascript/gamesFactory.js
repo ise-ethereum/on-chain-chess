@@ -563,6 +563,12 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       game.timeoutStarted = data.args.timeoutStarted.toNumber();
       game.timeoutState = data.args.timeoutState.toNumber();
 
+      if(game.timeoutState === 1 && game.nextPlayer === game.self.accountId) {
+        $rootScope.$broadcast('message',
+          'Player ' + game.opponent.username + ' claims that he won the game',
+          'message', 'playgame-' + game.gameId);
+      }
+
       $rootScope.$apply();
     }
   };
