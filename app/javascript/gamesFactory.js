@@ -460,6 +460,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       } else {
         game.nextPlayer = game.self.accountId;
       }
+
+      $rootScope.$apply();
     }
   };
 
@@ -560,6 +562,8 @@ angular.module('dappChess').factory('games', function (navigation, accounts, $ro
       }
       game.timeoutStarted = data.args.timeoutStarted.toNumber();
       game.timeoutState = data.args.timeoutState.toNumber();
+
+      $rootScope.$apply();
     }
   };
 
