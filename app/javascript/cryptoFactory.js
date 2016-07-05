@@ -10,6 +10,36 @@ angular.module('dappChess').factory('crypto', function () {
 
   let crypto = {};
 
+  function leftPad(nr, n, str){
+  return Array(n-String(nr).length+1).join(str||'0')+nr;
+  }
+
+  function solSha3 (...args) {
+    args = args.map(arg => {
+        if (typeof arg === 'string') {
+            if (arg.substring(0, 2) === '0x') {
+                return arg.slice(2);
+            } else {
+                return web3.toHex(arg).slice(2);
+            }
+        }
+
+        if (typeof arg === 'number') {
+            if (arg < 0) {
+              return leftPad((arg >>> 0).toString(16), 64, 'F');
+            }
+            return leftPad((arg).toString(16), 64, 0);
+        } else {
+          return '';
+        }
+    });
+
+    args = args.join('');
+
+    return '0x' + web3.sha3(args, { encoding: 'hex' });
+  }
+
+
   /**
    * Calculates the signature of the given data.
    * @param{string} account to be used for signing
@@ -17,7 +47,7 @@ angular.module('dappChess').factory('crypto', function () {
    * @returns{string} the signature of the given data
    */
   crypto.sign = function (account, data) {
-    let hash = web3.sha3(data);
+    let hash = solSha3(data);
     return web3.eth.sign(account, hash);
   };
 
@@ -29,7 +59,7 @@ angular.module('dappChess').factory('crypto', function () {
    * @returns{boolean} true, iff the signature matches the account and data
      */
   crypto.verify = function (account, signature, data) {
-    let msgHash = '0x' + web3.sha3(data);
+    let msgHash = web3.solSha3(data);
     let r = signature.slice(0, 66);
     let s = '0x' + signature.slice(66, 130);
     let v = '0x' + signature.slice(130, 132);

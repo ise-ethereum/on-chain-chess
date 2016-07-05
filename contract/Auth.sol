@@ -8,7 +8,6 @@ contract Auth {
         bytes32 s;
         uint8 v;
         
-        // FIXME: Should this throw, or return 0?
         if (sig.length != 65){
           return false;
       		//throw;
