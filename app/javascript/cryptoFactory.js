@@ -67,5 +67,45 @@ angular.module('dappChess').factory('crypto', function () {
     return Auth.verify(account, msgHash, v, r, s);
   };
 
+  crypto.test = function () {
+    const defaultBoard = [-4,-2,-3,-5,-6,-3,-2,-4,0,0,0,4,0,0,0,0,
+                          -1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,
+                          0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                          0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+                          0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                          0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                          1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
+                          4,2,3,5,6,3,2,4,0,0,0,116,0,0,0,0];
+
+    let text = 'My super text to be signed';
+    let object = { 'asd': 12, 32: '423' };
+
+    let signature = crypto.sign(web3.eth.accounts[0], text);
+    let valid = crypto.verify(web3.eth.accounts[0], signature, text);
+    console.log('testing crypto.sign & crypo.verify: text \t\t\t==>', valid);
+
+    signature = crypto.sign(web3.eth.accounts[0], object);
+    valid = crypto.verify(web3.eth.accounts[0], signature, object);
+    console.log('testing crypto.sign & crypo.verify: object \t\t\t==>', valid);
+
+    signature = crypto.sign(web3.eth.accounts[0], defaultBoard);
+    valid = crypto.verify(web3.eth.accounts[0], signature, defaultBoard);
+    console.log('testing crypto.sign & crypo.verify: defaultBoard \t==>', valid);
+
+    signature = crypto.sign(web3.eth.accounts[0], text);
+    valid = Auth.verifySig(web3.eth.accounts[0], solSha3(text), signature);
+    console.log('testing crypto.sign & Auth.verifySig: text \t\t\t==>', valid);
+
+    signature = crypto.sign(web3.eth.accounts[0], object);
+    valid = Auth.verifySig(web3.eth.accounts[0], solSha3(object), signature);
+    console.log('testing crypto.sign & Auth.verifySig: object \t\t==>', valid);
+
+    signature = crypto.sign(web3.eth.accounts[0], defaultBoard);
+    valid = Auth.verifySig(web3.eth.accounts[0], solSha3(defaultBoard), signature);
+    console.log('testing crypto.sign & Auth.verifySig: defaultBoard \t==>', valid);
+  };
+
+  // crypto.test();
+
   return crypto;
 });
