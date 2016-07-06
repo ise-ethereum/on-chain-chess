@@ -1,6 +1,7 @@
 /* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
-angular.module('dappChess').factory('games', function (navigation, accounts, $rootScope, $route) {
+angular.module('dappChess').factory('games', function (crypto, navigation,
+                                                       accounts, $rootScope, $route) {
   const games = {
     list: [],
     openGames: []

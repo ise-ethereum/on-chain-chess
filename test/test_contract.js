@@ -22,6 +22,35 @@ const emptyBoard = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
 
+function leftPad(nr, n, str){
+  return Array(n-String(nr).length+1).join(str||'0')+nr;
+}
+
+function solSha3 (...args) {
+    args = args.map(arg => {
+        if (typeof arg === 'string') {
+            if (arg.substring(0, 2) === '0x') {
+                return arg.slice(2);
+            } else {
+                return web3.toHex(arg).slice(2);
+            }
+        }
+
+        if (typeof arg === 'number') {
+            if (arg < 0) {
+              return leftPad((arg >>> 0).toString(16), 64, 'F');
+            }
+            return leftPad((arg).toString(16), 64, 0);
+        } else {
+          return '';
+        }
+    });
+
+    args = args.join('');
+
+    return '0x' + web3.sha3(args, { encoding: 'hex' });
+}
+
 describe('Chess contract', function() {
   this.timeout(60000);
   this.slow(500);
@@ -32,15 +61,14 @@ describe('Chess contract', function() {
   const player3 = web3.eth.accounts[2];
 
   // Remove this for CI/deploy, otherwise the test never finishes
-/*
-  var debugFilter = Chess.DebugInts({});
+
+  /*var debugFilter = Chess.DebugInts({});
   debugFilter.watch(function(error, result){
     console.log(result.args.message,
                 result.args.value1.toNumber(),
                 result.args.value2.toNumber(),
                 result.args.value3.toNumber());
-  });
-  */
+  });*/
 
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
@@ -213,9 +241,203 @@ describe('Chess contract', function() {
     });
   });
 
+  describe('moveFromState()', function () {
+    let gameId1;
+    beforeEach((done) => {
+      // runs before each test in this block
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+
+      // Watch for event from contract to check if it worked
+      var filter = Chess.GameInitialized({});
+      filter.watch((error, result) => {
+        gameId1 = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching();
+        Chess.joinGame(gameId1, 'Bob', {from: player2, gas: 500000});
+        done();
+      });
+    });
+
+    it('should accept a valid move with valid signatures', function (done) {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard);
+      let sigState = web3.eth.sign(player2, hashState);
+      // As player1 is the next player, this move should be valid
+      assert.doesNotThrow(function () {
+        // white pawn e7e6
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+
+      // Helper to wait for multiple async callbacks
+      let numberOfDone = 0;
+      const allDone = function() {
+        numberOfDone++;
+        if (numberOfDone >= 2) {
+          done();
+        }
+      };
+
+      // Watch for event from contract to check if the Move worked
+      var filter = Chess.Move({gameId: gameId1});
+      filter.watch(function(error, result){
+        assert.equal(player1, result.args.player);
+        assert.equal(100, result.args.fromIndex);
+        assert.equal(84, result.args.toIndex);
+        filter.stopWatching(); // Need to remove filter again
+        allDone();
+      });
+
+      // Watch for GameStateChanged event to check that all pieces and flags
+      // were updated
+      let expectedState = [...defaultBoard];
+      expectedState[100] = 0; // moved piece away
+      expectedState[84] = defaultBoard[100];
+      expectedState[56] = -1; // next player black
+      expectedState[8] = 1 >> 7; // updated move count
+      expectedState[9] = 1 % 128; // updated move count
+      var filter2 = Chess.GameStateChanged({gameId: gameId1});
+      filter2.watch(function (error, result) {
+        assert.deepEqual(gameStateDisplay(expectedState), gameStateDisplay(result.args.state));
+        filter2.stopWatching(); // Need to remove filter again
+        allDone();
+      });
+    });
+
+    it('should throw an exception for message from non-participant', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player3, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw an exception when it is not the turn of the message sender', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player2, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when state is not signed by opponent', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard);
+      let sigState = web3.eth.sign(player3, hashState); // SIGNED BY PLAYER 3 INSTEAD OF PLAYER 2
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when signed state and state in call do not match 1/2', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let differentBoard = [...defaultBoard]; // CHANGE BOARD
+      differentBoard[5] = 0;
+      differentBoard[6] = 0;
+      let hashState = solSha3(...defaultBoard); // HASH OF DEFAULTBOARD
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, differentBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when signed state and state in call do not match 2/2', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let differentBoard = [...defaultBoard]; // CHANGE BOARD
+      differentBoard[5] = 0;
+      differentBoard[6] = 0;
+      let hashState = solSha3(...differentBoard); // HASH OF DIFFERENTBOARD
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when game already ended', function () {
+      Chess.surrender(gameId1, {from: player1, gas: 500000});
+      assert.isTrue(Chess.isGameEnded(gameId1));
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw an exception when a move is invalid', function () {
+      let fromIndex = 96;
+      let toIndex = 96;
+      let hashState = solSha3(...defaultBoard);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      // Test some invalid moves, but from correct player
+      assert.throws(function () {
+        // white pawn a7a7
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+
+      fromIndex = 112;
+      toIndex = 96;
+      assert.throws(function () {
+        // white rook a8a7
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when moveCount of new state is lower than old state', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let boardHigh = [...defaultBoard]; // BOARD WITH MOVE COUNT = 0
+      // boardHigh[8] = 33;
+      let hashState = solSha3(...boardHigh);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      // First set State with moveCount = 0;
+      assert.doesNotThrow(function () {
+        Chess.moveFromState(gameId1, boardHigh, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+      // moveCount of board in BC now 1
+
+      // Now set State with moveCount = 0 again;
+      let boardLow = [...defaultBoard]; // BOARD WITH LOWER MOVE COUNT
+      // boardLow[8] = 3;
+      hashState = solSha3(...boardLow);
+      sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, boardLow, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+  });
+
   describe('closePlayerGame()', function () {
     let gameId, gameId2;
-    it('should initialize a game with 1 player only', function(done) {
+    it('should initialize a game with 1 player only', function (done) {
       Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
@@ -350,7 +572,7 @@ describe('Chess contract', function() {
         Chess.closePlayerGame(gameId, {from: player1, gas: 100000});
       }, Error);
     });
-    it('should be able to close a open game', () => {
+    it('should be able to close an open game', () => {
       assert.doesNotThrow(() => {
         Chess.closePlayerGame(gameId2, {from: player1, gas: 100000});
       }, Error);

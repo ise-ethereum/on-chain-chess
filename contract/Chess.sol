@@ -9,8 +9,9 @@
 
 import "TurnBasedGame.sol";
 import "ChessLogic.sol";
+import "Auth.sol";
 
-contract Chess is TurnBasedGame {
+contract Chess is TurnBasedGame, Auth {
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
 
@@ -66,6 +67,47 @@ contract Chess is TurnBasedGame {
         }
 
         GameJoined(gameId, games[gameId].player1, games[gameId].player1Alias, games[gameId].player2, player2Alias, gameStates[gameId].playerWhite, games[gameId].pot);
+    }
+
+    /**
+    *
+    * verify signature of state
+    * verify signature of move
+    * apply state, verify move
+    */
+    function moveFromState(bytes32 gameId, int8[128] state, uint256 fromIndex,
+                           uint256 toIndex, bytes sigState) notEnded(gameId) public {
+        // check whether sender is a member of this game
+        if (games[gameId].player1 != msg.sender && games[gameId].player2 != msg.sender) {
+            throw;
+        }
+
+        // find opponent to msg.sender
+        address opponent;
+        if (msg.sender == games[gameId].player1) {
+            opponent = games[gameId].player2;
+        } else {
+            opponent = games[gameId].player1;
+        }
+
+        // verify state - should be signed by the other member of game - not mover
+        if (!verifySig(opponent, sha3(state), sigState)) {
+            throw;
+        }
+
+        // check move count. New state should have a higher move count.
+        if ((state[8] * int8(128) + state[9]) < (gameStates[gameId].fields[8] * int8(128) + gameStates[gameId].fields[9])) {
+            throw;
+        }
+
+        int8 playerColor = msg.sender == gameStates[gameId].playerWhite ? int8(1) : int8(-1);
+
+        // apply state
+        gameStates[gameId].setState(state, playerColor);
+        games[gameId].nextPlayer =  msg.sender;
+
+        // apply and verify move
+        move(gameId, fromIndex, toIndex);
     }
 
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {

@@ -18,7 +18,7 @@ contract TurnBasedGame {
         address nextPlayer;
         address winner;
         bool ended;
-        uint pot; // What this game is worth ether paid into the game
+        uint pot; // What this game is worth: ether paid into the game
         uint player1Winnings;
         uint player2Winnings;
         uint timeoutStarted; // timer for timeout
