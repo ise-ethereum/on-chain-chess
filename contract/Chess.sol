@@ -75,14 +75,8 @@ contract Chess is TurnBasedGame, Auth {
     * verify signature of move
     * apply state, verify move
     */
-    function moveFromState(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex,
-                           bytes sigState, bytes sigFromIndex, bytes sigToIndex) notEnded(gameId) public {
-
-        if (games[gameId].winner != 0 || games[gameId].ended) {
-            // Game already ended
-            throw;
-        }
-
+    function moveFromState(bytes32 gameId, int8[128] state, uint256 fromIndex,
+                           uint256 toIndex, bytes sigState) notEnded(gameId) public {
         // check whether sender is a member of this game
         if (games[gameId].player1 != msg.sender && games[gameId].player2 != msg.sender) {
             throw;
@@ -90,44 +84,14 @@ contract Chess is TurnBasedGame, Auth {
 
         // find opponent to msg.sender
         address opponent;
-        if (games[gameId].player1 != msg.sender) {
-            opponent = games[gameId].player1;
+        if (msg.sender == games[gameId].player1) {
+            opponent = games[gameId].player2;
         } else {
             opponent = games[gameId].player1;
         }
-
-        /*
-        * Verify signatures and that mover is current player
-        */
-
-        // verify fromIndex and figure out who wants to move
-        address mover;
-        if (verifySig(msg.sender, sha3(fromIndex), sigFromIndex)) {
-            mover = msg.sender;
-        } else if (verifySig(opponent, sha3(fromIndex), sigFromIndex)) {
-            mover = opponent;
-        } else {
-            throw;
-        }
-
-        // check whether mover is currentPlayer in state
-        int8 playerColor = mover == gameStates[gameId].playerWhite ? int8(1) : int8(-1);
-
-        //if (state[ChessLogic.Flags(ChessLogic.Flag.CURRENT_PLAYER)] !=  playerColor) {
-        if (state[56] !=  playerColor) {
-            throw;
-        }
-
-        // verify toIndex
-        if (!verifySig(mover, sha3(toIndex), sigToIndex)) {
-            throw;
-        }
-
 
         // verify state - should be signed by the other member of game - not mover
-        if (mover == msg.sender && !verifySig(opponent, sha3(state), sigState)) {
-            throw;
-        } else if (mover == opponent && !verifySig(msg.sender, sha3(state), sigState)) {
+        if (!verifySig(opponent, sha3(state), sigState)) {
             throw;
         }
 
@@ -136,9 +100,11 @@ contract Chess is TurnBasedGame, Auth {
             throw;
         }
 
+        int8 playerColor = msg.sender == gameStates[gameId].playerWhite ? int8(1) : int8(-1);
+
         // apply state
         gameStates[gameId].setState(state, playerColor);
-        games[gameId].nextPlayer =  mover;
+        games[gameId].nextPlayer =  msg.sender;
 
         // apply and verify move
         move(gameId, fromIndex, toIndex);
