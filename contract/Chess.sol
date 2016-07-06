@@ -21,6 +21,9 @@ contract Chess is TurnBasedGame, Auth {
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint pot);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event GameTimeoutStarted(bytes32 indexed gameId,uint timeoutStarted, int8 timeoutState);
+    // GameDrawOfferRejected: notification that a draw of the currently turning player
+    //                        is rejected by the waiting player
+    event GameDrawOfferRejected(bytes32 indexed gameId);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
 
     function Chess(bool enableDebugging) TurnBasedGame(enableDebugging) {
@@ -162,19 +165,8 @@ contract Chess is TurnBasedGame, Auth {
         if (msg.sender == game.nextPlayer)
             throw;
         // get the color of the player that wants to claim win
-        int8 otherPlayerColor = 0;
+        int8 otherPlayerColor = gameStates[gameId].playerWhite == msg.sender ? int8(-1) : int8(1);
         // the one not sending is white -> the sending player is Black
-
-        if(gameStates[gameId].playerWhite == msg.sender){
-
-            // this like causes : Module build failed: Error: Internal compiler error: I sense a disturbance in the stack.
-            // Why no clue, bad choice to set the value explicitly, if the enum changes this line breaks
-            otherPlayerColor = -1;
-            // else he is white
-        }else{
-            // same here
-            otherPlayerColor = 1;
-        }
 
         // We get the king position of that player
         uint256 kingIndex = uint256(gameStates[gameId].getOwnKing(otherPlayerColor));
@@ -184,7 +176,7 @@ contract Chess is TurnBasedGame, Auth {
             game.timeoutState = 1;
             GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
         // else it is not
-        }else {
+        } else {
             throw;
         }
 
@@ -200,16 +192,39 @@ contract Chess is TurnBasedGame, Auth {
         // only if timeout has not started
         if (game.timeoutState != 0)
             throw;
-        // you can only claim draw / victory in the enemies turn
-        if (msg.sender == game.nextPlayer)
-            throw;
-        game.timeoutStarted = now;
-        game.timeoutState = -1;
 
-        GameTimeoutStarted(gameId,game.timeoutStarted,game.timeoutState);
+        game.timeoutStarted = now;
+        if (msg.sender == game.nextPlayer) {
+            game.timeoutState = -2;
+        } else {
+            game.timeoutState = -1;
+        }
+        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
     }
 
-    /* the sender claims that the other player is not in the game anymore. Starts a Timeout that can be claimed*/
+    /*
+     * The sender (currently turning player) offers the other player (waiting)
+     * a draw. Starts a timeout.
+     */
+    function rejectCurrentPlayerDraw(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout is present
+        if (game.timeoutState != -2)
+            throw;
+        // only not playing player is able to reject a draw offer of the nextPlayer
+        if (msg.sender == game.nextPlayer)
+            throw;
+        game.timeoutState = 0;
+        GameDrawOfferRejected(gameId);
+    }
+
+    /*
+     * The sender claims that the other player is not in the game anymore.
+     * Starts a Timeout that can be claimed
+     */
     function claimTimeout(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
         // just the two players currently playing
@@ -222,6 +237,26 @@ contract Chess is TurnBasedGame, Auth {
         if (msg.sender == game.nextPlayer)
             throw;
         game.timeoutStarted = now;
+        game.timeoutState = 2;
+        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
+    }
+
+    /*
+     * The sender rejects the previously claimed timeout of the other player.
+     * This will NOT reset the timeout.
+     * Timeout will 'degrade' to a draw timeout.
+     */
+    function rejectTimeout(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started
+        if (game.timeoutState != 2)
+            throw;
+        // you can only reject a timeout if you are the next player
+        if (msg.sender != game.nextPlayer)
+            throw;
         game.timeoutState = 1;
         GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
     }
@@ -232,34 +267,42 @@ contract Chess is TurnBasedGame, Auth {
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
             throw;
-        if (msg.sender == game.nextPlayer)
-            throw;
         if (game.timeoutState == 0)
             throw;
         if (now < game.timeoutStarted + 10 minutes)
             throw;
-        // Game is a draw, transfer ether back
-        if (game.timeoutState == -1){
-            game.ended = true;
-            games[gameId].player1Winnings = games[gameId].pot / 2;
-            games[gameId].player2Winnings = games[gameId].pot / 2;
-            games[gameId].pot = 0;
-            GameEnded(gameId);
-        } else if (game.timeoutState == 1){
-            game.ended = true;
-            game.winner = msg.sender;
-            if(msg.sender == game.player1) {
-                games[gameId].player1Winnings = games[gameId].pot;
+        if (msg.sender == game.nextPlayer) {
+            if (game.timeoutState == -2) { // draw
+                game.ended = true;
+                games[gameId].player1Winnings = games[gameId].pot / 2;
+                games[gameId].player2Winnings = games[gameId].pot / 2;
                 games[gameId].pot = 0;
+                GameEnded(gameId);
+            } else {
+                throw;
             }
-            else {
-                games[gameId].player2Winnings = games[gameId].pot;
-                games[gameId].pot = 0;
-            }
-
-            GameEnded(gameId);
         } else {
-            throw;
+            // Game is a draw, transfer ether back
+            if (game.timeoutState == -1) {
+                game.ended = true;
+                games[gameId].player1Winnings = games[gameId].pot / 2;
+                games[gameId].player2Winnings = games[gameId].pot / 2;
+                games[gameId].pot = 0;
+                GameEnded(gameId);
+            } else if (game.timeoutState == 1 || game.timeoutState == 2){
+                game.ended = true;
+                game.winner = msg.sender;
+                if(msg.sender == game.player1) {
+                    games[gameId].player1Winnings = games[gameId].pot;
+                    games[gameId].pot = 0;
+                } else {
+                    games[gameId].player2Winnings = games[gameId].pot;
+                    games[gameId].pot = 0;
+                }
+                GameEnded(gameId);
+            } else {
+                throw;
+            }
         }
     }
 
@@ -269,33 +312,43 @@ contract Chess is TurnBasedGame, Auth {
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
             throw;
-        if (msg.sender != game.nextPlayer)
-            throw;
         if (game.timeoutState == 0)
             throw;
-        // Game is a draw, transfer ether back
-        if (game.timeoutState == -1){
-            game.ended = true;
-            games[gameId].player1Winnings = games[gameId].pot / 2;
-            games[gameId].player2Winnings = games[gameId].pot / 2;
-            games[gameId].pot = 0;
-            GameEnded(gameId);
-        } else if (game.timeoutState == 1){
-            game.ended = true;
-            // other player won
-            if(msg.sender == game.player1) {
-                game.winner = game.player2;
-                games[gameId].player2Winnings = games[gameId].pot;
+        if (msg.sender != game.nextPlayer) {
+            if (game.timeoutState == -2) { // draw
+                game.ended = true;
+                games[gameId].player1Winnings = games[gameId].pot / 2;
+                games[gameId].player2Winnings = games[gameId].pot / 2;
                 games[gameId].pot = 0;
+                GameEnded(gameId);
+            } else {
+                throw;
             }
-            else {
-                game.winner = game.player1;
-                games[gameId].player1Winnings = games[gameId].pot;
-                games[gameId].pot = 0;
-            }
-            GameEnded(gameId);
         } else {
-            throw;
+            // Game is a draw, transfer ether back
+            if (game.timeoutState == -1) {
+                game.ended = true;
+                games[gameId].player1Winnings = games[gameId].pot / 2;
+                games[gameId].player2Winnings = games[gameId].pot / 2;
+                games[gameId].pot = 0;
+                GameEnded(gameId);
+            } else if (game.timeoutState == 1 || game.timeoutState == 2) {
+                // TODO: do we want to allow this for timeoutState == 2 ?
+                game.ended = true;
+                // other player won
+                if(msg.sender == game.player1) {
+                    game.winner = game.player2;
+                    games[gameId].player2Winnings = games[gameId].pot;
+                    games[gameId].pot = 0;
+                } else {
+                    game.winner = game.player1;
+                    games[gameId].player1Winnings = games[gameId].pot;
+                    games[gameId].pot = 0;
+                }
+                GameEnded(gameId);
+            } else {
+                throw;
+            }
         }
     }
 

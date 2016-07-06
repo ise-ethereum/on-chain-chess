@@ -22,7 +22,14 @@ contract TurnBasedGame {
         uint player1Winnings;
         uint player2Winnings;
         uint timeoutStarted; // timer for timeout
-        int8 timeoutState; // -1 draw 0 nothing 1 checkmate
+        /*
+         * -2 draw offered by nextPlayer
+         * -1 draw offered by waiting player
+         * 0 nothing
+         * 1 checkmate
+         * 2 timeout
+         */
+        int8 timeoutState;
     }
 
     mapping (bytes32 => Game) public games;
