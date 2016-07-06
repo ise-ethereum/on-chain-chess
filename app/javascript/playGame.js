@@ -382,7 +382,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
             }
           }
           // is draw
-          else if (chess.in_draw() && data.data.args.timeoutState === -1) {
+          else if (chess.in_draw() && data.args.timeoutState === -1) {
             try {
               SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
             } catch (e) {
