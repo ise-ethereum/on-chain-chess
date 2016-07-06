@@ -10,35 +10,34 @@ angular.module('dappChess').factory('crypto', function () {
 
   let crypto = {};
 
-  function leftPad(nr, n, str){
-  return Array(n-String(nr).length+1).join(str||'0')+nr;
+  function leftPad (nr, n, str) {
+    return Array(n - String(nr).length + 1).join(str || '0') + nr;
   }
 
   function solSha3 (...args) {
     args = args.map(arg => {
-        if (typeof arg === 'string') {
-            if (arg.substring(0, 2) === '0x') {
-                return arg.slice(2);
-            } else {
-                return web3.toHex(arg).slice(2);
-            }
-        }
-
-        if (typeof arg === 'number') {
-            if (arg < 0) {
-              return leftPad((arg >>> 0).toString(16), 64, 'F');
-            }
-            return leftPad((arg).toString(16), 64, 0);
+      if (typeof arg === 'string') {
+        if (arg.substring(0, 2) === '0x') {
+          return arg.slice(2);
         } else {
-          return '';
+          return web3.toHex(arg).slice(2);
         }
+      }
+
+      if (typeof arg === 'number') {
+        if (arg < 0) {
+          return leftPad((arg >>> 0).toString(16), 64, 'F');
+        }
+        return leftPad((arg).toString(16), 64, 0);
+      } else {
+        return '';
+      }
     });
 
     args = args.join('');
 
     return '0x' + web3.sha3(args, { encoding: 'hex' });
   }
-
 
   /**
    * Calculates the signature of the given data.
