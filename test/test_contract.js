@@ -267,7 +267,7 @@ describe('Chess contract', function() {
       assert.doesNotThrow(function () {
         // white pawn e7e6
         Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
-                            player2, sigState, {from: player1, gas: 2000000});
+                            sigState, {from: player1, gas: 2000000});
       }, Error);
 
       // Helper to wait for multiple async callbacks
@@ -312,20 +312,8 @@ describe('Chess contract', function() {
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
                             sigState, {from: player3, gas: 2000000});
-      }, Error);
-    });
-
-    it('should throw an exception when opponent is not a member of the game', function () {
-      let fromIndex = 100;
-      let toIndex = 84;
-      let hashState = solSha3(...defaultBoard);
-      let sigState = web3.eth.sign(player2, hashState);
-
-      assert.throws(function () {
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player3,
-                            sigState, {from: player1, gas: 2000000});
       }, Error);
     });
 
@@ -336,7 +324,7 @@ describe('Chess contract', function() {
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player1,
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
                             sigState, {from: player2, gas: 2000000});
       }, Error);
     });
@@ -348,7 +336,7 @@ describe('Chess contract', function() {
       let sigState = web3.eth.sign(player3, hashState); // SIGNED BY PLAYER 3 INSTEAD OF PLAYER 2
 
       assert.throws(function () {
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
                             sigState, {from: player1, gas: 2000000});
       }, Error);
     });
@@ -363,7 +351,7 @@ describe('Chess contract', function() {
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
-        Chess.moveFromState(gameId1, differentBoard, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, differentBoard, fromIndex, toIndex,
                             sigState, {from: player1, gas: 2000000});
       }, Error);
     });
@@ -378,25 +366,10 @@ describe('Chess contract', function() {
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
                             sigState, {from: player1, gas: 2000000});
       }, Error);
     });
-
-    // TODO is this a valid test?
-    /*
-    it('should throw when msg.sender and opponent are identical', function () {
-      let fromIndex = 100;
-      let toIndex = 84;
-      let hashState = solSha3(...defaultBoard);
-      let sigState = web3.eth.sign(player2, hashState);
-
-      assert.throws(function () {
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player1,
-                            sigState, {from: player1, gas: 2000000});
-      }, Error);
-    });
-    */
 
     it('should throw when game already ended', function () {
       Chess.surrender(gameId1, {from: player1, gas: 500000});
@@ -407,7 +380,7 @@ describe('Chess contract', function() {
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
                             sigState, {from: player1, gas: 2000000});
       }, Error);
     });
@@ -421,7 +394,7 @@ describe('Chess contract', function() {
       // Test some invalid moves, but from correct player
       assert.throws(function () {
         // white pawn a7a7
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
                             sigState, {from: player1, gas: 2000000});
       }, Error);
 
@@ -429,7 +402,7 @@ describe('Chess contract', function() {
       toIndex = 96;
       assert.throws(function () {
         // white rook a8a7
-        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
                             sigState, {from: player1, gas: 2000000});
       }, Error);
     });
@@ -444,7 +417,7 @@ describe('Chess contract', function() {
 
       // First set State with moveCount = 0;
       assert.doesNotThrow(function () {
-        Chess.moveFromState(gameId1, boardHigh, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, boardHigh, fromIndex, toIndex,
                             sigState, {from: player1, gas: 2000000});
       }, Error);
       // moveCount of board in BC now 1
@@ -456,7 +429,7 @@ describe('Chess contract', function() {
       sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
-        Chess.moveFromState(gameId1, boardLow, fromIndex, toIndex, player2,
+        Chess.moveFromState(gameId1, boardLow, fromIndex, toIndex,
                             sigState, {from: player1, gas: 2000000});
       }, Error);
     });
