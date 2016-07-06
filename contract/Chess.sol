@@ -77,7 +77,7 @@ contract Chess is TurnBasedGame, Auth {
     */
     function moveFromState(bytes32 gameId, int8[128] state, uint256 fromIndex, uint256 toIndex,
                            bytes sigState, bytes sigFromIndex, bytes sigToIndex) notEnded(gameId) public {
-        
+
         if (games[gameId].winner != 0 || games[gameId].ended) {
             // Game already ended
             throw;
@@ -87,13 +87,13 @@ contract Chess is TurnBasedGame, Auth {
         if (games[gameId].player1 != msg.sender && games[gameId].player2 != msg.sender) {
             throw;
         }
-        
+
         // find opponent to msg.sender
         address opponent;
         if (games[gameId].player1 != msg.sender) {
-            opponent = games[gameId].player1
+            opponent = games[gameId].player1;
         } else {
-            opponent = games[gameId].player1
+            opponent = games[gameId].player1;
         }
 
         /*
@@ -101,7 +101,7 @@ contract Chess is TurnBasedGame, Auth {
         */
 
         // verify fromIndex and figure out who wants to move
-        address mover; 
+        address mover;
         if (verifySig(msg.sender, sha3(fromIndex), sigFromIndex)) {
             mover = msg.sender;
         } else if (verifySig(opponent, sha3(fromIndex), sigFromIndex)) {
@@ -123,7 +123,7 @@ contract Chess is TurnBasedGame, Auth {
             throw;
         }
 
-        
+
         // verify state - should be signed by the other member of game - not mover
         if (mover == msg.sender && !verifySig(opponent, sha3(state), sigState)) {
             throw;
