@@ -346,28 +346,85 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     function eventGameTimeoutStarted(err, data) {
       console.log('eventTimeoutStarted ', err, data);
-      if (err){
+      if (err) {
         console.log('EVENTGAMETIMEOUTERROR: ', err);
       } else {
+        console.log(data);
         let game = $scope.getGame();
-        if (chess.turn() === 'w' && game.self.color === 'white'){
-          console.log('Black win');
-          try {
-            SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
-          } catch(e){
-            console.log(e);
-          }
-        }
-        else if (chess.turn() === 'b' && game.self.color === 'black') {
-          console.log('White win');
-          try {
-            SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
-          } catch(e) {
-            console.log(e);
-          }
-        }
-      }
 
+        /*
+          Situation: - Black makes a move sends offerDraw/claimWin. White is in turn now.
+                     - White must verify the situation.
+                     - Possible situation for white: checkmate, stalemate and draw
+         */
+        if (chess.turn() === 'w' && game.self.color === 'white') {
+
+          // is checkmate for black
+          if (chess.in_checkmate()) {
+            console.log('Black win');
+            try {
+              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+            } catch (e) {
+              console.log(e);
+            }
+          }
+          // is stalemate
+          else if (chess.in_stalemate()) {
+            try {
+              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+            } catch (e) {
+              console.log(e);
+            }
+          }
+          // is draw
+          else if (chess.in_draw()) {
+            try {
+              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+            } catch (e) {
+              console.log(e);
+            }
+          } else {
+            // TODO
+          }
+        }
+
+        /*
+         Situation: - White makes a move sends offerDraw/claimWin. Black is in turn now.
+         - Black must verify the situation.
+         - Possible situation for black: checkmate, stalemate and draw
+         */
+        else if (chess.turn() === 'b' && game.self.color === 'black') {
+
+          // is checkmate for black
+          if (chess.in_checkmate()) {
+            console.log('Black win');
+            try {
+              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+            } catch (e) {
+              console.log(e);
+            }
+          }
+          // is stalemate
+          else if (chess.in_stalemate()) {
+            try {
+              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+            } catch (e) {
+              console.log(e);
+            }
+          }
+          // is draw
+          else if (chess.in_draw()) {
+            try {
+              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+            } catch (e) {
+              console.log(e);
+            }
+          } else {
+            // TODO
+          }
+        }
+
+      }
     }
 
     // player clicked on chess piece
@@ -487,6 +544,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
       let game = $scope.getGame();
       let highlights = lightItUp();
 
+      claimWin();
       var fromW = highlights.playerWhite[chessMove.from];
       var toW = highlights.playerWhite[chessMove.to];
       var fromB = highlights.playerBlack[chessMove.from];
@@ -524,27 +582,43 @@ angular.module('dappChess').controller('PlayGameCtrl',
           //chess.enableUserInput(true);
         }
 
-        // game over?
+        /*
+          Situation: - Black/White makes a move. White/Black is in turn now.
+                     - Black/White checks checkmate, draw and stalemate conditions
+                     - If one of these conditions is true Black/White informs blockchain
+                       about the situation.
+                     - Note: only the player before will inform blockchain
+        */
         if (chess.in_checkmate() === true) { // jshint ignore:line
           status = 'CHECKMATE! ' + nextPlayer + ' lost.';
           if (chess.turn() === 'b' && game.self.color === 'white') {
-            // ToDo
+            claimWin();
           }
           if (chess.turn() === 'w' && game.self.color === 'black') {
-            // ToDo
+            claimWin();
           }
 
         }
         // draw?
         else if (chess.in_draw() === true) { // jshint ignore:line
           status = 'DRAW!';
-          // ToDo
+          if (chess.turn() === 'b' && game.self.color === 'white') {
+            offerDraw();
+          }
+          if (chess.turn() === 'w' && game.self.color === 'black') {
+            offerDraw();
+          }
         }
 
         // stalemate?
         else if (chess.in_stalemate() === true) { // jshint ignore:line
           status = 'STALEMATE!';
-          // ToDO
+          if (chess.turn() === 'b' && game.self.color === 'white') {
+            offerDraw();
+          }
+          if (chess.turn() === 'w' && game.self.color === 'black') {
+            offerDraw();
+          }
         }
 
         // game is still on
@@ -639,6 +713,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
       }
 
       updateGameInfo('Next player is ' + gamer + '.', false);
+
+      SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
 
     };
 
