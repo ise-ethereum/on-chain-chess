@@ -834,6 +834,12 @@ describe('Chess contract', function() {
 
       it('should assign ether pot to winning player after confirmGameEnded', (done) => {
         assert.doesNotThrow(() => {
+          Chess.move(gameId, 101, 69, {from: player1, gas: 500000});
+          Chess.move(gameId, 20, 52, {from: player2, gas: 500000});
+          Chess.move(gameId, 96, 64, {from: player1, gas: 500000});
+          Chess.move(gameId, 3, 71, {from: player2, gas: 500000});
+        });
+        assert.doesNotThrow(() => {
           Chess.claimWin(gameId, {from: player2, gas: 200000});
         });
         assert.doesNotThrow(() => {
