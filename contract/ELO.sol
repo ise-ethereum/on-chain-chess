@@ -5,7 +5,6 @@
 library ELO {
     struct Score {
         uint score;
-        string alias;
     }
     struct Scores {
         mapping(address => Score) scores;

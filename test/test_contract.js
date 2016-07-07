@@ -801,36 +801,16 @@ describe('Chess contract', function() {
           Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
         });
 
-        let filter = Chess.GameEnded({});
-        filter.watch((error, result) => {
-          assert.equal(gameId, result.args.gameId);
-          assert.equal(player2, Chess.games(result.args.gameId)[5]);
-          filter.stopWatching();
-          done();
-        });
-      });
-
-      it('should assign ether pot to winning player after confirmGameEnded', (done) => {
-        assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
-          Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
-        });
-
         let plan = new Plan(3, () => {
           done();
         });
 
-        // GameEnded event
         let filter = Chess.GameEnded({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
           assert.equal(player2, Chess.games(result.args.gameId)[5]);
-          // Pot is 0
-          assert.equal(0, Chess.games(result.args.gameId)[7]);
-          // Player 2 got pot
-          assert.equal(2000000, Chess.games(result.args.gameId)[9]);
           filter.stopWatching();
-          plan.ok();
+          done();
         });
 
         // EloScoreUpdate event P2
@@ -849,6 +829,28 @@ describe('Chess contract', function() {
           assert.equal(100, result.args.score.toNumber());
           filter3.stopWatching();
           plan.ok();
+        });
+      });
+
+      it('should assign ether pot to winning player after confirmGameEnded', (done) => {
+        assert.doesNotThrow(() => {
+          Chess.claimWin(gameId, {from: player2, gas: 200000});
+        });
+        assert.doesNotThrow(() => {
+          Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
+        });
+
+        // GameEnded event
+        let filter = Chess.GameEnded({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.equal(player2, Chess.games(result.args.gameId)[5]);
+          // Pot is 0
+          assert.equal(0, Chess.games(result.args.gameId)[7]);
+          // Player 2 got pot
+          assert.equal(2000000, Chess.games(result.args.gameId)[9]);
+          filter.stopWatching();
+          done();
         });
       });
 
