@@ -10,10 +10,13 @@
 import "TurnBasedGame.sol";
 import "ChessLogic.sol";
 import "Auth.sol";
+import "ELO.sol";
 
 contract Chess is TurnBasedGame, Auth {
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
+    using ELO for ELO.Scores;
+    ELO.Scores eloScores;
 
 
 
@@ -22,6 +25,7 @@ contract Chess is TurnBasedGame, Auth {
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event GameTimeoutStarted(bytes32 indexed gameId,uint timeoutStarted, int8 timeoutState);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
+    event EloScoreUpdate(address indexed player, uint score);
 
     function Chess(bool enableDebugging) TurnBasedGame(enableDebugging) {
     }
@@ -245,6 +249,10 @@ contract Chess is TurnBasedGame, Auth {
             games[gameId].player2Winnings = games[gameId].pot / 2;
             games[gameId].pot = 0;
             GameEnded(gameId);
+            // Update ELO scores
+            eloScores.recordResult(game.player1, game.player2, 0);
+            EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+            EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         } else if (game.timeoutState == 1){
             game.ended = true;
             game.winner = msg.sender;
@@ -258,6 +266,10 @@ contract Chess is TurnBasedGame, Auth {
             }
 
             GameEnded(gameId);
+            // Update ELO scores
+            eloScores.recordResult(game.player1, game.player2, game.winner);
+            EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+            EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         } else {
             throw;
         }
@@ -280,6 +292,10 @@ contract Chess is TurnBasedGame, Auth {
             games[gameId].player2Winnings = games[gameId].pot / 2;
             games[gameId].pot = 0;
             GameEnded(gameId);
+            // Update ELO scores
+            eloScores.recordResult(game.player1, game.player2, 0);
+            EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+            EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         } else if (game.timeoutState == 1){
             game.ended = true;
             // other player won
@@ -294,6 +310,10 @@ contract Chess is TurnBasedGame, Auth {
                 games[gameId].pot = 0;
             }
             GameEnded(gameId);
+            // Update ELO scores
+            eloScores.recordResult(game.player1, game.player2, game.winner);
+            EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+            EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         } else {
             throw;
         }

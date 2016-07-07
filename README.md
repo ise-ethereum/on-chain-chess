@@ -53,3 +53,5 @@ This is loosely based on [ethereum-webpack-example-dapp](https://github.com/uzyn
   ```bash
   npm run test
   ```
+
+1. You can run only one test file if you like: `npm test -- test/test_elo.js`

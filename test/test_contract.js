@@ -1,6 +1,7 @@
 /* global describe, it, beforeEach */
 import { Chess, web3 } from '../contract/Chess.sol';
 import { gameStateDisplay } from './utils';
+import { Plan } from './utils.js';
 
 var assert = require('chai').assert;
 
@@ -792,7 +793,7 @@ describe('Chess contract', function() {
     });
 
     describe('confirmGameEnded()', () => {
-      it('should allow confirmGameEnded after claimTimeout', (done) => {
+      it('should allow confirmGameEnded after claimWin, update state and ELO scores', (done) => {
         assert.doesNotThrow(() => {
           Chess.claimTimeout(gameId, {from: player2, gas: 200000});
         });
@@ -815,6 +816,11 @@ describe('Chess contract', function() {
           Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
         });
 
+        let plan = new Plan(3, () => {
+          done();
+        });
+
+        // GameEnded event
         let filter = Chess.GameEnded({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
@@ -824,7 +830,25 @@ describe('Chess contract', function() {
           // Player 2 got pot
           assert.equal(2000000, Chess.games(result.args.gameId)[9]);
           filter.stopWatching();
-          done();
+          plan.ok();
+        });
+
+        // EloScoreUpdate event P2
+        let filter2 = Chess.EloScoreUpdate({player: player2});
+        filter2.watch((error, result) => {
+          assert.equal(player2, result.args.player);
+          assert.equal(110, result.args.score.toNumber());
+          filter2.stopWatching();
+          plan.ok();
+        });
+
+        // EloScoreUpdate event P1
+        let filter3 = Chess.EloScoreUpdate({player: player1});
+        filter3.watch((error, result) => {
+          assert.equal(player1, result.args.player);
+          assert.equal(100, result.args.score.toNumber());
+          filter3.stopWatching();
+          plan.ok();
         });
       });
 
