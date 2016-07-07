@@ -15,7 +15,7 @@ describe('ELO library', function() {
 
   describe('Recording game result', function () {
     it('correctly initialize scores with floor and record win of P1', function (done) {
-      EloTest.recordResult(player1, player2, player1);
+      EloTest.recordResult(player1, player2, player1, {gas: 500000});
 
       let filter = EloTest.EloScoreUpdate({});
       let plan = new Plan(2, () => {
@@ -38,28 +38,29 @@ describe('ELO library', function() {
         // winner, new score player 1, new score player 2
         // Start: 110, 100
         [player1, 120, 100],  // +10, -10   (floored at 100)
-        [player1, 130, 100],  // +10, -10
-        [player1, 140, 100],  // +10, -10
-        [player1, 149, 100],  //  +9,  -9
-        [player2, 140, 111],  //  -9, +11
-        [player2, 130, 121],  // -10, +10
-        [player1, 140, 111],  // +10, -10
-        [player1, 150, 101],  // +10, -10
-        [player1, 159, 100],  //  +9,  -9
-        [player1, 168, 100],  //  +9,  -9
-        [player1, 177, 100],  //  +9,  -9
-        [player1, 185, 100],  //  +8,  -8
-        [player2, 177, 112],  //  -8, +12
-        [0,       176, 113],  //  -1,  +1
-        [player2, 167, 124],  //  -9, +11
-        [player2, 158, 135],  //  -9, +11
-        [0,       158, 135],  //  -0,  +0
+        [player1, 129, 100],  //  +9,  -9
+        [player1, 138, 100],  //  +9,  -9
+        [player1, 147, 100],  //  +9,  -9
+        [player2, 138, 111],  //  -9, +11
+        [player2, 129, 122],  //  -9, +11
+        [player1, 139, 112],  // +10, -10
+        [player1, 148, 101],  //  +9, -11
+        [player1, 157, 100],  //  +9,  -9
+        [player1, 165, 100],  //  +8,  -8
+        [player1, 173, 100],  //  +8,  -8
+        [player1, 181, 100],  //  +8,  -8
+        [player2, 173, 112],  //  -8, +12
+        [0,       171, 114],  //  -2,  +2
+        [player2, 163, 126],  //  -8, +12
+        [player2, 154, 137],  //  -9, +11
+        [player2, 144, 147],  // -10, +10
+        [0,       144, 147],  //  -0,  +0
       ];
 
       // Test a couple of results after each other
       async.mapSeries(results, (item, callback) => {
         let [winner, score1, score2] = item;
-        EloTest.recordResult(player1, player2, winner);
+        EloTest.recordResult(player1, player2, winner, {gas: 500000});
         let filter = EloTest.EloScoreUpdate({});
         let plan = new Plan(2, () => {
           filter.stopWatching();

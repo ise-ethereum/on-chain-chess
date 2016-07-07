@@ -55,3 +55,10 @@ This is loosely based on [ethereum-webpack-example-dapp](https://github.com/uzyn
   ```
 
 1. You can run only one test file if you like: `npm test -- test/test_elo.js`
+
+## FAQ
+
+- _Deployment fails with out-of-gas_  
+  When using testrpc, try raising the gas limit. Install any version newer than this:
+  `npm install -g git://github.com/ethereumjs/testrpc.git#b3ec03eb8e2615453adcea7a93188ceb578a4094`
+  and then run with `testrpc -l 4000000`, for example.
