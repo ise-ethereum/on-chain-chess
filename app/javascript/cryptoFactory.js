@@ -8,6 +8,8 @@ angular.module('dappChess').factory('crypto', function () {
    * let valid = crypto.verify(web3.eth.accounts[0], gameId, signature, text);
    */
 
+  let crypto = {};
+
   function leftPad (nr, n, str) {
     return Array(n - String(nr).length + 1).join(str || '0') + nr;
   }
@@ -104,7 +106,7 @@ angular.module('dappChess').factory('crypto', function () {
     console.log('testing crypto.sign & Auth.verifySig: defaultBoard \t==>', valid);
   };
 
-  //crypto.test();
+  // crypto.test();
 
   return crypto;
 });
