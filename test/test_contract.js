@@ -262,7 +262,7 @@ describe('Chess contract', function() {
     it('should accept a valid move with valid signatures', function (done) {
       let fromIndex = 100;
       let toIndex = 84;
-      let hashState = solSha3(...defaultBoard);
+      let hashState = solSha3(...defaultBoard, gameId1);
       let sigState = web3.eth.sign(player2, hashState);
       // As player1 is the next player, this move should be valid
       assert.doesNotThrow(function () {
@@ -309,7 +309,7 @@ describe('Chess contract', function() {
     it('should throw an exception for message from non-participant', function () {
       let fromIndex = 100;
       let toIndex = 84;
-      let hashState = solSha3(...defaultBoard);
+      let hashState = solSha3(...defaultBoard, gameId1);
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
@@ -321,7 +321,7 @@ describe('Chess contract', function() {
     it('should throw an exception when it is not the turn of the message sender', function () {
       let fromIndex = 100;
       let toIndex = 84;
-      let hashState = solSha3(...defaultBoard);
+      let hashState = solSha3(...defaultBoard, gameId1);
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
@@ -333,7 +333,7 @@ describe('Chess contract', function() {
     it('should throw when state is not signed by opponent', function () {
       let fromIndex = 100;
       let toIndex = 84;
-      let hashState = solSha3(...defaultBoard);
+      let hashState = solSha3(...defaultBoard, gameId1);
       let sigState = web3.eth.sign(player3, hashState); // SIGNED BY PLAYER 3 INSTEAD OF PLAYER 2
 
       assert.throws(function () {
@@ -348,7 +348,7 @@ describe('Chess contract', function() {
       let differentBoard = [...defaultBoard]; // CHANGE BOARD
       differentBoard[5] = 0;
       differentBoard[6] = 0;
-      let hashState = solSha3(...defaultBoard); // HASH OF DEFAULTBOARD
+      let hashState = solSha3(...defaultBoard, gameId1); // HASH OF DEFAULTBOARD
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
@@ -363,7 +363,7 @@ describe('Chess contract', function() {
       let differentBoard = [...defaultBoard]; // CHANGE BOARD
       differentBoard[5] = 0;
       differentBoard[6] = 0;
-      let hashState = solSha3(...differentBoard); // HASH OF DIFFERENTBOARD
+      let hashState = solSha3(...differentBoard, gameId1); // HASH OF DIFFERENTBOARD
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
@@ -377,7 +377,7 @@ describe('Chess contract', function() {
       assert.isTrue(Chess.isGameEnded(gameId1));
       let fromIndex = 100;
       let toIndex = 84;
-      let hashState = solSha3(...defaultBoard);
+      let hashState = solSha3(...defaultBoard, gameId1);
       let sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {
@@ -389,7 +389,7 @@ describe('Chess contract', function() {
     it('should throw an exception when a move is invalid', function () {
       let fromIndex = 96;
       let toIndex = 96;
-      let hashState = solSha3(...defaultBoard);
+      let hashState = solSha3(...defaultBoard, gameId1);
       let sigState = web3.eth.sign(player2, hashState);
 
       // Test some invalid moves, but from correct player
@@ -413,7 +413,7 @@ describe('Chess contract', function() {
       let toIndex = 84;
       let boardHigh = [...defaultBoard]; // BOARD WITH MOVE COUNT = 0
       // boardHigh[8] = 33;
-      let hashState = solSha3(...boardHigh);
+      let hashState = solSha3(...boardHigh, gameId1);
       let sigState = web3.eth.sign(player2, hashState);
 
       // First set State with moveCount = 0;
@@ -426,7 +426,7 @@ describe('Chess contract', function() {
       // Now set State with moveCount = 0 again;
       let boardLow = [...defaultBoard]; // BOARD WITH LOWER MOVE COUNT
       // boardLow[8] = 3;
-      hashState = solSha3(...boardLow);
+      hashState = solSha3(...boardLow, gameId1);
       sigState = web3.eth.sign(player2, hashState);
 
       assert.throws(function () {

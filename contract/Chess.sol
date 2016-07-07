@@ -93,7 +93,7 @@ contract Chess is TurnBasedGame, Auth {
         }
 
         // verify state - should be signed by the other member of game - not mover
-        if (!verifySig(opponent, sha3(state), sigState)) {
+        if (!verifySig(opponent, sha3(state, gameId), sigState)) {
             throw;
         }
 
