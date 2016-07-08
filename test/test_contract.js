@@ -612,7 +612,7 @@ describe('Chess contract', function() {
     });
   });
 
-  describe.only('Endgame', () => {
+  describe('Endgame', () => {
     let gameId;
     beforeEach((done) => {
       // runs before each test in this block
