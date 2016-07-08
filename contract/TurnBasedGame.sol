@@ -8,6 +8,10 @@ contract TurnBasedGame {
 
     event GameEnded(bytes32 indexed gameId);
     event GameClosed(bytes32 indexed gameId, address indexed player);
+    event GameTimeoutStarted(bytes32 indexed gameId, uint timeoutStarted, int8 timeoutState);
+    // GameDrawOfferRejected: notification that a draw of the currently turning player
+    //                        is rejected by the waiting player
+    event GameDrawOfferRejected(bytes32 indexed gameId);
     event DebugInts(string message, int value1, int value2, int value3);
 
     struct Game {
@@ -244,6 +248,172 @@ contract TurnBasedGame {
                     openGameIds[gameId] = 0;
                     break;
                 }
+            }
+        }
+    }
+
+    /* The sender claims he has won the game. Starts a timeout. */
+    function claimWin(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started
+        if (game.timeoutState != 0)
+            throw;
+        // you can only claim draw / victory in the enemies turn
+        if (msg.sender == game.nextPlayer)
+            throw;
+
+        game.timeoutStarted = now;
+        game.timeoutState = 1;
+        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
+    }
+
+    /* The sender offers the other player a draw. Starts a timeout. */
+    function offerDraw(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started or is a draw by nextPlayer
+        if (game.timeoutState != 0 && game.timeoutState != 2)
+            throw;
+        // if state = timeout, timeout has to be 2*timeoutTime
+        if (game.timeoutState == 2 && now < game.timeoutStarted + 20 minutes)
+            throw;
+
+        if (msg.sender == game.nextPlayer) {
+            game.timeoutState = -2;
+        } else {
+            game.timeoutState = -1;
+        }
+        game.timeoutStarted = now;
+        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
+    }
+
+    /*
+     * The sender claims that the other player is not in the game anymore.
+     * Starts a Timeout that can be claimed
+     */
+    function claimTimeout(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout has not started
+        if (game.timeoutState != 0)
+            throw;
+        // you can only claim draw / victory in the enemies turn
+        if (msg.sender == game.nextPlayer)
+            throw;
+        game.timeoutStarted = now;
+        game.timeoutState = 2;
+        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
+    }
+
+    /*
+     * The sender (waiting player) rejects the draw offered by the
+     * other (turning / current) player.
+     */
+    function rejectCurrentPlayerDraw(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        // only if timeout is present
+        if (game.timeoutState != -2)
+            throw;
+        // only not playing player is able to reject a draw offer of the nextPlayer
+        if (msg.sender == game.nextPlayer)
+            throw;
+        game.timeoutState = 0;
+        GameDrawOfferRejected(gameId);
+    }
+
+    /* The sender claims a previously started timeout. */
+    function claimTimeoutEnded(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        if (game.timeoutState == 0 || game.timeoutState == 2)
+            throw;
+        if (now < game.timeoutStarted + 10 minutes)
+            throw;
+        if (msg.sender == game.nextPlayer) {
+            if (game.timeoutState == -2) { // draw
+                game.ended = true;
+                games[gameId].player1Winnings = games[gameId].pot / 2;
+                games[gameId].player2Winnings = games[gameId].pot / 2;
+                games[gameId].pot = 0;
+                GameEnded(gameId);
+            } else {
+                throw;
+            }
+        } else {
+            if (game.timeoutState == -1) { // draw
+                game.ended = true;
+                games[gameId].player1Winnings = games[gameId].pot / 2;
+                games[gameId].player2Winnings = games[gameId].pot / 2;
+                games[gameId].pot = 0;
+                GameEnded(gameId);
+            } else if (game.timeoutState == 1){ // win
+                game.ended = true;
+                game.winner = msg.sender;
+                if(msg.sender == game.player1) {
+                    games[gameId].player1Winnings = games[gameId].pot;
+                    games[gameId].pot = 0;
+                } else {
+                    games[gameId].player2Winnings = games[gameId].pot;
+                    games[gameId].pot = 0;
+                }
+                GameEnded(gameId);
+            } else {
+                throw;
+            }
+        }
+    }
+
+    /* A timeout can be confirmed by the non-initializing player. */
+    function confirmGameEnded(bytes32 gameId) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        if (game.timeoutState == 0)
+            throw;
+        if (msg.sender != game.nextPlayer) {
+            if (game.timeoutState == -2) { // draw
+                game.ended = true;
+                games[gameId].player1Winnings = games[gameId].pot / 2;
+                games[gameId].player2Winnings = games[gameId].pot / 2;
+                games[gameId].pot = 0;
+                GameEnded(gameId);
+            } else {
+                throw;
+            }
+        } else {
+            if (game.timeoutState == -1) { // draw
+                game.ended = true;
+                games[gameId].player1Winnings = games[gameId].pot / 2;
+                games[gameId].player2Winnings = games[gameId].pot / 2;
+                games[gameId].pot = 0;
+                GameEnded(gameId);
+            } else if (game.timeoutState == 1 || game.timeoutState == 2) { // win
+                game.ended = true;
+                if(msg.sender == game.player1) {
+                    game.winner = game.player2;
+                    games[gameId].player2Winnings = games[gameId].pot;
+                    games[gameId].pot = 0;
+                } else {
+                    game.winner = game.player1;
+                    games[gameId].player1Winnings = games[gameId].pot;
+                    games[gameId].pot = 0;
+                }
+                GameEnded(gameId);
+            } else {
+                throw;
             }
         }
     }

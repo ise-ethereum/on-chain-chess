@@ -56,6 +56,7 @@
     "webpack-node-externals": "*"
   },
   "dependencies": {
-    "bignumber.js": "^2.3.0"
+    "bignumber.js": "^2.3.0",
+    "async": "^1.5.2"
   }
 }
