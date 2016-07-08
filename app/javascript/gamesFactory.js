@@ -69,7 +69,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
    *  ended: <boolean>,
    *  pot: <number>,
    *  timeoutStarted: <date>,
-   *  timeoutState: <{-1,0,1}>
+   *  timeoutState: <{-2,-1,0,1,2}>
    * @param contractGameObject
    * @returns game
      */
@@ -258,6 +258,30 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
           $rootScope.$broadcast('message',
             'Could not offer a draw',
             'error', 'offerdraw');
+        }
+      }
+    }
+  };
+
+  games.claimTimeout = function (game) {
+    console.log('offerDraw', game);
+    if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+      if (game.timeoutState !== 0) {
+        $rootScope.$broadcast('message',
+          'Not able to claim timeout, while other claim is active in game with the id ' +
+          game.gameId,
+          'error', 'claimtimeout');
+      } else {
+        $rootScope.$broadcast('message',
+          'Claim timeout for your game with the id ' + game.gameId,
+          'message', 'claimtimeout');
+        try {
+          Chess.claimTimeout(game.gameId, {from: game.self.accountId});
+        } catch (e) {
+          console.log('claimTimeout error', e);
+          $rootScope.$broadcast('message',
+            'Could not claim timeout',
+            'error', 'claimtimeout');
         }
       }
     }
@@ -564,9 +588,27 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       game.timeoutStarted = data.args.timeoutStarted.toNumber();
       game.timeoutState = data.args.timeoutState.toNumber();
 
+      /*
+       * -2 draw offered by nextPlayer
+       * -1 draw offered by waiting player
+       * 0 nothing
+       * 1 checkmate
+       * 2 timeout
+       */
+      if((game.timeoutState === -1 && game.nextPlayer === game.self.accountId) ||
+        (game.timeoutState === -2 && game.nextPlayer === game.opponent.accountId)) {
+        $rootScope.$broadcast('message',
+          'Player ' + game.opponent.username + ' wants to offer a draw',
+          'message', 'playgame-' + game.gameId);
+      }
       if(game.timeoutState === 1 && game.nextPlayer === game.self.accountId) {
         $rootScope.$broadcast('message',
           'Player ' + game.opponent.username + ' claims that he won the game',
+          'message', 'playgame-' + game.gameId);
+      }
+      if(game.timeoutState === 2 && game.nextPlayer === game.self.accountId) {
+        $rootScope.$broadcast('message',
+          'Player ' + game.opponent.username + ' claims that he won the game due to a timeout',
           'message', 'playgame-' + game.gameId);
       }
 
