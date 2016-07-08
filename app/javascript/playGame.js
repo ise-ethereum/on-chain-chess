@@ -603,7 +603,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
     $scope.gameCanOfferDraw = function () {
       let game = $scope.getGame();
       if (game) {
-        let timeoutDatePlus2TurnTime = new Date(game.timeoutStarted * 1000 + 2 * game.turnTime * 60000);
+        let timeoutDatePlus2TurnTime =
+          new Date(game.timeoutStarted * 1000 + 2 * game.turnTime * 60000);
         return (game.timeoutState === 0 ||
           (game.timeoutState === 2 && timeoutDatePlus2TurnTime < new Date())) &&
           !game.ended;
@@ -625,7 +626,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
       if (game) {
         return (
             (game.timeoutState === -1 && game.nextPlayer === game.self.accountId) ||
-            (game.timeoutState === -2 && game.nextPlayer !== game.self.accountId && typeof game.nextPlayer !== 'undefined')
+            (game.timeoutState === -2 && game.nextPlayer !== game.self.accountId &&
+              typeof game.nextPlayer !== 'undefined')
           ) && !game.ended;
       }
     };
