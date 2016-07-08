@@ -31,6 +31,12 @@
         <div class="error" data-ng-show="form.username.$error.required">Please enter a username.</div>
       </div>
 
+      <label for="turntime">Turntime (in minutes)</label>
+      <input id="turntime" type="number" min="5" step="1" pattern="\d+" name="turntime" data-ng-model="turntime" required>
+      <div data-ng-show="form.$submitted || form.turntime.$touched">
+        <div class="error" data-ng-show="form.turntime.$error.required">Please enter a turntime.</div>
+      </div>
+
       <label for="startcolor">Start color</label>
       <select id="startcolor" name="startcolor" data-ng-model="startcolor" required>
         <option value="white" selected>White</option>

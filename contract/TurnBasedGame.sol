@@ -25,6 +25,7 @@ contract TurnBasedGame {
         uint pot; // What this game is worth: ether paid into the game
         uint player1Winnings;
         uint player2Winnings;
+        uint turnTime; // in minutes
         uint timeoutStarted; // timer for timeout
         /*
          * -2 draw offered by nextPlayer
@@ -186,11 +187,15 @@ contract TurnBasedGame {
         _
     }
 
-    function initGame(string player1Alias, bool playAsWhite) public returns (bytes32) {
+    function initGame(string player1Alias, bool playAsWhite, uint turnTime) public returns (bytes32) {
+        if (turnTime < 5)
+            throw;
+
         // Generate game id based on player's addresses and current block number
         bytes32 gameId = sha3(msg.sender, block.number);
 
         games[gameId].ended = false;
+        games[gameId].turnTime = turnTime;
         games[gameId].timeoutState = 0;
 
         // Initialize participants
@@ -280,7 +285,7 @@ contract TurnBasedGame {
         if (game.timeoutState != 0 && game.timeoutState != 2)
             throw;
         // if state = timeout, timeout has to be 2*timeoutTime
-        if (game.timeoutState == 2 && now < game.timeoutStarted + 20 minutes)
+        if (game.timeoutState == 2 && now < game.timeoutStarted + 2 * game.turnTime * 1 minutes)
             throw;
 
         if (msg.sender == game.nextPlayer) {
@@ -339,7 +344,7 @@ contract TurnBasedGame {
             throw;
         if (game.timeoutState == 0 || game.timeoutState == 2)
             throw;
-        if (now < game.timeoutStarted + 10 minutes)
+        if (now < game.timeoutStarted + game.turnTime * 1 minutes)
             throw;
         if (msg.sender == game.nextPlayer) {
             if (game.timeoutState == -2) { // draw

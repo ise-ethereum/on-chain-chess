@@ -42,8 +42,9 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       pot: array[7],
       player1WonEther: array[8],
       player2WonEther: array[9],
-      timeoutStarted: array[10],
-      timeoutState: array[11],
+      turnTime: array[10],
+      timeoutStarted: array[11],
+      timeoutState: array[12],
       playerWhite: playerWhite
     };
   };
@@ -68,15 +69,19 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
    *  },
    *  ended: <boolean>,
    *  pot: <number>,
+   *  turnTime: <number>,
    *  timeoutStarted: <date>,
    *  timeoutState: <{-1,0,1}>
    * @param contractGameObject
    * @returns game
      */
-  games.convertGameToObject = function(contractGameObject) {
+  games.convertGameToObject = function (contractGameObject) {
     let game = {
       gameId: contractGameObject.gameId,
-      nextPlayer: contractGameObject.nextPlayer
+      nextPlayer: contractGameObject.nextPlayer,
+      turnTime: contractGameObject.turnTime.toNumber(),
+      ended: contractGameObject.ended,
+      pot: web3.fromWei(contractGameObject.pot, 'ether').toDigits().toString()
     };
 
     if (typeof contractGameObject.timeoutState !== 'undefined') {
@@ -139,16 +144,10 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       contractGameObject.winner !== '0x0000000000000000000000000000000000000000') {
       if (game.self.accountId === contractGameObject.winner) {
         game.winner = 'self';
-      }
-      else if (game.opponent.accountId === contractGameObject.winner) {
+      } else if (game.opponent.accountId === contractGameObject.winner) {
         game.winner = 'opponent';
       }
     }
-
-    game.ended = contractGameObject.ended;
-    game.pot = web3.fromWei(contractGameObject.pot, 'ether').toDigits().toString();
-
-    console.log(game);
 
     return game;
   };
