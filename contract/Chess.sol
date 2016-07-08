@@ -189,8 +189,11 @@ contract Chess is TurnBasedGame, Auth {
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
             throw;
-        // only if timeout has not started or state = timeout and 2*timeoutTime is over
-        if (game.timeoutState != 0 && (game.timeoutState != 2 || now < game.timeoutStarted + 20 minutes))
+        // only if timeout has not started or is a draw by nextPlayer
+        if (game.timeoutState != 0 && game.timeoutState != 2)
+            throw;
+        // if state = timeout, timeout has to be 2*timeoutTime
+        if (game.timeoutState == 2 && now < game.timeoutStarted + 20 minutes)
             throw;
 
         game.timeoutStarted = now;
