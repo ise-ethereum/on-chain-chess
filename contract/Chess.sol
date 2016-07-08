@@ -10,18 +10,20 @@
 import "TurnBasedGame.sol";
 import "ChessLogic.sol";
 import "Auth.sol";
+import "ELO.sol";
 
 contract Chess is TurnBasedGame, Auth {
     using ChessLogic for ChessLogic.State;
     mapping (bytes32 => ChessLogic.State) gameStates;
 
-
+    using ELO for ELO.Scores;
+    ELO.Scores eloScores;
 
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint pot);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint pot);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
-    event GameTimeoutStarted(bytes32 indexed gameId,uint timeoutStarted, int8 timeoutState);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
+    event EloScoreUpdate(address indexed player, uint score);
 
     function Chess(bool enableDebugging) TurnBasedGame(enableDebugging) {
     }
@@ -91,7 +93,7 @@ contract Chess is TurnBasedGame, Auth {
         }
 
         // verify state - should be signed by the other member of game - not mover
-        if (!verifySig(opponent, sha3(state), sigState)) {
+        if (!verifySig(opponent, sha3(state, gameId), sigState)) {
             throw;
         }
 
@@ -150,153 +152,44 @@ contract Chess is TurnBasedGame, Auth {
 
     /* The sender claims he has won the game. Starts a timeout. */
     function claimWin(bytes32 gameId) notEnded(gameId) public {
+        super.claimWin(gameId);
 
-        var game = games[gameId];
-        // just the two players currently playing
-        if (msg.sender != game.player1 && msg.sender != game.player2)
-            throw;
-        // only if timeout has not started
-        if (game.timeoutState != 0)
-            throw;
-        // you can only claim draw / victory in the enemies turn
-        if (msg.sender == game.nextPlayer)
-            throw;
         // get the color of the player that wants to claim win
         int8 otherPlayerColor = 0;
-        // the one not sending is white -> the sending player is Black
-
-        if(gameStates[gameId].playerWhite == msg.sender){
-
-            // this like causes : Module build failed: Error: Internal compiler error: I sense a disturbance in the stack.
-            // Why no clue, bad choice to set the value explicitly, if the enum changes this line breaks
+        if (gameStates[gameId].playerWhite == msg.sender){
             otherPlayerColor = -1;
-            // else he is white
-        }else{
-            // same here
+        } else {
             otherPlayerColor = 1;
         }
 
         // We get the king position of that player
         uint256 kingIndex = uint256(gameStates[gameId].getOwnKing(otherPlayerColor));
-        // if he is in check the request is legal
-        if (gameStates[gameId].checkForCheck(kingIndex, otherPlayerColor)){
-            game.timeoutStarted = now;
-            game.timeoutState = 1;
-            GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
-        // else it is not
-        }else {
+        // if he is not in check, the request is illegal
+        if (!gameStates[gameId].checkForCheck(kingIndex, otherPlayerColor)){
             throw;
         }
-
-
-    }
-
-    /* The sender offers the other player a draw. Starts a timeout. */
-    function offerDraw(bytes32 gameId) notEnded(gameId) public {
-        var game = games[gameId];
-        // just the two players currently playing
-        if (msg.sender != game.player1 && msg.sender != game.player2)
-            throw;
-        // only if timeout has not started
-        if (game.timeoutState != 0)
-            throw;
-        // you can only claim draw / victory in the enemies turn
-        if (msg.sender == game.nextPlayer)
-            throw;
-        game.timeoutStarted = now;
-        game.timeoutState = -1;
-
-        GameTimeoutStarted(gameId,game.timeoutStarted,game.timeoutState);
-    }
-
-    /* the sender claims that the other player is not in the game anymore. Starts a Timeout that can be claimed*/
-    function claimTimeout(bytes32 gameId) notEnded(gameId) public {
-        var game = games[gameId];
-        // just the two players currently playing
-        if (msg.sender != game.player1 && msg.sender != game.player2)
-            throw;
-        // only if timeout has not started
-        if (game.timeoutState != 0)
-            throw;
-        // you can only claim draw / victory in the enemies turn
-        if (msg.sender == game.nextPlayer)
-            throw;
-        game.timeoutStarted = now;
-        game.timeoutState = 1;
-        GameTimeoutStarted(gameId, game.timeoutStarted, game.timeoutState);
     }
 
     /* The sender claims a previously started timeout. */
     function claimTimeoutEnded(bytes32 gameId) notEnded(gameId) public {
-        var game = games[gameId];
-        // just the two players currently playing
-        if (msg.sender != game.player1 && msg.sender != game.player2)
-            throw;
-        if (msg.sender == game.nextPlayer)
-            throw;
-        if (game.timeoutState == 0)
-            throw;
-        if (now < game.timeoutStarted + 10 minutes)
-            throw;
-        // Game is a draw, transfer ether back
-        if (game.timeoutState == -1){
-            game.ended = true;
-            games[gameId].player1Winnings = games[gameId].pot / 2;
-            games[gameId].player2Winnings = games[gameId].pot / 2;
-            games[gameId].pot = 0;
-            GameEnded(gameId);
-        } else if (game.timeoutState == 1){
-            game.ended = true;
-            game.winner = msg.sender;
-            if(msg.sender == game.player1) {
-                games[gameId].player1Winnings = games[gameId].pot;
-                games[gameId].pot = 0;
-            }
-            else {
-                games[gameId].player2Winnings = games[gameId].pot;
-                games[gameId].pot = 0;
-            }
+        super.claimTimeoutEnded(gameId);
 
-            GameEnded(gameId);
-        } else {
-            throw;
-        }
+        // Update ELO scores
+        var game = games[gameId];
+        eloScores.recordResult(game.player1, game.player2, game.winner);
+        EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+        EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
     }
 
     /* A timeout can be confirmed by the non-initializing player. */
     function confirmGameEnded(bytes32 gameId) notEnded(gameId) public {
+        super.confirmGameEnded(gameId);
+
+        // Update ELO scores
         var game = games[gameId];
-        // just the two players currently playing
-        if (msg.sender != game.player1 && msg.sender != game.player2)
-            throw;
-        if (msg.sender != game.nextPlayer)
-            throw;
-        if (game.timeoutState == 0)
-            throw;
-        // Game is a draw, transfer ether back
-        if (game.timeoutState == -1){
-            game.ended = true;
-            games[gameId].player1Winnings = games[gameId].pot / 2;
-            games[gameId].player2Winnings = games[gameId].pot / 2;
-            games[gameId].pot = 0;
-            GameEnded(gameId);
-        } else if (game.timeoutState == 1){
-            game.ended = true;
-            // other player won
-            if(msg.sender == game.player1) {
-                game.winner = game.player2;
-                games[gameId].player2Winnings = games[gameId].pot;
-                games[gameId].pot = 0;
-            }
-            else {
-                game.winner = game.player1;
-                games[gameId].player1Winnings = games[gameId].pot;
-                games[gameId].pot = 0;
-            }
-            GameEnded(gameId);
-        } else {
-            throw;
-        }
+        eloScores.recordResult(game.player1, game.player2, game.winner);
+        EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+        EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
     }
 
     /* This unnamed function is called whenever someone tries to send ether to the contract */
