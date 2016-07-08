@@ -223,8 +223,8 @@ contract Chess is TurnBasedGame, Auth {
     }
 
     /*
-     * The sender (currently waiting player) rejects the draw offered by the
-     * other (turning) player.
+     * The sender (waiting player) rejects the draw offered by the
+     * other (turning / current) player.
      */
     function rejectCurrentPlayerDraw(bytes32 gameId) notEnded(gameId) public {
         var game = games[gameId];
