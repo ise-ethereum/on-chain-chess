@@ -263,6 +263,29 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
     }
   };
 
+  games.claimTimeout = function (game) {
+    console.log('offerDraw', game);
+    if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
+      if (game.timeoutState !== 0) {
+        $rootScope.$broadcast('message',
+          'Not able to claim timeout, while other claim is active in game with the id ' + game.gameId,
+          'error', 'claimtimeout');
+      } else {
+        $rootScope.$broadcast('message',
+          'Claim timeout for your game with the id ' + game.gameId,
+          'message', 'claimtimeout');
+        try {
+          Chess.claimTimeout(game.gameId, {from: game.self.accountId});
+        } catch (e) {
+          console.log('claimTimeout error', e);
+          $rootScope.$broadcast('message',
+            'Could not claim timeout',
+            'error', 'claimtimeout');
+        }
+      }
+    }
+  };
+
   games.confirmGameEnded = function (game) {
     console.log('confirmGameEnded', game);
     if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
