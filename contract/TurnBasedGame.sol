@@ -200,7 +200,7 @@ contract TurnBasedGame {
         games[gameId].player2Winnings = 0;
 
         // Initialize game value
-        games[gameId].pot = msg.value;
+        games[gameId].pot = msg.value * 2;
 
         // Add game to gamesOfPlayers
         gamesOfPlayers[msg.sender][gameId] = gamesOfPlayersHeads[msg.sender];
