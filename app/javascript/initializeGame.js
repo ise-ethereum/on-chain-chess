@@ -15,12 +15,12 @@ angular.module('dappChess').controller('InitializeGameCtrl',
         console.log('Trying to initialize game', $scope.username,
           {
             from: accounts.selectedAccount,
-            value: web3.toWei($scope.etherbet, 'ether')
+            value: web3.toWei($scope.etherbet / 2, 'ether')
           });
         Chess.initGame($scope.username, $scope.startcolor === 'white',
          {
            from: accounts.selectedAccount,
-           value: web3.toWei($scope.etherbet, 'ether')
+           value: web3.toWei($scope.etherbet / 2, 'ether')
          });
       }
       catch(e) {

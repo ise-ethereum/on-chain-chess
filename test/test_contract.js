@@ -1,6 +1,7 @@
 /* global describe, it, beforeEach */
 import { Chess, web3 } from '../contract/Chess.sol';
 import { gameStateDisplay } from './utils';
+import { Plan } from './utils.js';
 
 var assert = require('chai').assert;
 
@@ -22,6 +23,35 @@ const emptyBoard = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
 
+function leftPad(nr, n, str){
+  return Array(n-String(nr).length+1).join(str||'0')+nr;
+}
+
+function solSha3 (...args) {
+    args = args.map(arg => {
+        if (typeof arg === 'string') {
+            if (arg.substring(0, 2) === '0x') {
+                return arg.slice(2);
+            } else {
+                return web3.toHex(arg).slice(2);
+            }
+        }
+
+        if (typeof arg === 'number') {
+            if (arg < 0) {
+              return leftPad((arg >>> 0).toString(16), 64, 'F');
+            }
+            return leftPad((arg).toString(16), 64, 0);
+        } else {
+          return '';
+        }
+    });
+
+    args = args.join('');
+
+    return '0x' + web3.sha3(args, { encoding: 'hex' });
+}
+
 describe('Chess contract', function() {
   this.timeout(60000);
   this.slow(500);
@@ -32,20 +62,19 @@ describe('Chess contract', function() {
   const player3 = web3.eth.accounts[2];
 
   // Remove this for CI/deploy, otherwise the test never finishes
-/*
-  var debugFilter = Chess.DebugInts({});
+
+  /*var debugFilter = Chess.DebugInts({});
   debugFilter.watch(function(error, result){
     console.log(result.args.message,
                 result.args.value1.toNumber(),
                 result.args.value2.toNumber(),
                 result.args.value3.toNumber());
-  });
-  */
+  });*/
 
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
-    it('should initialize a game with player1 playing white', function (done) {
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+    it('should initialize a game with player1 playing white with 1M Wei', function (done) {
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
@@ -95,12 +124,21 @@ describe('Chess contract', function() {
       assert.isTrue(Chess.getGamesOfPlayer(player1).indexOf(testGames[0]) !== -1);
       assert.isTrue(Chess.getGamesOfPlayer(player1).indexOf(testGames[1]) !== -1);
     });
+
+    it('should have the pot of 1M Wei for the first game', () => {
+      assert.equal(1000000, Chess.games(testGames[0])[7]);
+    });
   });
 
   describe('joinGame()', function () {
+    it('should reject join with player with insufficient Ether', () => {
+      assert.throws(function(){
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000, value: 500000});
+      }, Error);
+    });
     it('should join player2 as black if player1 is white', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000, value: 1000000});
       }, Error);
 
       // Watch for event from contract to check if it worked
@@ -147,19 +185,23 @@ describe('Chess contract', function() {
       assert.isTrue(Chess.getGamesOfPlayer(player2).indexOf(testGames[0]) !== -1);
       assert.isTrue(Chess.getGamesOfPlayer(player2).indexOf(testGames[1]) !== -1);
     });
+
+    it('should have the pot of 2M Wei for the first game', () => {
+      assert.equal(2000000, Chess.games(testGames[0])[7]);
+    });
   });
 
   describe('surrender()', function () {
     // Setup a new game for this test
     let gameId;
     it('should initialize a new game and join both players', function(done) {
-      Chess.initGame('Bob', true, {from: player1, gas: 2000000});
+      Chess.initGame('Bob', true, {from: player1, gas: 2000000, value: 1000000});
       var filter = Chess.GameInitialized({});
       filter.watch(function(error, result){
         gameId = result.args.gameId;
         filter.stopWatching();
 
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000, value: 1000000});
         var filter2 = Chess.GameJoined({gameId: gameId});
         filter2.watch(function(){
           filter2.stopWatching();
@@ -177,8 +219,8 @@ describe('Chess contract', function() {
     it('should allow surrender from P1 and declare P2 as winner', function(done) {
       Chess.surrender(gameId, {from: player1, gas: 500000});
       var filter = Chess.GameEnded({gameId: gameId});
-      filter.watch(function(error, result){
-        assert.equal(player2, result.args.winner);
+      filter.watch(function(){
+        assert.equal(player2, Chess.games(gameId)[5]);
         filter.stopWatching();
         done();
       });
@@ -193,12 +235,211 @@ describe('Chess contract', function() {
         Chess.surrender(gameId, {from: player2, gas: 500000});
       }, Error);
     });
+
+    it('should have assigned ether pot to winning player', () => {
+      assert.equal(0, Chess.games(gameId)[7]);
+      assert.equal(2000000, Chess.games(gameId)[9]);
+    });
+  });
+
+  describe('moveFromState()', function () {
+    let gameId1;
+    beforeEach((done) => {
+      // runs before each test in this block
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+
+      // Watch for event from contract to check if it worked
+      var filter = Chess.GameInitialized({});
+      filter.watch((error, result) => {
+        gameId1 = result.args.gameId;
+        assert.isOk(result.args.gameId);
+        filter.stopWatching();
+        Chess.joinGame(gameId1, 'Bob', {from: player2, gas: 500000});
+        done();
+      });
+    });
+
+    it('should accept a valid move with valid signatures', function (done) {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard, gameId1);
+      let sigState = web3.eth.sign(player2, hashState);
+      // As player1 is the next player, this move should be valid
+      assert.doesNotThrow(function () {
+        // white pawn e7e6
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+
+      // Helper to wait for multiple async callbacks
+      let numberOfDone = 0;
+      const allDone = function() {
+        numberOfDone++;
+        if (numberOfDone >= 2) {
+          done();
+        }
+      };
+
+      // Watch for event from contract to check if the Move worked
+      var filter = Chess.Move({gameId: gameId1});
+      filter.watch(function(error, result){
+        assert.equal(player1, result.args.player);
+        assert.equal(100, result.args.fromIndex);
+        assert.equal(84, result.args.toIndex);
+        filter.stopWatching(); // Need to remove filter again
+        allDone();
+      });
+
+      // Watch for GameStateChanged event to check that all pieces and flags
+      // were updated
+      let expectedState = [...defaultBoard];
+      expectedState[100] = 0; // moved piece away
+      expectedState[84] = defaultBoard[100];
+      expectedState[56] = -1; // next player black
+      expectedState[8] = 1 >> 7; // updated move count
+      expectedState[9] = 1 % 128; // updated move count
+      var filter2 = Chess.GameStateChanged({gameId: gameId1});
+      filter2.watch(function (error, result) {
+        assert.deepEqual(gameStateDisplay(expectedState), gameStateDisplay(result.args.state));
+        filter2.stopWatching(); // Need to remove filter again
+        allDone();
+      });
+    });
+
+    it('should throw an exception for message from non-participant', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard, gameId1);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player3, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw an exception when it is not the turn of the message sender', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard, gameId1);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player2, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when state is not signed by opponent', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard, gameId1);
+      let sigState = web3.eth.sign(player3, hashState); // SIGNED BY PLAYER 3 INSTEAD OF PLAYER 2
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when signed state and state in call do not match 1/2', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let differentBoard = [...defaultBoard]; // CHANGE BOARD
+      differentBoard[5] = 0;
+      differentBoard[6] = 0;
+      let hashState = solSha3(...defaultBoard, gameId1); // HASH OF DEFAULTBOARD
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, differentBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when signed state and state in call do not match 2/2', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let differentBoard = [...defaultBoard]; // CHANGE BOARD
+      differentBoard[5] = 0;
+      differentBoard[6] = 0;
+      let hashState = solSha3(...differentBoard, gameId1); // HASH OF DIFFERENTBOARD
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when game already ended', function () {
+      Chess.surrender(gameId1, {from: player1, gas: 500000});
+      assert.isTrue(Chess.isGameEnded(gameId1));
+      let fromIndex = 100;
+      let toIndex = 84;
+      let hashState = solSha3(...defaultBoard, gameId1);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw an exception when a move is invalid', function () {
+      let fromIndex = 96;
+      let toIndex = 96;
+      let hashState = solSha3(...defaultBoard, gameId1);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      // Test some invalid moves, but from correct player
+      assert.throws(function () {
+        // white pawn a7a7
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+
+      fromIndex = 112;
+      toIndex = 96;
+      assert.throws(function () {
+        // white rook a8a7
+        Chess.moveFromState(gameId1, defaultBoard, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should throw when moveCount of new state is lower than old state', function () {
+      let fromIndex = 100;
+      let toIndex = 84;
+      let boardHigh = [...defaultBoard]; // BOARD WITH MOVE COUNT = 0
+      // boardHigh[8] = 33;
+      let hashState = solSha3(...boardHigh, gameId1);
+      let sigState = web3.eth.sign(player2, hashState);
+
+      // First set State with moveCount = 0;
+      assert.doesNotThrow(function () {
+        Chess.moveFromState(gameId1, boardHigh, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+      // moveCount of board in BC now 1
+
+      // Now set State with moveCount = 0 again;
+      let boardLow = [...defaultBoard]; // BOARD WITH LOWER MOVE COUNT
+      // boardLow[8] = 3;
+      hashState = solSha3(...boardLow, gameId1);
+      sigState = web3.eth.sign(player2, hashState);
+
+      assert.throws(function () {
+        Chess.moveFromState(gameId1, boardLow, fromIndex, toIndex,
+                            sigState, {from: player1, gas: 2000000});
+      }, Error);
+    });
   });
 
   describe('closePlayerGame()', function () {
     let gameId, gameId2;
-    it('should initialize a game with 1 player only', function(done) {
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+    it('should initialize a game with 1 player only', function (done) {
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       let filter = Chess.GameInitialized({});
@@ -238,6 +479,11 @@ describe('Chess contract', function() {
            currentGameId = Chess.gamesOfPlayers(player1, currentGameId)) {
         assert.notEqual(gameId, currentGameId);
       }
+    });
+
+    it('should have assigned ether pot back to player 1', () => {
+      assert.equal(0, Chess.games(gameId)[7]);
+      assert.equal(1000000, Chess.games(gameId)[8]);
     });
 
     // next test
@@ -327,7 +573,7 @@ describe('Chess contract', function() {
         Chess.closePlayerGame(gameId, {from: player1, gas: 100000});
       }, Error);
     });
-    it('should be able to close a open game', () => {
+    it('should be able to close an open game', () => {
       assert.doesNotThrow(() => {
         Chess.closePlayerGame(gameId2, {from: player1, gas: 100000});
       }, Error);
@@ -365,11 +611,11 @@ describe('Chess contract', function() {
     });
   });
 
-  describe('Endgame', () => {
+  describe.only('Endgame', () => {
     let gameId;
     beforeEach((done) => {
       // runs before each test in this block
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
@@ -377,15 +623,22 @@ describe('Chess contract', function() {
         gameId = result.args.gameId;
         assert.isOk(result.args.gameId);
         filter.stopWatching();
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000, value: 1000000});
         done();
       });
     });
 
     describe('claimWin()', () => {
-      it('should allow claimWin and send event', (done) => {
+      it('should allow claimwin and send event', (done) => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.move(gameId, 101, 69, {from: player1, gas: 500000});
+          Chess.move(gameId, 20, 52, {from: player2, gas: 500000});
+          Chess.move(gameId, 96, 64, {from: player1, gas: 500000});
+          Chess.move(gameId, 3, 71, {from: player2, gas: 500000});
+        });
+
+        assert.doesNotThrow(() => {
+          Chess.claimWin(gameId, {from: player2, gas: 2000000});
         });
 
         let filter = Chess.GameTimeoutStarted({});
@@ -400,35 +653,90 @@ describe('Chess contract', function() {
 
       it('should reject claimWin from current player', () => {
         assert.throws(() => {
-          Chess.claimWin(gameId, {from: player1, gas: 200000});
+          Chess.claimWin(gameId, {from: player1, gas: 2000000});
         });
       });
 
-      it('should allow move after claimWin and reject claimTimeout afterwards', () => {
+      it('should reject claimWin directly after claimTimeout', () => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.move(gameId, 101, 69, {from: player1, gas: 500000});
+          Chess.move(gameId, 20, 52, {from: player2, gas: 500000});
+          Chess.move(gameId, 96, 64, {from: player1, gas: 500000});
+          Chess.move(gameId, 3, 71, {from: player2, gas: 500000});
+        });
+        assert.doesNotThrow(() => {
+          Chess.claimWin(gameId, {from: player2, gas: 2000000});
+        });
+        assert.throws(() => {
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
+        });
+      });
+
+      it('should reject claimTimeoutEnded from P1 after claimTimeout from P2', () => {
+        assert.doesNotThrow(() => {
+          Chess.move(gameId, 101, 69, {from: player1, gas: 2000000});
+          Chess.move(gameId, 20, 52, {from: player2, gas: 2000000});
+          Chess.move(gameId, 96, 64, {from: player1, gas: 2000000});
+          Chess.move(gameId, 3, 71, {from: player2, gas: 2000000});
+        });
+        assert.doesNotThrow(() => {
+          Chess.claimWin(gameId, {from: player2, gas: 2000000});
+        });
+        assert.throws(() => {
+          Chess.claimTimeoutEnded(gameId, {from: player1, gas: 200000});
+        });
+      });
+    });
+
+    describe('claimTimeout()', () => {
+      it('should allow claimTimeout and send event', (done) => {
+        assert.doesNotThrow(() => {
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+        });
+
+        let filter = Chess.GameTimeoutStarted({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.isAbove(new Date().getTime() / 1000, result.args.timeoutStarted);
+          assert.equal(2, result.args.timeoutState.toNumber());
+          filter.stopWatching();
+          done();
+        });
+      });
+
+      it('should reject claimTimeout from current player', () => {
+        assert.throws(() => {
+          Chess.claimTimeout(gameId, {from: player1, gas: 200000});
+        });
+      });
+
+      it('should allow move after claimTimeout and reject claimTimeoutEnded afterwards', () => {
+        assert.doesNotThrow(() => {
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+        });
+        assert.doesNotThrow(() => {
           Chess.move(gameId, 100, 68, {from: player1, gas: 500000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
         });
       });
 
-      it('should reject claimTimeout directly after claimWin', () => {
+      it('should reject claimTimeoutEnded directly after claimTimeout', () => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
         });
       });
 
-      it('should reject claimTimeout from P1 after claimWin from P2', () => {
+      it('should reject claimTimeoutEnded from P1 after claimTimeout from P2', () => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player1, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player1, gas: 200000});
         });
       });
     });
@@ -448,22 +756,31 @@ describe('Chess contract', function() {
         });
       });
 
-      it('should reject offerDraw from current player', () => {
-        assert.throws(() => {
+      it('should accept offerDraw from current player', (done) => {
+        assert.doesNotThrow(() => {
           Chess.offerDraw(gameId, {from: player1, gas: 200000});
         });
+
+        let filter = Chess.GameTimeoutStarted({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.isAbove(new Date().getTime() / 1000, result.args.timeoutStarted);
+          assert.equal(-2, result.args.timeoutState);
+          filter.stopWatching();
+          done();
+        });
       });
 
-      it('should reject claimTimeout directly after offerDraw', () => {
+      it('should reject claimTimeoutEnded directly after offerDraw', () => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
-        });
-        assert.throws(() => {
           Chess.claimTimeout(gameId, {from: player2, gas: 200000});
         });
+        assert.throws(() => {
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
+        });
       });
 
-      it('should reject claimTimeout from P1 after offerDraw from P2', () => {
+      it('should reject offerdraw from P1 but not from P2', () => {
         assert.doesNotThrow(() => {
           Chess.offerDraw(gameId, {from: player2, gas: 200000});
         });
@@ -473,28 +790,80 @@ describe('Chess contract', function() {
       });
     });
 
-    describe('claimTimeout()', () => {
-      it('should reject claimTimeout only', () => {
+    describe('claimTimeoutEnded()', () => {
+      it('should reject claimTimeoutEnded only', () => {
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player1, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player1, gas: 200000});
         });
         assert.throws(() => {
-          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeoutEnded(gameId, {from: player2, gas: 200000});
         });
       });
     });
 
     describe('confirmGameEnded()', () => {
-      it('should allow confirmGameEnded after claimWin', (done) => {
+      it('should allow confirmGameEnded after claimWin, update state and ELO scores', (done) => {
         assert.doesNotThrow(() => {
-          Chess.claimWin(gameId, {from: player2, gas: 200000});
+          Chess.claimTimeout(gameId, {from: player2, gas: 200000});
+        });
+        assert.doesNotThrow(() => {
           Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
+        });
+
+        let plan = new Plan(3, () => {
+          done();
         });
 
         let filter = Chess.GameEnded({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
-          assert.equal(player2, result.args.winner);
+          assert.equal(player2, Chess.games(result.args.gameId)[5]);
+          filter.stopWatching();
+          done();
+        });
+
+        // EloScoreUpdate event P2
+        let filter2 = Chess.EloScoreUpdate({player: player2});
+        filter2.watch((error, result) => {
+          assert.equal(player2, result.args.player);
+          assert.equal(110, result.args.score.toNumber());
+          filter2.stopWatching();
+          plan.ok();
+        });
+
+        // EloScoreUpdate event P1
+        let filter3 = Chess.EloScoreUpdate({player: player1});
+        filter3.watch((error, result) => {
+          assert.equal(player1, result.args.player);
+          assert.equal(100, result.args.score.toNumber());
+          filter3.stopWatching();
+          plan.ok();
+        });
+      });
+
+      it('should assign ether pot to winning player after confirmGameEnded', (done) => {
+        assert.doesNotThrow(() => {
+          Chess.move(gameId, 101, 69, {from: player1, gas: 500000});
+          Chess.move(gameId, 20, 52, {from: player2, gas: 500000});
+          Chess.move(gameId, 96, 64, {from: player1, gas: 500000});
+          Chess.move(gameId, 3, 71, {from: player2, gas: 500000});
+        });
+        assert.doesNotThrow(() => {
+          Chess.claimWin(gameId, {from: player2, gas: 200000});
+        });
+        assert.doesNotThrow(() => {
+          Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
+        });
+
+        // GameEnded event
+        let filter = Chess.GameEnded({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.equal(player2, Chess.games(result.args.gameId)[5]);
+          // Pot is 0
+          assert.equal(0, Chess.games(result.args.gameId)[7]);
+          // Player 2 got pot
+          assert.equal(2000000, Chess.games(result.args.gameId)[9]);
           filter.stopWatching();
           done();
         });
@@ -509,7 +878,28 @@ describe('Chess contract', function() {
         let filter = Chess.GameEnded({});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
-          assert.equal(0, result.args.winner);
+          assert.equal(0, Chess.games(result.args.gameId)[5]);
+          filter.stopWatching();
+          done();
+        });
+      });
+
+      it('should split ether pot after confirmed draw', (done) => {
+        assert.doesNotThrow(() => {
+          Chess.offerDraw(gameId, {from: player2, gas: 200000});
+          Chess.confirmGameEnded(gameId, {from: player1, gas: 200000});
+        });
+
+        let filter = Chess.GameEnded({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.equal(0, Chess.games(result.args.gameId)[5]);
+          // Pot is 0
+          assert.equal(0, Chess.games(result.args.gameId)[7]);
+          // Player 1 and player 2 got 1M Wei each
+          assert.equal(1000000, Chess.games(result.args.gameId)[8]);
+          assert.equal(1000000, Chess.games(result.args.gameId)[9]);
+
           filter.stopWatching();
           done();
         });

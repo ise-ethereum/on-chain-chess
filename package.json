@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "bignumber.js": "^2.3.0",
-    "web3-shh-dropin-for-proxy": "github:ise-ethereum/web3-shh-dropin-for-proxy"
+    "web3-shh-dropin-for-proxy": "github:ise-ethereum/web3-shh-dropin-for-proxy",
+    "async": "^1.5.2"
   }
 }
