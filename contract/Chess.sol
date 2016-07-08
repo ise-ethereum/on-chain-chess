@@ -19,7 +19,7 @@ contract Chess is TurnBasedGame, Auth {
     using ELO for ELO.Scores;
     ELO.Scores eloScores;
 
-    event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint pot);
+    event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint turnTime, uint pot);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint pot);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
     event Move(bytes32 indexed gameId, address indexed player, uint256 fromIndex, uint256 toIndex);
@@ -48,7 +48,7 @@ contract Chess is TurnBasedGame, Auth {
         }
 
         // Sent notification events
-        GameInitialized(gameId, games[gameId].player1, player1Alias, gameStates[gameId].playerWhite, games[gameId].pot);
+        GameInitialized(gameId, games[gameId].player1, player1Alias, gameStates[gameId].playerWhite, games[gameId].turnTime, games[gameId].pot);
         GameStateChanged(gameId, gameStates[gameId].fields);
         return gameId;
     }

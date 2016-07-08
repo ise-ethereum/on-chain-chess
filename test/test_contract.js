@@ -74,7 +74,7 @@ describe('Chess contract', function() {
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
     it('should initialize a game with player1 playing white with 1M Wei', function (done) {
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
@@ -84,13 +84,14 @@ describe('Chess contract', function() {
         assert.equal('Alice', result.args.player1Alias);
         assert.equal(player1, result.args.player1);
         assert.equal(player1, result.args.playerWhite);
+        assert.equal(10, result.args.turnTime);
         filter.stopWatching(); // Need to remove filter again
         done();
       });
     });
 
     it('should broadcast the initial game state', function(done) {
-      Chess.initGame('Bob', true, {from: player1, gas: 2000000});
+      Chess.initGame('Bob', true, 10, {from: player1, gas: 2000000});
 
       var eventGamestate = Chess.GameStateChanged({});
       eventGamestate.watch(function(error, result){
@@ -102,7 +103,7 @@ describe('Chess contract', function() {
     });
 
     it('should initialize a game with player1 playing black', function (done) {
-      Chess.initGame('Susan', false, {from: player1, gas: 2000000});
+      Chess.initGame('Susan', false, 10, {from: player1, gas: 2000000});
 
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
@@ -195,7 +196,7 @@ describe('Chess contract', function() {
     // Setup a new game for this test
     let gameId;
     it('should initialize a new game and join both players', function(done) {
-      Chess.initGame('Bob', true, {from: player1, gas: 2000000, value: 1000000});
+      Chess.initGame('Bob', true, 10, {from: player1, gas: 2000000, value: 1000000});
       var filter = Chess.GameInitialized({});
       filter.watch(function(error, result){
         gameId = result.args.gameId;
@@ -246,7 +247,7 @@ describe('Chess contract', function() {
     let gameId1;
     beforeEach((done) => {
       // runs before each test in this block
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
 
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
@@ -439,7 +440,7 @@ describe('Chess contract', function() {
   describe('closePlayerGame()', function () {
     let gameId, gameId2;
     it('should initialize a game with 1 player only', function (done) {
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       let filter = Chess.GameInitialized({});
@@ -489,16 +490,16 @@ describe('Chess contract', function() {
     // next test
     it('should initialize 4 open games', () => {
       assert.doesNotThrow(() => {
-        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
-        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
-        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
-        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+        Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
+        Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
+        Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
+        Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
       });
     });
 
 
     it('should initialize 1 open game (gameId2)', (done) => {
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
       let filter = Chess.GameInitialized({});
       filter.watch(function (error, result) {
         gameId2 = result.args.gameId;
@@ -511,7 +512,7 @@ describe('Chess contract', function() {
     // TODO smarter way to start 4 games with 2 players ?
     it('should initialize game 1/4 with 2 players', (done) => {
       // create game 1
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
       let filter = Chess.GameInitialized({});
       filter.watch(function (error, result) {
         let myGame = result.args.gameId;
@@ -523,7 +524,7 @@ describe('Chess contract', function() {
     });
     it('should initialize game 2/4 with 2 players', (done) => {
       // create game 2
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
       let filter = Chess.GameInitialized({});
       filter.watch(function (error, result) {
         let myGame = result.args.gameId;
@@ -535,7 +536,7 @@ describe('Chess contract', function() {
     });
     it('should initialize game 3/4 with 2 players', (done) => {
       // create game 3 (will be closed later)
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
       let filter = Chess.GameInitialized({});
       filter.watch(function (error, result) {
         gameId = result.args.gameId;
@@ -547,7 +548,7 @@ describe('Chess contract', function() {
     });
     it('should initialize game 4/4 with 2 players', (done) => {
       // create game 4
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
       let filter = Chess.GameInitialized({});
       filter.watch(function (error, result) {
         let myGame = result.args.gameId;
@@ -615,7 +616,7 @@ describe('Chess contract', function() {
     let gameId;
     beforeEach((done) => {
       // runs before each test in this block
-      Chess.initGame('Alice', true, {from: player1, gas: 2000000, value: 1000000});
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000, value: 1000000});
 
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
@@ -1051,7 +1052,7 @@ describe('Chess contract', function() {
       let gameId;
       beforeEach((done) => {
         // runs before each test in this block
-        Chess.initGame('Alice', true, {from: player1, gas: 2000000});
+        Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
 
         // Watch for event from contract to check if it worked
         var filter = Chess.GameInitialized({});
