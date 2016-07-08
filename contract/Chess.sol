@@ -280,7 +280,7 @@ contract Chess is TurnBasedGame, Auth {
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
             throw;
-        if (game.timeoutState == 0 || game.timeoutSate == 2)
+        if (game.timeoutState == 0 || game.timeoutState == 2)
             throw;
         if (now < game.timeoutStarted + 10 minutes)
             throw;
