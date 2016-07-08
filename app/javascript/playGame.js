@@ -604,7 +604,17 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
     let initGameOffChain = function(game) {
       // init chess.js and chessboard.js
-      chess = new Chess();
+
+      // set current fen
+      let currentFen;
+      try {
+        let gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+        currentFen = generateFen(gameState);
+      } catch (e) {
+        console.log(e);
+      }
+
+      chess = new Chess(currentFen);
       board = new Chessboard('my-board', {
           position: chess.fen(),
           eventHandlers: {
