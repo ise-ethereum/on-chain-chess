@@ -160,7 +160,6 @@ contract Chess is TurnBasedGame, Auth {
         // We get the king position of that player
         uint256 kingIndex = uint256(gameStates[gameId].getOwnKing(otherPlayerColor));
 
-
         // if he is not in check, the request is illegal
         if (!gameStates[gameId].checkForCheck(kingIndex, otherPlayerColor)){
             throw;
