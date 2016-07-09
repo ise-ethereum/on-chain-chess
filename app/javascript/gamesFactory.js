@@ -154,8 +154,6 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
     game.ended = contractGameObject.ended;
     game.pot = web3.fromWei(contractGameObject.pot, 'ether').toDigits().toString();
 
-    console.log(game);
-
     return game;
   };
 
