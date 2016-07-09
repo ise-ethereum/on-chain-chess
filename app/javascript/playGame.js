@@ -352,11 +352,10 @@ module.controller('PlayGameCtrl',
         // define next player
         if (userColor === chess.turn()) {
           nextPlayer = game.self.username;
-
-          //chess.enableUserInput(false);
+          status = 'It\'s your turn.';
         } else {
           nextPlayer = game.opponent.username;
-          //chess.enableUserInput(true);
+          status = 'It\'s ' + nextPlayer + '\'s turn.';
         }
 
         /*
@@ -398,19 +397,13 @@ module.controller('PlayGameCtrl',
           }
         }
 
-        // game is still on
-        else {
-          status = 'Next player is ' + nextPlayer + '.';
-
-          // plaver in check?
-          if (chess.in_check() === true) { // jshint ignore:line
-            status = 'CHECK! ' + status;
-          }
+        // plaver in check?
+        else if (chess.in_check() === true) { // jshint ignore:line
+          status =  'CHECK! ' + status;
         }
       }
       updateGameInfo(status);
     }
-
 
     function pieceMoveOffChain(move) {
       let game = $scope.getGame();
