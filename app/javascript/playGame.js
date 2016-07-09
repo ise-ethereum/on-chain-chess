@@ -75,7 +75,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           activeColor = fenComponents[1],
           castling =  fenComponents[2],
           enPassant =  fenComponents[3],
-          halfMoveClock = fenComponents[4],
+          halfMoveClock = fenComponents[4], // jshint ignore:line
           fullMoveCounter = fenComponents[5];
 
       // set board to 0x88
@@ -163,7 +163,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
     function generateFen(state) {
       let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
 
-      for (var i=0; i < state.length; i++) {
+      for (var i = 0; i < state.length; i++) {
 
         // field is empty
         if (state[i].isZero()) {
@@ -180,7 +180,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           fen += toPiece[state[i].toNumber()];
         }
 
-        skip ++;
+        skip++;
 
         // shadow board
         if (skip === 8) {
@@ -201,6 +201,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           skip = 0;
         }
       }
+    }
 
     function lightItUp () {
       var xWhite = 0, yWhite = 8;
