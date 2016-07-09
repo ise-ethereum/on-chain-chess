@@ -706,8 +706,8 @@ module.controller('PlayGameCtrl',
 module.directive('countdown', ['$interval', function($interval){
   return {
     scope: { 'to': '=countdown' },
-    template: "{{timeLeft}}",
-    link: function(scope, element, attrs){
+    template: '{{timeLeft}}',
+    link: function(scope){
       scope.timeLeft = '';
 
       function update() {
@@ -722,6 +722,7 @@ module.directive('countdown', ['$interval', function($interval){
         if (typeof scope.to === 'undefined' || !scope.to) {
           if (typeof interval !== 'undefined') {
             interval.cancel();
+            scope.timeLeft = '';
           }
           return;
         }

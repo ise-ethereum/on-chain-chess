@@ -423,8 +423,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
                   'last state and move to blockchain');
       // TODO
       // If opponent did not move, send my last move to blockchain
-    }, 600 * 1000);
-    game.currentTimeout = new Date(new Date().getTime() + 600 * 1000); // TODO use game settings
+    }, game.turnTime * 60 * 1000);
+    game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000); // TODO use game settings
     $rootScope.$apply();
   };
 
@@ -464,7 +464,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
           // TODO Send my last known state and move to the blockchain
         } else {*/
           game.lastReceivedHash = web3.sha3(m.payload);
-          game.currentTimeout = new Date(new Date().getTime() + 600 * 1000); // TODO use game settings
+          game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
           callback(m);
         /*}*/
       }
