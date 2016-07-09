@@ -390,11 +390,10 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
   /* Send move and resulting new state to second player */
   games.sendMove = function(game, fromIndex, toIndex) {
     let identity = game.self.accountId;
-    // TODO check that this really sends game state
-    let payload = [ 'MOVE', game.state, crypto.sign(identity, game.state),
-                   fromIndex, toIndex, crypto.sign(identity, [fromIndex, toIndex])
+    let payload = [ 'MOVE', game.state, crypto.sign(identity, game.gameId, game.state),
+                   fromIndex, toIndex, crypto.sign(identity, game.gameId, [fromIndex, toIndex])
                   ];
-    game.lastSentHash = web3.sha3(payload);
+    game.lastSentHash = crypto.solSha3(payload);
     shh.post({
       'from': identity,
       'to': game.opponent.accountId,
@@ -409,8 +408,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
     game.ackTimeout = setTimeout(() => {
       if (game.lastAckHash !== game.lastSentHash) {
         console.log('Opponent did not ACK, sending last state and move to blockchain');
-        // TODO
-        // If not ACKed, send my last move to blockchain
+        // TODO If not ACKed, send my last move to blockchain
+
       }
     }, 10000);
 
@@ -421,15 +420,16 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
     game.moveTimeout = setTimeout(() => {
       console.log('Opponent did not send move, sending' +
                   'last state and move to blockchain');
-      // TODO
-      // If opponent did not move, send my last move to blockchain
+      // TODO If opponent did not move, send my last state and move to blockchain
+
     }, game.turnTime * 60 * 1000);
-    game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000); // TODO use game settings
+    game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
     $rootScope.$apply();
   };
 
   /* Send acknowledgment of last received move */
   games.sendAck = function(game) {
+    console.log("Acknowledge reception of", game.lastReceivedHash);
     shh.post({
       'from': game.self.accountId,
       'to': game.opponent.accountId,
@@ -441,6 +441,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
   /* Receive move and resulting new state from opponent */
   /* callback({[state, stateSignature, fromIndex, toIndex, moveSignature], from}) */
   games.listenForMoves = function(game, callback) {
+    // Register is only needed for Fake-SHH. Remove this line for real Whisper
     shh.register(game.self.accountId);
 
     let moveEvents = shh.watch({
@@ -452,21 +453,21 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       if (m.payload[0] === 'ACK') {
         let hash = m.payload[1];
         game.lastAckHash = hash;
+        console.log("Received acknowledgment of", hash);
       }
       if (m.payload[0] === 'MOVE') {
-        // TODO: Remove jshint ignore line when this is implemented correctly
-        let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;  // jshint ignore:line
-        /*if (!crypto.verify(game.self.accountId, stateSignature, state) ||
-            !crypto.verify(game.self.accountId, moveSignature, [fromIndex, toIndex])) {
-          // Signature FAIL
-          console.log('Could not verify opponents move signature, sending last ' +
-                      'state and move to blockchain');
+        let [, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
+        if (!crypto.verify(game.opponent.accountId, game.gameId, stateSignature, state) ||
+            !crypto.verify(game.opponent.accountId, game.gameId, moveSignature, [fromIndex, toIndex])) {
+          console.log('Could not verify opponent\'s move signature, sending last ' +
+                      'valid state and move to blockchain');
           // TODO Send my last known state and move to the blockchain
-        } else {*/
-          game.lastReceivedHash = web3.sha3(m.payload);
+
+        } else {
+          game.lastReceivedHash = crypto.solSha3(m.payload);
           game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
           callback(m);
-        /*}*/
+        }
       }
     });
 

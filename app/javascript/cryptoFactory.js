@@ -38,15 +38,17 @@ angular.module('dappChess').factory('crypto', function () {
 
     return '0x' + web3.sha3(args, { encoding: 'hex' });
   }
+  crypto.solSha3 = solSha3;
 
   /**
    * Calculates the signature of the given data.
    * @param{string} account to be used for signing
-   * @param{object} data to be signed
+   * @param{string/number/array} data to be signed
    * @returns{string} the signature of the given data
    */
-  crypto.sign = function (account, gameId, data) {
-    let hash = solSha3(data, gameId);
+  crypto.sign = function (account, gameId, data=[]) {
+    if (!Array.isArray(data)) data = [data];
+    let hash = solSha3(...data, gameId);
     return web3.eth.sign(account, hash);
   };
 
@@ -54,11 +56,12 @@ angular.module('dappChess').factory('crypto', function () {
    * Verifies the signature of the given data.
    * @param{string} account of the signature
    * @param{string} signature of the data
-   * @param{object} data that was signed
+   * @param{string/number/array} data that was signed
    * @returns{boolean} true, iff the signature matches the account and data
      */
-  crypto.verify = function (account, gameId, signature, data) {
-    let msgHash = solSha3(data, gameId);
+  crypto.verify = function (account, gameId, signature, data=[]) {
+    if (!Array.isArray(data)) data = [data];
+    let msgHash = solSha3(...data, gameId);
     let r = signature.slice(0, 66);
     let s = '0x' + signature.slice(66, 130);
     let v = '0x' + signature.slice(130, 132);
@@ -78,16 +81,11 @@ angular.module('dappChess').factory('crypto', function () {
                           4,2,3,5,6,3,2,4,0,0,0,116,0,0,0,0];
 
     let text = 'My super text to be signed';
-    let object = { 'asd': 12, 32: '423' };
     let gameId = 0x529ae4d1feee4c1b4ae8194856bfec24ae7589bd2e31604d52a9019262b8d38e;
 
     let signature = crypto.sign(web3.eth.accounts[0], gameId, text);
     let valid = crypto.verify(web3.eth.accounts[0], gameId, signature, text);
     console.log('testing crypto.sign & crypo.verify: text \t\t\t==>', valid);
-
-    signature = crypto.sign(web3.eth.accounts[0], gameId, object);
-    valid = crypto.verify(web3.eth.accounts[0], gameId, signature, object);
-    console.log('testing crypto.sign & crypo.verify: object \t\t\t==>', valid);
 
     signature = crypto.sign(web3.eth.accounts[0], gameId, defaultBoard);
     valid = crypto.verify(web3.eth.accounts[0], gameId, signature, defaultBoard);
@@ -97,16 +95,12 @@ angular.module('dappChess').factory('crypto', function () {
     valid = Auth.verifySig(web3.eth.accounts[0], solSha3(text, gameId), signature);
     console.log('testing crypto.sign & Auth.verifySig: text \t\t\t==>', valid);
 
-    signature = crypto.sign(web3.eth.accounts[0], gameId, object);
-    valid = Auth.verifySig(web3.eth.accounts[0], solSha3(object, gameId), signature);
-    console.log('testing crypto.sign & Auth.verifySig: object \t\t==>', valid);
-
     signature = crypto.sign(web3.eth.accounts[0], gameId, defaultBoard);
-    valid = Auth.verifySig(web3.eth.accounts[0], solSha3(defaultBoard, gameId), signature);
+    valid = Auth.verifySig(web3.eth.accounts[0], solSha3(...defaultBoard, gameId), signature);
     console.log('testing crypto.sign & Auth.verifySig: defaultBoard \t==>', valid);
   };
 
-  // crypto.test();
+  //crypto.test();
 
   return crypto;
 });
