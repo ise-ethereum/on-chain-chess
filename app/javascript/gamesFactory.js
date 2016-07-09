@@ -386,7 +386,6 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
   /* Send move and resulting new state to second player */
   games.sendMove = function(game, fromIndex, toIndex) {
     let identity = game.self.accountId;
-    console.log('sign move with', identity);
     // TODO check that this really sends game state
     let payload = [ 'MOVE', game.state, crypto.sign(identity, game.state),
                    fromIndex, toIndex, crypto.sign(identity, [fromIndex, toIndex])
@@ -420,7 +419,9 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
                   'last state and move to blockchain');
       // TODO
       // If opponent did not move, send my last move to blockchain
-    }, 10 * 60000);
+    }, 600 * 1000);
+    game.currentTimeout = new Date(new Date().getTime() + 600 * 1000); // TODO use game settings
+    $rootScope.$apply();
   };
 
   /* Send acknowledgment of last received move */
@@ -459,6 +460,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
           // TODO Send my last known state and move to the blockchain
         } else {*/
           game.lastReceivedHash = web3.sha3(m.payload);
+          game.currentTimeout = new Date(new Date().getTime() + 600 * 1000); // TODO use game settings
           callback(m);
         /*}*/
       }

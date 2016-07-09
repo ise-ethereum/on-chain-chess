@@ -2,7 +2,8 @@
 import {Chess as SoliChess} from '../../contract/Chess.sol';
 
 var BigNumber = require('bignumber.js');
-angular.module('dappChess').controller('PlayGameCtrl',
+var module = angular.module('dappChess');
+module.controller('PlayGameCtrl',
   function (games, $route, navigation, $scope, $rootScope) {
     // init chess validation
     var chess, board, lastFrom, lastTo, chessMove;
@@ -424,8 +425,8 @@ angular.module('dappChess').controller('PlayGameCtrl',
       // offchain chess
       if (chessMove !== null) {
         games.sendMove(game, move.from, move.to);
-
         processChessMoveOffChain(chessMove);
+        $scope.$apply();
       } else {
         // ToDo Nothing happens?
       }
@@ -450,6 +451,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
           board.move(fromIndex+ '-' + toIndex);
           games.sendAck(game);
           processChessMoveOffChain(opponentChessMove);
+          $scope.$apply();
         } else {
           // ToDo: Move is not valid, send last state and move to blockchain
           console.log('Move is not valid, send last state and move to blockchain');
@@ -482,6 +484,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
       return false;
     };
+    $scope.game = $scope.getGame();
 
     $scope.surrender = function() {
       $rootScope.$broadcast('message', 'Submitting your surrender, please wait...',
@@ -699,3 +702,37 @@ angular.module('dappChess').controller('PlayGameCtrl',
     }
   }
 );
+
+module.directive('countdown', ['$interval', function($interval){
+  return {
+    scope: { 'to': '=countdown' },
+    template: "{{timeLeft}}",
+    link: function(scope, element, attrs){
+      scope.timeLeft = '';
+
+      function update() {
+        var diff = scope.to.getTime() - new Date().getTime();
+        var minutes = ('00' + Math.floor(diff/60000)).substr(-2);
+        var seconds = ('00' + Math.floor((diff%60000)/1000)).substr(-2);
+        scope.timeLeft = minutes + ':' + seconds + ' left';
+      }
+
+      var interval;
+      function init() {
+        if (typeof scope.to === 'undefined' || !scope.to) {
+          if (typeof interval !== 'undefined') {
+            interval.cancel();
+          }
+          return;
+        }
+        console.log("Initialized countdown to", scope.to);
+        interval = $interval(update, 1000);
+      }
+
+      scope.$watch('to', function() {
+          init();
+      });
+      init();
+    }
+  };
+}]);

@@ -15,7 +15,7 @@
 <div class="container" data-ng-show="!isOpenGame()">
   <div class="eight columns">
     <p data-ng-show="gameIsActive()">
-      You are in an ongoing chess game, the pot is at {{getGame().pot}}.
+      You are in an ongoing chess game, the pot is at {{game.pot}}.
     </p>
     <p data-ng-show="gameIsWon()">
       You have won this game.
@@ -62,7 +62,7 @@
     <button data-ng-click="closeGame()" data-ng-show="!gameIsActive()">Close</button>
     <button data-ng-click="claimEther()" data-ng-show="gameHasClaimableEther()">Claim ether</button>
     <div class="game-log">
-      <p>{{gameStatus}}</p>
+      <p>{{gameStatus}} <span countdown="game.currentTimeout"></span></p>
       <p>{{gamePgn}}</p>
     </div>
   </div>
