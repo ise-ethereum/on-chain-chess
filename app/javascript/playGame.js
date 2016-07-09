@@ -77,12 +77,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
           enPassant =  fenComponents[3],
           halfMoveClock = fenComponents[4],
           fullMoveCounter = fenComponents[5];
-      console.log('board: ', board);
-      console.log('Color: ',activeColor);
-      console.log('enPAssant: ',enPassant);
-      console.log('castling: ',castling);
-      console.log('halfMove: ',halfMoveClock);
-      console.log('fullmove: ',fullMoveCounter);
 
       // set board to 0x88
       let state = [];
@@ -124,8 +118,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       state[9] = new BigNumber(parseInt(halfMoveCounter % 128));
 
       // set king position
-      console.log('white king ', whiteKing);
-      console.log('black king ', blackKing);
       state[11] = new BigNumber(blackKing);
       state[123] = new BigNumber(whiteKing);
 
@@ -166,10 +158,49 @@ angular.module('dappChess').controller('PlayGameCtrl',
       let mapping = generateMapping();
       state[61] = new BigNumber(mapping.toBackend[enPassant]);
       state[77] = new BigNumber(mapping.toBackend[enPassant]);
-
-      console.log('STATE: ',state);
-
     }
+
+    function generateFen(state) {
+      let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
+
+      for (var i=0; i < state.length; i++) {
+
+        // field is empty
+        if (state[i].isZero()) {
+          zero += 1;
+        }
+        // field contains a piece
+        else {
+
+          // before concatinate piece to fen, check if zeros exist
+          if (zero > 0) {
+            fen += zero;
+            zero = 0;
+          }
+          fen += toPiece[state[i].toNumber()];
+        }
+
+        skip ++;
+
+        // shadow board
+        if (skip === 8) {
+
+          // concatinate rest to fen if exists
+          if (zero > 0) {
+            fen += zero;
+            zero = 0;
+          }
+
+          // concatinate '/'
+          if (i < 118) {
+            fen += '/';
+          }
+
+          // skip shadow board and reset skip
+          i += 8;
+          skip = 0;
+        }
+      }
 
     function lightItUp () {
       var xWhite = 0, yWhite = 8;
@@ -213,7 +244,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       if (err) {
         console.log('EVENTGAMETIMEOUTERROR: ', err);
       } else {
-        console.log(data);
         let game = $scope.getGame();
 
         /*
@@ -231,11 +261,13 @@ angular.module('dappChess').controller('PlayGameCtrl',
 
           // is checkmate for black
           if (chess.in_checkmate() && data.args.timeoutState === 1) {  // jshint ignore:line
-            console.log('Black win');
             try {
               SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
             } catch (e) {
-              console.log(e);
+              $rootScope.$broadcast('message',
+                'Could not confirm your game against ' + game.opponent.username + ' ended',
+                'error', 'playgame-' + game.gameId);
+              console.log('error while trying to confirm the game ended after checkmate', e);
             }
           }
           // is stalemate
@@ -243,7 +275,10 @@ angular.module('dappChess').controller('PlayGameCtrl',
             try {
               SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
             } catch (e) {
-              console.log(e);
+              $rootScope.$broadcast('message',
+                'Could not confirm your game against ' + game.opponent.username + ' ended',
+                'error', 'playgame-' + game.gameId);
+              console.log('error while trying to confirm the game ended after stalemate', e);
             }
           }
           // is draw
@@ -251,11 +286,16 @@ angular.module('dappChess').controller('PlayGameCtrl',
             try {
               SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
             } catch (e) {
-              console.log(e);
+              $rootScope.$broadcast('message',
+                'Could not confirm your game against ' + game.opponent.username + ' ended',
+                'error', 'playgame-' + game.gameId);
+              console.log('error while trying to confirm the game ended after draw', e);
             }
           } else {
             // hmmmmm...
           }
+
+          $rootScope.$apply();
         }
       }
     }
@@ -276,7 +316,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
     function processChessMoveOffChain(chessMove) {
 
       board.enableUserInput(!board.isUserInputEnabled());
-      console.log('Set Column color');
+
       let game = $scope.getGame();
       let highlights = lightItUp();
 
@@ -398,9 +438,6 @@ angular.module('dappChess').controller('PlayGameCtrl',
       games.listenForMoves(game, function(m) {
 
         let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload; // jshint ignore:line
-        console.log('proxy move event');
-        console.log(m);
-        console.log(toIndex);
 
         let opponentChessMove = chess.move({
           from: fromIndex,
@@ -449,11 +486,11 @@ angular.module('dappChess').controller('PlayGameCtrl',
       $rootScope.$broadcast('message', 'Submitting your surrender, please wait...',
         'loading', 'playgame');
       try {
-        //console.log('calling Chess.surrender(' + $scope.getGameId() + ')');
         SoliChess.surrender($scope.getGameId(), {from: $scope.getGame().self.accountId});
       }
       catch(e) {
-        $rootScope.$broadcast('message', 'Could not submit your surrender', 'loading', 'playgame');
+        $rootScope.$broadcast('message', 'Could not submit your surrender',
+          'error', 'playgame-' + $scope.getGameId());
       }
     };
 
@@ -611,7 +648,7 @@ angular.module('dappChess').controller('PlayGameCtrl',
         let gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
         currentFen = generateFen(gameState);
       } catch (e) {
-        console.log(e);
+        console.log('error while trying to init game', e);
       }
 
       chess = new Chess(currentFen);
