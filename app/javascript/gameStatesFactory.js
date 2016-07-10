@@ -7,6 +7,14 @@ angular.module('dappChess').factory('gameStates', function () {
     lastMoveNumber: {}
   };
 
+  gameStates.getMoveNumberFromState = function(state) {
+    // Deal with states sometimes containing BigNumbers
+    if(typeof(state[8]) === 'object') {
+      return state[8].toNumber() * 128 + state[9].toNumber();
+    }
+    return state[8] * 128 + state[9];
+  };
+
   gameStates.initializeGame = function(gameId) {
     if(typeof(gameStates.selfMoves[gameId]) === 'undefined') {
       gameStates.selfMoves[gameId] = [];
@@ -22,7 +30,7 @@ angular.module('dappChess').factory('gameStates', function () {
   gameStates.addSelfMove = function(gameId, moveFrom, moveTo, newState) {
     gameStates.initializeGame(gameId);
 
-    let moveNumber = newState[8].toNumber() * 128 + newState[9].toNumber();
+    let moveNumber = gameStates.getMoveNumberFromState(newState);
 
     // If we already stored this move, don't do anything
     if(gameStates.lastMoveNumber[gameId] === moveNumber) {
@@ -45,7 +53,7 @@ angular.module('dappChess').factory('gameStates', function () {
                                         moveSignature, newState, newStateSignature) {
     gameStates.initializeGame(gameId);
 
-    let moveNumber = newState[8].toNumber() * 128 + newState[9].toNumber();
+    let moveNumber = gameStates.getMoveNumberFromState(newState);
 
     // If we already stored this move, don't do anything
     if(gameStates.lastMoveNumber[gameId] === moveNumber) {
@@ -103,8 +111,7 @@ angular.module('dappChess').factory('gameStates', function () {
     }
 
     for(let currentMove of gameStates.selfMoves[gameId]) {
-      let currentMoveNumber = currentMove.newState[8].toNumber() * 128 +
-        currentMove.newState[9].toNumber();
+      let currentMoveNumber = gameStates.getMoveNumberFromState(currentMove);
 
       if(currentMoveNumber === moveNumber) {
         return currentMove;
@@ -148,8 +155,7 @@ angular.module('dappChess').factory('gameStates', function () {
         return true;
       }
 
-      let blockchainMoveNumber = blockchainState[8].toNumber() * 128 +
-        blockchainState[9].toNumber();
+      let blockchainMoveNumber = gameStates.getMoveNumberFromState(blockchainState);
 
       return blockchainMoveNumber > gameStates.lastMoveNumber[gameId];
     }
@@ -172,8 +178,7 @@ angular.module('dappChess').factory('gameStates', function () {
     }
 
     let lastSelfMove = gameStates.selfMoves[gameId][gameStates.selfMoves[gameId].length - 1];
-    let lastSelfMoveNumber = lastSelfMove.newState[8].toNumber() * 128 +
-      lastSelfMove.newState[9].toNumber();
+    let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove);
 
     if(lastSelfMoveNumber !== gameStates.lastMoveNumber[gameId]) {
       throw 'The self move was not the last move';
@@ -207,8 +212,7 @@ angular.module('dappChess').factory('gameStates', function () {
     }
 
     let lastSelfMove = gameStates.selfMoves[gameId][gameStates.selfMoves[gameId].length - 1];
-    let lastSelfMoveNumber = lastSelfMove.newState[8].toNumber() * 128 +
-      lastSelfMove.newState[9].toNumber();
+    let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove);
 
     if(lastSelfMoveNumber === gameStates.lastMoveNumber[gameId]) {
       return lastSelfMove.newState;
@@ -217,8 +221,7 @@ angular.module('dappChess').factory('gameStates', function () {
     let lastOpponentMove = gameStates.opponentMoves[gameId][
       gameStates.opponentMoves[gameId].length - 1
     ];
-    let lastOpponentMoveNumber = lastOpponentMove.newState[8].toNumber() * 128 +
-      lastOpponentMove.newState[9].toNumber();
+    let lastOpponentMoveNumber = gameStates.getMoveNumberFromState(lastOpponentMove);
 
     if(lastOpponentMoveNumber === gameStates.lastMoveNumber[gameId]) {
       return lastOpponentMove.newState;
