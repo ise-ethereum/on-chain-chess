@@ -37,11 +37,12 @@ angular.module('dappChess').factory('gameStates', function () {
       moveTo: moveTo,
       newState: newState
     });
-    gameStates.lastMoveNumber = moveNumber;
+    gameStates.lastMoveNumber[gameId] = moveNumber;
 
     gameStates.updateLocalStorage();
   };
-  gameStates.addOpponentMove = function(gameId, moveFrom, moveTo, moveSignature, newState, newStateSignature) {
+  gameStates.addOpponentMove = function(gameId, moveFrom, moveTo,
+                                        moveSignature, newState, newStateSignature) {
     gameStates.initializeGame(gameId);
 
     let moveNumber = newState[8].toNumber() * 128 + newState[9].toNumber();
@@ -61,7 +62,7 @@ angular.module('dappChess').factory('gameStates', function () {
       newState: newState,
       newStateSignature: newStateSignature
     });
-    gameStates.lastMoveNumber = moveNumber;
+    gameStates.lastMoveNumber[gameId] = moveNumber;
 
     gameStates.updateLocalStorage();
   };
@@ -195,9 +196,44 @@ angular.module('dappChess').factory('gameStates', function () {
       ];
   };
 
+  /**
+   * Get last state from local storage
+   * @param gameId
+   * @returns state | false if not in local storage
+     */
+  gameStates.getLastLocalState = function(gameId) {
+    if(typeof(gameStates.lastMoveNumber[gameId]) === 'undefined') {
+      return false;
+    }
+
+    let lastSelfMove = gameStates.selfMoves[gameId][gameStates.selfMoves[gameId].length - 1];
+    let lastSelfMoveNumber = lastSelfMove.newState[8].toNumber() * 128 +
+      lastSelfMove.newState[9].toNumber();
+
+    if(lastSelfMoveNumber === gameStates.lastMoveNumber[gameId]) {
+      return lastSelfMove.newState;
+    }
+
+    let lastOpponentMove = gameStates.opponentMoves[gameId][
+      gameStates.opponentMoves[gameId].length - 1
+    ];
+    let lastOpponentMoveNumber = lastOpponentMove.newState[8].toNumber() * 128 +
+      lastOpponentMove.newState[9].toNumber();
+
+    if(lastOpponentMoveNumber === gameStates.lastMoveNumber[gameId]) {
+      return lastOpponentMove.newState;
+    }
+
+    throw 'Could not find last move in self or opponent moves';
+  };
+
   gameStates.updateLocalStorage = function() {
-    window.localStorage.setItem('gameStates.selfMoves', angular.toJson(gameStates.selfMoves));
-    window.localStorage.setItem('gameStates.opponentMoves', angular.toJson(gameStates.opponentMoves));
+    window.localStorage.setItem('gameStates.selfMoves',
+      angular.toJson(gameStates.selfMoves));
+    window.localStorage.setItem('gameStates.opponentMoves',
+      angular.toJson(gameStates.opponentMoves));
+    window.localStorage.setItem('gameStates.lastMoveNumber',
+      angular.toJson(gameStates.lastMoveNumber));
   };
   gameStates.fetchFromLocalStorage = function() {
     if(typeof(window.localStorage.selfMoves) !== 'undefined') {
@@ -245,4 +281,6 @@ angular.module('dappChess').factory('gameStates', function () {
   };
 
   gameStates.fetchFromLocalStorage();
+
+  return gameStates;
 });
