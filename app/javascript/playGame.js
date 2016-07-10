@@ -472,7 +472,7 @@ module.controller('PlayGameCtrl',
 
       // offchain chess
       if (chessMove !== null) {
-        games.sendMove(game, move.from, move.to);
+        games.sendMove(game, move.from, move.to, generateState(chess.fen()));
         processChessMoveOffChain(chessMove);
         gameStates.addSelfMove(game.gameId, move.from, move.to, generateState(chess.fen()));
         $scope.$apply();

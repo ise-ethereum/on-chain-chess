@@ -386,10 +386,10 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
   };
 
   /* Send move and resulting new state to second player */
-  games.sendMove = function(game, fromIndex, toIndex) {
+  games.sendMove = function(game, fromIndex, toIndex, state) {
     let identity = game.self.accountId;
     // TODO check that this really sends game state
-    let payload = [ 'MOVE', game.state, crypto.sign(identity, game.state),
+    let payload = [ 'MOVE', state, crypto.sign(identity, state),
                    fromIndex, toIndex, crypto.sign(identity, [fromIndex, toIndex])
                   ];
     game.lastSentHash = web3.sha3(payload);
