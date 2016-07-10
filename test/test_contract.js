@@ -611,7 +611,7 @@ describe('Chess contract', function() {
     });
   });
 
-  describe('Endgame', () => {
+  describe.only('Endgame', () => {
     let gameId;
     beforeEach((done) => {
       // runs before each test in this block
@@ -698,7 +698,7 @@ describe('Chess contract', function() {
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
           assert.isAbove(new Date().getTime() / 1000, result.args.timeoutStarted);
-          assert.equal(1, result.args.timeoutState);
+          assert.equal(2, result.args.timeoutState.toNumber());
           filter.stopWatching();
           done();
         });
@@ -756,9 +756,18 @@ describe('Chess contract', function() {
         });
       });
 
-      it('should reject offerDraw from current player', () => {
-        assert.throws(() => {
+      it('should accept offerDraw from current player', (done) => {
+        assert.doesNotThrow(() => {
           Chess.offerDraw(gameId, {from: player1, gas: 200000});
+        });
+
+        let filter = Chess.GameTimeoutStarted({});
+        filter.watch((error, result) => {
+          assert.equal(gameId, result.args.gameId);
+          assert.isAbove(new Date().getTime() / 1000, result.args.timeoutStarted);
+          assert.equal(-2, result.args.timeoutState);
+          filter.stopWatching();
+          done();
         });
       });
 

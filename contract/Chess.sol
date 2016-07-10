@@ -155,19 +155,48 @@ contract Chess is TurnBasedGame, Auth {
         super.claimWin(gameId);
 
         // get the color of the player that wants to claim win
-        int8 otherPlayerColor = 0;
-        if (gameStates[gameId].playerWhite == msg.sender){
-            otherPlayerColor = -1;
-        } else {
-            otherPlayerColor = 1;
-        }
+        int8 otherPlayerColor = gameStates[gameId].playerWhite == msg.sender ? int8(-1) : int8(1);
 
         // We get the king position of that player
         uint256 kingIndex = uint256(gameStates[gameId].getOwnKing(otherPlayerColor));
+
         // if he is not in check, the request is illegal
         if (!gameStates[gameId].checkForCheck(kingIndex, otherPlayerColor)){
             throw;
         }
+    }
+
+    /*
+     * The sender (currently waiting player) claims that the other (turning)
+     * player timed out and has to provide a move, the other player could
+     * have done to prevent the timeout.
+     */
+    function claimTimeoutEndedWithMove(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {
+        var game = games[gameId];
+        // just the two players currently playing
+        if (msg.sender != game.player1 && msg.sender != game.player2)
+            throw;
+        if (now < game.timeoutStarted + 10 minutes)
+            throw;
+        if (msg.sender == game.nextPlayer)
+            throw;
+        if (game.timeoutState != 2)
+            throw;
+
+        // TODO we need other move function
+        // move is valid if it does not throw
+        move(gameId, fromIndex, toIndex);
+
+        game.ended = true;
+        game.winner = msg.sender;
+        if(msg.sender == game.player1) {
+            games[gameId].player1Winnings = games[gameId].pot;
+            games[gameId].pot = 0;
+        } else {
+            games[gameId].player2Winnings = games[gameId].pot;
+            games[gameId].pot = 0;
+        }
+        GameEnded(gameId);
     }
 
     /* The sender claims a previously started timeout. */
