@@ -48,8 +48,9 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       pot: array[7],
       player1WonEther: array[8],
       player2WonEther: array[9],
-      timeoutStarted: array[10],
-      timeoutState: array[11],
+      turnTime: array[10],
+      timeoutStarted: array[11],
+      timeoutState: array[12],
       playerWhite: playerWhite
     };
   };
@@ -74,15 +75,19 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
    *  },
    *  ended: <boolean>,
    *  pot: <number>,
+   *  turnTime: <number>,
    *  timeoutStarted: <date>,
    *  timeoutState: <{-2,-1,0,1,2}>
    * @param contractGameObject
    * @returns game
      */
-  games.convertGameToObject = function(contractGameObject) {
+  games.convertGameToObject = function (contractGameObject) {
     let game = {
       gameId: contractGameObject.gameId,
-      nextPlayer: contractGameObject.nextPlayer
+      nextPlayer: contractGameObject.nextPlayer,
+      turnTime: contractGameObject.turnTime.toNumber(),
+      ended: contractGameObject.ended,
+      pot: web3.fromWei(contractGameObject.pot, 'ether').toDigits().toString()
     };
 
     if (typeof contractGameObject.timeoutState !== 'undefined') {
@@ -145,8 +150,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       contractGameObject.winner !== '0x0000000000000000000000000000000000000000') {
       if (game.self.accountId === contractGameObject.winner) {
         game.winner = 'self';
-      }
-      else if (game.opponent.accountId === contractGameObject.winner) {
+      } else if (game.opponent.accountId === contractGameObject.winner) {
         game.winner = 'opponent';
       }
     }
@@ -419,8 +423,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
                   'last state and move to blockchain');
       // TODO
       // If opponent did not move, send my last move to blockchain
-    }, 600 * 1000);
-    game.currentTimeout = new Date(new Date().getTime() + 600 * 1000); // TODO use game settings
+    }, game.turnTime * 60 * 1000);
+    game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
     $rootScope.$apply();
   };
 
@@ -460,7 +464,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
           // TODO Send my last known state and move to the blockchain
         } else {*/
           game.lastReceivedHash = web3.sha3(m.payload);
-          game.currentTimeout = new Date(new Date().getTime() + 600 * 1000); // TODO use game settings
+          game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
           callback(m);
         /*}*/
       }

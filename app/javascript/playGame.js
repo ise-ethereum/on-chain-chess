@@ -352,11 +352,10 @@ module.controller('PlayGameCtrl',
         // define next player
         if (userColor === chess.turn()) {
           nextPlayer = game.self.username;
-
-          //chess.enableUserInput(false);
+          status = 'It\'s your turn.';
         } else {
           nextPlayer = game.opponent.username;
-          //chess.enableUserInput(true);
+          status = 'It\'s ' + nextPlayer + '\'s turn.';
         }
 
         /*
@@ -398,19 +397,13 @@ module.controller('PlayGameCtrl',
           }
         }
 
-        // game is still on
-        else {
-          status = 'Next player is ' + nextPlayer + '.';
-
-          // plaver in check?
-          if (chess.in_check() === true) { // jshint ignore:line
-            status = 'CHECK! ' + status;
-          }
+        // plaver in check?
+        else if (chess.in_check() === true) { // jshint ignore:line
+          status =  'CHECK! ' + status;
         }
       }
       updateGameInfo(status);
     }
-
 
     function pieceMoveOffChain(move) {
       let game = $scope.getGame();
@@ -706,8 +699,8 @@ module.controller('PlayGameCtrl',
 module.directive('countdown', ['$interval', function($interval){
   return {
     scope: { 'to': '=countdown' },
-    template: "{{timeLeft}}",
-    link: function(scope, element, attrs){
+    template: '{{timeLeft}}',
+    link: function(scope){
       scope.timeLeft = '';
 
       function update() {
@@ -722,10 +715,11 @@ module.directive('countdown', ['$interval', function($interval){
         if (typeof scope.to === 'undefined' || !scope.to) {
           if (typeof interval !== 'undefined') {
             interval.cancel();
+            scope.timeLeft = '';
           }
           return;
         }
-        console.log("Initialized countdown to", scope.to);
+        console.log('Initialized countdown to', scope.to);
         interval = $interval(update, 1000);
       }
 

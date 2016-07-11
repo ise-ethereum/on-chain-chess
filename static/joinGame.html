@@ -39,6 +39,7 @@
         <tr>
           <th>Opponent</th>
           <th>Color</th>
+          <th>Turntime (minutes)</th>
           <th>Bet (ether)</th>
           <th></th>
         </tr>
@@ -48,6 +49,7 @@
             data-ng-class="{selected: isSelectedGame(game)}">
           <td>{{game.self.username}}</td>
           <td>{{game.self.color}}</td>
+          <td>{{game.turnTime}}</td>
           <td>{{game.pot}}</td>
           <td><a href="#" data-ng-click="setSelectedGame($event, game)">Select</a></td>
         </tr><!-- | orderBy:predicate:reverse-->
