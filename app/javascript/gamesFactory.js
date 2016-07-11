@@ -188,18 +188,16 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
 
     game.state = gameStates.getLastBlockchainState(game);
 
-    let currentFen;
     try {
       let lastLocalState = gameStates.getLastLocalState(game);
-      if (lastLocalState) {
-        currentFen = generateFen(lastLocalState);
-      } else {
-        currentFen = generateFen(game.state);
+      if (gameStates.getMoveNumberFromState(lastLocalState) >
+          gameStates.getMoveNumberFromState(game.state)) {
+        game.state = lastLocalState;
+        console.log('Loading game from localstorage state');
       }
-      game.chess.load(currentFen);
     } catch (e) {
-      console.log('error while trying to load game state', e);
     }
+    game.chess.load(generateFen(game.state));
     if (game.self.color[0] === game.chess.turn()) {
       game.nextPlayer = game.self.accountId;
     } else {
@@ -410,7 +408,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         } catch (e) {
           console.log('claimTimeoutEnded error', e);
           $rootScope.$broadcast('message',
-            'Could not claime timeout',
+            'Could not claim timeout',
             'error', 'claimtimeoutended');
         }
       }
@@ -503,7 +501,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           console.log('Could not send state and move to blockchain', e);
         }
       }
-    }, 10000);
+    }, 3000);
 
     // Wait for next move
     if (typeof game.moveTimeout !== 'undefined') {

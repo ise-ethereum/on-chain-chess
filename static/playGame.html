@@ -62,7 +62,7 @@
     <button data-ng-click="closeGame()" data-ng-show="!gameIsActive()">Close</button>
     <button data-ng-click="claimEther()" data-ng-show="gameHasClaimableEther()">Claim ether</button>
     <div class="game-log">
-      <p>{{gameStatus}} <span countdown="game.currentTimeout"></span></p>
+      <p>{{gameStatus}} <span countdown="game.currentTimeout" data-ng-show="gameIsActive()"></span></p>
       <p>{{gamePgn}}</p>
     </div>
   </div>

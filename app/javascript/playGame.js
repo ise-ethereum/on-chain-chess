@@ -1,6 +1,6 @@
 /* global angular, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
-import {generateState} from './utils/fen-conversion.js';
+import {generateState, algebraicToIndex} from './utils/fen-conversion.js';
 
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
@@ -170,7 +170,7 @@ module.controller('PlayGameCtrl',
 
         games.sendMove(game, move.from, move.to);
         updateBoardState(game, chessMove);
-        gameStates.addSelfMove(game.gameId, move.from, move.to, game.state);
+        gameStates.addSelfMove(game.gameId, algebraicToIndex(move.from), algebraicToIndex(move.to), game.state);
         $scope.$apply();
       } else {
         // Invalid move
@@ -280,13 +280,14 @@ module.controller('PlayGameCtrl',
 
     $scope.gameCanClaimWin = function () {
       let game = $scope.getGame();
-      if (game) {
+      if (game && game.chess) {
         return game.timeoutState === 0 &&
           game.nextPlayer !== game.self.accountId &&
           typeof game.nextPlayer !== 'undefined' &&
           game.chess.in_check() && // jshint ignore:line
           !game.ended;
       }
+      return false;
     };
 
     $scope.gameCanOfferDraw = function () {

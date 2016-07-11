@@ -54,6 +54,16 @@ function generateMapping () {
   return {'toBackend': toBackend, 'toFrontend': toFrontend};
 }
 
+/**
+ * Convert Standard Algebraic Notation to 0x88 index
+ * @param string: SAN string (e.g. 'a3')
+ * @return number: Index in 0x88 board
+ */
+export function algebraicToIndex(string) {
+  let alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  return (8-parseInt(string[1]))*16 + alphabet.indexOf(string[0]);
+}
+
 export function generateState(fen) {
   let fenComponents = fen.split(' ');
   let board = fenComponents[0],
