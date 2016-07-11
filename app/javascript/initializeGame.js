@@ -4,6 +4,7 @@ angular.module('dappChess').controller('InitializeGameCtrl',
   function ($rootScope, $scope, accounts) {
     $scope.startcolor = 'white';
     $scope.username = null;
+    $scope.turntime = 10;
     $scope.etherbet = 0;
 
     $scope.accounts = accounts;
@@ -17,7 +18,7 @@ angular.module('dappChess').controller('InitializeGameCtrl',
             from: accounts.selectedAccount,
             value: web3.toWei($scope.etherbet / 2, 'ether')
           });
-        Chess.initGame($scope.username, $scope.startcolor === 'white',
+        Chess.initGame($scope.username, $scope.startcolor === 'white', $scope.turntime,
          {
            from: accounts.selectedAccount,
            value: web3.toWei($scope.etherbet / 2, 'ether')
