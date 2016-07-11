@@ -308,31 +308,10 @@ module.controller('PlayGameCtrl',
          */
         if ((chess.turn() === 'w' && game.self.color === 'white' && data.args.timeoutState !== 0) ||
           (chess.turn() === 'b' && game.self.color === 'black' && data.args.timeoutState !== 0)) {
-
-          // is checkmate for black
-          if (chess.in_checkmate() && data.args.timeoutState === 1) {  // jshint ignore:line
-            try {
-              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
-            } catch (e) {
-              $rootScope.$broadcast('message',
-                'Could not confirm your game against ' + game.opponent.username + ' ended',
-                'error', 'playgame-' + game.gameId);
-              console.log('error while trying to confirm the game ended after checkmate', e);
-            }
-          }
-          // is stalemate
-          else if (chess.in_stalemate() && data.args.timeoutState === -1) {  // jshint ignore:line
-            try {
-              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
-            } catch (e) {
-              $rootScope.$broadcast('message',
-                'Could not confirm your game against ' + game.opponent.username + ' ended',
-                'error', 'playgame-' + game.gameId);
-              console.log('error while trying to confirm the game ended after stalemate', e);
-            }
-          }
-          // is draw
-          else if (chess.in_draw() && data.args.timeoutState === -1) {  // jshint ignore:line
+          if (
+              ([1, 2].indexOf(data.args.timeoutState) !== -1 && chess.in_checkmate()) || // jshint ignore:line
+              (data.args.timeoutState === -1 && (chess.in_stalemate() || chess.in_draw())) // jshint ignore:line
+            ) {
             try {
               SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
             } catch (e) {
@@ -341,11 +320,32 @@ module.controller('PlayGameCtrl',
                 'error', 'playgame-' + game.gameId);
               console.log('error while trying to confirm the game ended after draw', e);
             }
-          } else {
-            // hmmmmm...
+          } else { // no valid endgame
+            try {
+              games.sendLastStateOrMoveToBlockchain(game);
+            } catch (e) {
+              $rootScope.$broadcast('message',
+                'Could not send move to blockchain to decline endgame',
+                'error', 'playgame-' + game.gameId);
+              console.log('Could not send move to blockchain to decline endgame', e);
+            }
           }
 
           $rootScope.$apply();
+        } else if (data.args.timeoutState === -2 &&
+          (chess.in_stalemate() || chess.in_draw()) && ( // jshint ignore:line
+            (chess.turn() === 'w' && game.self.color === 'black') ||
+            (chess.turn() === 'b' && game.self.color === 'white')
+          )
+        ) { // opponent (currently turning player) offers draw
+          try {
+            SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
+          } catch (e) {
+            $rootScope.$broadcast('message',
+              'Could not confirm your game against ' + game.opponent.username + ' ended',
+              'error', 'playgame-' + game.gameId);
+            console.log('error while trying to confirm the game ended after draw', e);
+          }
         }
       }
     }
