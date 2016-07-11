@@ -166,11 +166,10 @@ angular.module('dappChess').factory('gameStates', function () {
 
   /**
    * Get an array with all parameters needed to send them to the blockchain.
-   * Throws if the last move was not done by oneself.
    * @param gameId
-   * @return [oldOpponentState, oldOpponentStateSignature, moveSelfFrom, moveSelfTo]
+   * @return [opponentState, opponentStateSignature, moveSelfFrom, moveSelfTo]
      */
-  gameStates.getSelfMovePackage = function(gameId) {
+  gameStates.getLastMovePackage = function(gameId) {
     if(typeof(gameStates.selfMoves[gameId]) === 'undefined') {
       throw 'This game has no moves yet';
     }
@@ -178,7 +177,6 @@ angular.module('dappChess').factory('gameStates', function () {
       throw 'This game has no self moves yet';
     }
 
-    // gameStates.selfMoves[gameId][gameStates.selfMoves[gameId].length - 1];
     let lastSelfMove = gameStates.getLastSelfMove(gameId);
     let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
 
@@ -190,9 +188,16 @@ angular.module('dappChess').factory('gameStates', function () {
     let opponentMove = gameStates.getLastOpponentMove(gameId);
     let opponentMoveNumber = gameStates.getMoveNumberFromState(opponentMove.newState);
 
+    // We have to fetch the opponent move that was the last move before our own move
+    // If the opponents move was the last move, we need to check for the previous
+    // move that *should* be the move before our last move
     if (opponentMoveNumber + 1 !== lastSelfMoveNumber) {
+      // Fetch the previous opponents move
       opponentMove = gameStates.getPreviousOpponentMove(gameId);
       opponentMoveNumber = gameStates.getMoveNumberFromState(opponentMove.newState);
+
+      // If this is not the move previous to our move, there was an error
+      // Thus: *Something* has to fetch the last move from the blockchain
       if (opponentMoveNumber + 1 !== lastSelfMoveNumber) {
         throw 'No move package found for last self move.';
       }
@@ -216,8 +221,7 @@ angular.module('dappChess').factory('gameStates', function () {
       return false;
     }
 
-    if (gameStates.selfMoves[game.gameId] !== 'undefined' &&
-        gameStates.selfMoves[game.gameId].length > 0) {
+    if (gameStates.selfMoves[game.gameId].length > 0) {
       let lastSelfMove = gameStates.getLastSelfMove(game.gameId);
       let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
 
@@ -226,8 +230,7 @@ angular.module('dappChess').factory('gameStates', function () {
       }
     }
 
-    if (gameStates.opponentMoves[game.gameId] !== 'undefined' &&
-        gameStates.opponentMoves[game.gameId].length > 0) {
+    if (gameStates.opponentMoves[game.gameId].length > 0) {
       let lastOpponentMove = gameStates.getLastOpponentMove(game.gameId);
       let lastOpponentMoveNumber = gameStates.getMoveNumberFromState(lastOpponentMove.newState);
 
