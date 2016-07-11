@@ -165,7 +165,7 @@ module.controller('PlayGameCtrl',
 
       for (var i = 0; i < state.length; i++) {
         // field is empty
-        if (state[i].isZero()) {
+        if (state[i] === 0) {
           zero += 1;
         }
         // field contains a piece
@@ -231,6 +231,7 @@ module.controller('PlayGameCtrl',
 
       // set En passant
       if (state[61] > 0 || state[77] > 0) {
+        let position = generateMapping();
         if (state[61] > 0) {
           fen += ' ' + position.toFrontend[state[61]];
         }
@@ -483,9 +484,8 @@ module.controller('PlayGameCtrl',
       let game = $scope.getGame();
       games.listenForMoves(game, function(m) {
 
-        let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload; // jshint ignore:line
-
-        console.log(m.payload);
+        // let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
+        let [, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
 
         let opponentChessMove = chess.move({
           from: fromIndex,
@@ -701,13 +701,12 @@ module.controller('PlayGameCtrl',
       let currentFen;
       try {
         // Try to init the game from local storage first
-        let lastLocalState = gameStates.getLastLocalState(game.gameId);
-
+        let lastLocalState = gameStates.getLastLocalState(game);
         if(lastLocalState) {
           currentFen = generateFen(lastLocalState);
         }
         else {
-          let gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
+          let gameState = gameStates.getLastBlockchainState(game);
           currentFen = generateFen(gameState);
         }
       } catch (e) {
@@ -785,7 +784,6 @@ module.directive('countdown', ['$interval', function($interval){
           }
           return;
         }
-        console.log('Initialized countdown to', scope.to);
         interval = $interval(update, 1000);
       }
 
