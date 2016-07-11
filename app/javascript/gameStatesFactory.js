@@ -115,6 +115,7 @@ angular.module('dappChess').factory('gameStates', function () {
         return currentMove;
       }
     }
+    throw 'Could not find moveNumber ' + moveNumber + ' for the game ' + gameId;
   };
 
   gameStates.getPreviousOpponentMove = function(gameId) {
@@ -127,6 +128,8 @@ angular.module('dappChess').factory('gameStates', function () {
     if(gameStates.opponentMoves[gameId].length < 2) {
       throw 'This game has no previous opponent move';
     }
+
+    return gameStates.opponentMoves[gameId][gameStates.opponentMoves[gameId].length - 2];
   };
   gameStates.getLastOpponentMove = function(gameId) {
     if(typeof(gameStates.opponentMoves[gameId]) === 'undefined') {
@@ -175,28 +178,32 @@ angular.module('dappChess').factory('gameStates', function () {
       throw 'This game has no self moves yet';
     }
 
-    let lastSelfMove = gameStates.selfMoves[gameId][gameStates.selfMoves[gameId].length - 1];
+    // gameStates.selfMoves[gameId][gameStates.selfMoves[gameId].length - 1];
+    let lastSelfMove = gameStates.getLastSelfMove(gameId);
     let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
 
-    if(lastSelfMoveNumber !== gameStates.lastMoveNumber[gameId]) {
-      throw 'The self move was not the last move';
-    }
-
     // There was only one move, and it was the self move => this was our first move as white
-    if(gameStates.lastMoveNumber[gameId] === 1) {
+    if (gameStates.lastMoveNumber[gameId] === 1) {
       return [null, null, lastSelfMove.moveFrom, lastSelfMove.moveTo];
     }
 
-    let lastOpponentMove = gameStates.opponentMoves[gameId][
-      gameStates.opponentMoves[gameId].length - 1
-      ];
+    let opponentMove = gameStates.getLastOpponentMove(gameId);
+    let opponentMoveNumber = gameStates.getMoveNumberFromState(opponentMove.newState);
+
+    if (opponentMoveNumber + 1 !== lastSelfMoveNumber) {
+      opponentMove = gameStates.getPreviousOpponentMove(gameId);
+      opponentMoveNumber = gameStates.getMoveNumberFromState(opponentMove.newState);
+      if (opponentMoveNumber + 1 !== lastSelfMoveNumber) {
+        throw 'No move package found for last self move.';
+      }
+    }
 
     return [
-      lastOpponentMove.newState,
-      lastOpponentMove.newStateSignature,
+      opponentMove.newState,
+      opponentMove.newStateSignature,
       lastSelfMove.moveFrom,
       lastSelfMove.moveTo
-      ];
+    ];
   };
 
   /**
@@ -204,26 +211,29 @@ angular.module('dappChess').factory('gameStates', function () {
    * @param gameId
    * @returns state | false if not in local storage
      */
-  gameStates.getLastLocalState = function(game) {
-    if(typeof(gameStates.lastMoveNumber[game.gameId]) === 'undefined') {
+  gameStates.getLastLocalState = function (game) {
+    if (typeof gameStates.lastMoveNumber[game.gameId] === 'undefined') {
       return false;
     }
 
-    let lastSelfMove = gameStates.selfMoves[game.gameId][
-      gameStates.selfMoves[game.gameId].length - 1];
-    let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
+    if (gameStates.selfMoves[game.gameId] !== 'undefined' &&
+        gameStates.selfMoves[game.gameId].length > 0) {
+      let lastSelfMove = gameStates.getLastSelfMove(game.gameId);
+      let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
 
-    if(lastSelfMoveNumber === gameStates.lastMoveNumber[game.gameId]) {
-      return lastSelfMove.newState;
+      if (lastSelfMoveNumber === gameStates.lastMoveNumber[game.gameId]) {
+        return lastSelfMove.newState;
+      }
     }
 
-    let lastOpponentMove = gameStates.opponentMoves[game.gameId][
-      gameStates.opponentMoves[game.gameId].length - 1
-    ];
-    let lastOpponentMoveNumber = gameStates.getMoveNumberFromState(lastOpponentMove.newState);
+    if (gameStates.opponentMoves[game.gameId] !== 'undefined' &&
+        gameStates.opponentMoves[game.gameId].length > 0) {
+      let lastOpponentMove = gameStates.getLastOpponentMove(game.gameId);
+      let lastOpponentMoveNumber = gameStates.getMoveNumberFromState(lastOpponentMove.newState);
 
-    if(lastOpponentMoveNumber === gameStates.lastMoveNumber[game.gameId]) {
-      return lastOpponentMove.newState;
+      if (lastOpponentMoveNumber === gameStates.lastMoveNumber[game.gameId]) {
+        return lastOpponentMove.newState;
+      }
     }
 
     throw 'Could not find last move in self or opponent moves';
@@ -235,7 +245,6 @@ angular.module('dappChess').factory('gameStates', function () {
 
     blockchainGameState = blockchainGameState.map(function(element) {
       if(typeof(element) === 'object' && typeof(element.toNumber) === 'function') {
-        if(element.toNumber() === null) console.log('null: ', element);
         return element.toNumber();
       }
 
