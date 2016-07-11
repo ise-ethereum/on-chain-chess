@@ -454,12 +454,12 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           } catch (e) {
             console.error('Could not claimTimeoutEndedWithMove', e);
           }
-        }, game.turnTime * 60 * 1000);
+        }, game.turnTime/2 * 60 * 1000 + 10000); // half game time plus 10 seconds extra
         game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
       } catch (e) {
         console.log('Could not send state and move to blockchain', e);
       }
-    }, game.turnTime * 60 * 1000);
+    }, game.turnTime/2 * 60 * 1000); // half game time
     game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
     $rootScope.$apply();
   };
