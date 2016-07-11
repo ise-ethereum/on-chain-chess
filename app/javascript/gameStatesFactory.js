@@ -79,6 +79,8 @@ angular.module('dappChess').factory('gameStates', function () {
     delete gameStates.selfMoves[gameId];
     delete gameStates.opponentMoves[gameId];
     delete gameStates.lastMoveNumber[gameId];
+
+    gameStates.updateLocalStorage();
   };
 
   gameStates.getSelfMoves = function(gameId) {
