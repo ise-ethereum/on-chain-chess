@@ -3,7 +3,7 @@ import {Chess as SoliChess} from '../../contract/Chess.sol';
 
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
-  function (games, $route, navigation, $scope, $rootScope) {
+  function (games, gameStates, $route, navigation, $scope, $rootScope) {
     // init chess validation
     var chess, board, lastFrom, lastTo, chessMove;
     // var highlight, currentFen, gamestate
@@ -31,7 +31,6 @@ module.controller('PlayGameCtrl',
       }
 
       return {'toBackend':toBackend, 'toFrontend': toFrontend};
-
     }
 
     function generatePieceMapping(){
@@ -68,8 +67,7 @@ module.controller('PlayGameCtrl',
       };
     }
 
-    // Not used now, but will be used by gameStatesFactory later
-    function generateState(fen) { // jshint ignore:line
+    function generateState(fen) {
       let fenComponents = fen.split(' ');
       let board = fenComponents[0],
           activeColor = fenComponents[1],
@@ -166,9 +164,8 @@ module.controller('PlayGameCtrl',
       let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
 
       for (var i = 0; i < state.length; i++) {
-
         // field is empty
-        if (state[i].isZero()) {
+        if (state[i] === 0) {
           zero += 1;
         }
         // field contains a piece
@@ -179,7 +176,7 @@ module.controller('PlayGameCtrl',
             fen += zero;
             zero = 0;
           }
-          fen += toPiece[state[i].toNumber()];
+          fen += toPiece[state[i]];
         }
 
         skip++;
@@ -203,6 +200,56 @@ module.controller('PlayGameCtrl',
           skip = 0;
         }
       }
+
+      // set current player
+      if (state[56] === 1) {
+        // white
+        fen += ' w ';
+      } else {
+        // black
+        fen += ' b ';
+      }
+
+      // set Rochade
+      if (state[79] === 0 || state[78] === 0 ||
+        state[62] === 0 || state[63] === 0) {
+        if (state[79] === 0) {
+          fen += 'K';
+        }
+        if (state[78] === 0) {
+          fen += 'Q';
+        }
+        if (state[62] === 0) {
+          fen += 'k';
+        }
+        if (state[63] === 0) {
+          fen += 'q';
+        }
+      } else {
+        fen += '-';
+      }
+
+      // set En passant
+      if (state[61] > 0 || state[77] > 0) {
+        let position = generateMapping();
+        if (state[61] > 0) {
+          fen += ' ' + position.toFrontend[state[61]];
+        }
+        if (state[77] > 0) {
+          fen += ' ' + position.toFrontend[state[77]];
+        }
+      } else {
+        fen += ' -';
+      }
+
+      // set halfmove clock
+      fen += ' 0 ';
+
+      // set fullmove number
+      let halfMoveCounter = 128 * state[8] + state[9];
+      fen += Math.ceil((halfMoveCounter + 1) / 2);
+
+      return fen;
     }
 
     function lightItUp () {
@@ -423,6 +470,7 @@ module.controller('PlayGameCtrl',
         game.state = generateState(fen);
         games.sendMove(game, move.from, move.to);
         processChessMoveOffChain(chessMove);
+        gameStates.addSelfMove(game.gameId, move.from, move.to, generateState(chess.fen()));
         $scope.$apply();
       } else {
         // Invalid move
@@ -436,7 +484,8 @@ module.controller('PlayGameCtrl',
       let game = $scope.getGame();
       games.listenForMoves(game, function(m) {
 
-        let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload; // jshint ignore:line
+        // let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
+        let [, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
 
         let opponentChessMove = chess.move({
           from: fromIndex,
@@ -449,6 +498,10 @@ module.controller('PlayGameCtrl',
           game.state = state;
           games.sendAck(game);
           processChessMoveOffChain(opponentChessMove);
+          gameStates.addOpponentMove(
+            game.gameId, fromIndex, toIndex, moveSignature,
+            state, stateSignature
+          );
           $scope.$apply();
         } else {
           // ToDo: Move is not valid, send last state and move to blockchain
@@ -647,8 +700,15 @@ module.controller('PlayGameCtrl',
       // set current fen
       let currentFen;
       try {
-        let gameState = SoliChess.getCurrentGameState(game.gameId, {from: game.self.accountId});
-        currentFen = generateFen(gameState);
+        // Try to init the game from local storage first
+        let lastLocalState = gameStates.getLastLocalState(game);
+        if(lastLocalState) {
+          currentFen = generateFen(lastLocalState);
+        }
+        else {
+          let gameState = gameStates.getLastBlockchainState(game);
+          currentFen = generateFen(gameState);
+        }
       } catch (e) {
         console.log('error while trying to init game', e);
       }
@@ -724,7 +784,6 @@ module.directive('countdown', ['$interval', function($interval){
           }
           return;
         }
-        console.log('Initialized countdown to', scope.to);
         interval = $interval(update, 1000);
       }
 

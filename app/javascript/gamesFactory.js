@@ -4,7 +4,7 @@ var shhFactory = require('web3-shh-dropin-for-proxy');
 var proxyUri = 'http://localhost:8090';
 var shhTopic = 'ise-ethereum-chess';
 
-angular.module('dappChess').factory('games', function (crypto, navigation,
+angular.module('dappChess').factory('games', function (crypto, navigation, gameStates,
                                                        accounts, $rootScope, $route) {
   const games = {
     list: [],
@@ -26,6 +26,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
         break;
       }
     }
+
+    gameStates.delete(gameId);
   };
 
   /**
@@ -150,7 +152,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       contractGameObject.winner !== '0x0000000000000000000000000000000000000000') {
       if (game.self.accountId === contractGameObject.winner) {
         game.winner = 'self';
-      } else if (game.opponent.accountId === contractGameObject.winner) {
+      }
+      else if (game.opponent.accountId === contractGameObject.winner) {
         game.winner = 'opponent';
       }
     }
