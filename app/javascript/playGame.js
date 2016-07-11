@@ -1,7 +1,6 @@
 /* global angular, Chess, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
 
-var BigNumber = require('bignumber.js');
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
   function (games, $route, navigation, $scope, $rootScope) {
@@ -724,7 +723,7 @@ module.directive('countdown', ['$interval', function($interval){
           }
           return;
         }
-        console.log("Initialized countdown to", scope.to);
+        console.log('Initialized countdown to', scope.to);
         interval = $interval(update, 1000);
       }
 

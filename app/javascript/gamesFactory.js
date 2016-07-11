@@ -429,7 +429,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
 
   /* Send acknowledgment of last received move */
   games.sendAck = function(game) {
-    console.log("Acknowledge reception of", game.lastReceivedHash);
+    console.log('Acknowledge reception of', game.lastReceivedHash);
     shh.post({
       'from': game.self.accountId,
       'to': game.opponent.accountId,
@@ -453,12 +453,13 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       if (m.payload[0] === 'ACK') {
         let hash = m.payload[1];
         game.lastAckHash = hash;
-        console.log("Received acknowledgment of", hash);
+        console.log('Received acknowledgment of', hash);
       }
       if (m.payload[0] === 'MOVE') {
         let [, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
         if (!crypto.verify(game.opponent.accountId, game.gameId, stateSignature, state) ||
-            !crypto.verify(game.opponent.accountId, game.gameId, moveSignature, [fromIndex, toIndex])) {
+            !crypto.verify(game.opponent.accountId, game.gameId, moveSignature,
+              [fromIndex, toIndex])) {
           console.log('Could not verify opponent\'s move signature, sending last ' +
                       'valid state and move to blockchain');
           // TODO Send my last known state and move to the blockchain
