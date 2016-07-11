@@ -474,6 +474,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
       'topic': [shhTopic, game.gameId],
       'payload': payload
     });
+    console.log("Sent move no", game.state[8] * 128 + game.state[9], 'from', fromIndex, 'to', toIndex);
 
     // Wait for ACK
     if (typeof game.ackTimeout !== 'undefined') {

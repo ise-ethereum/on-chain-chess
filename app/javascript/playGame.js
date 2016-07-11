@@ -384,17 +384,23 @@ module.controller('PlayGameCtrl',
     };
 
     $scope.game = $scope.getGame();
-    games.viewingGame.id = $scope.game.gameId;
 
+    // Show current move number
+    $scope.halfMoveNumber = gameStates.getLastMoveNumber($scope.game) + 1;
+    $scope.$watch('gameStates.lastMoveNumber', function() {
+      $scope.halfMoveNumber = gameStates.getLastMoveNumber($scope.game) + 1;
+    });
+
+    // Keep track of currently viewing game
+    games.viewingGame.id = $scope.game.gameId;
     $scope.$on('$destroy', function(){
         games.viewingGame.id = 0;
     });
 
-    //--- init Chessboard ---
+    // Initialize chessboard
     if (!$scope.isOpenGame()) {
       if ($scope.game) {
         $timeout(() => {
-          console.log("init chessboard");
           initChessboard($scope.game);
           updateBoardState($scope.game);
           $scope.$watch('game.lastMove', function(checkMove) {
@@ -404,7 +410,7 @@ module.controller('PlayGameCtrl',
       } else {
         navigation.goto(navigation.welcomePage);
         $rootScope.$broadcast('message', 'No game with the specified id exists',
-          'error', 'playgame');
+                              'error', 'playgame');
       }
     }
   }

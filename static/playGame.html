@@ -15,7 +15,7 @@
 <div class="container" data-ng-show="!isOpenGame()">
   <div class="eight columns">
     <p data-ng-show="gameIsActive()">
-      You are in an ongoing chess game, the pot is at {{game.pot}}.
+      You are in an ongoing chess game, the pot is at {{game.pot}}. Move no {{halfMoveNumber}}.
     </p>
     <p data-ng-show="gameIsWon()">
       You have won this game.

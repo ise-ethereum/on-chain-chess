@@ -270,6 +270,10 @@ angular.module('dappChess').factory('gameStates', function () {
     return gameStates.lastMoveTime[game.gameId];
   };
 
+  gameStates.getLastMoveNumber = function(game) {
+    return gameStates.lastMoveNumber[game.gameId];
+  };
+
   gameStates.updateLocalStorage = function() {
     window.localStorage.setItem('gameStates.selfMoves',
       angular.toJson(gameStates.selfMoves));
