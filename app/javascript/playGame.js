@@ -1,7 +1,6 @@
 /* global angular, Chess, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
 
-var BigNumber = require('bignumber.js');
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
   function (games, $route, navigation, $scope, $rootScope) {
@@ -53,18 +52,18 @@ module.controller('PlayGameCtrl',
         '6': 'K',
 
         // for fen to 0x88
-        'k': '-6',
-        'q': '-5',
-        'r': '-4',
-        'b': '-3',
-        'n': '-2',
-        'p': '-1',
-        'P': '1',
-        'N': '2',
-        'B': '3',
-        'R': '4',
-        'Q': '5',
-        'K': '6'
+        'k': -6,
+        'q': -5,
+        'r': -4,
+        'b': -3,
+        'n': -2,
+        'p': -1,
+        'P': 1,
+        'N': 2,
+        'B': 3,
+        'R': 4,
+        'Q': 5,
+        'K': 6
 
       };
     }
@@ -88,11 +87,11 @@ module.controller('PlayGameCtrl',
         if (isNaN(Number(board[i]))) {
           if (board[i] === '/') {
             for (let k = 0; k < 8; k++) {
-              state.push(new BigNumber(0));
+              state.push((0));
               counter++;
             }
           } else {
-            state.push(new BigNumber(toState[board[i]]));
+            state.push((toState[board[i]]));
             if (board[i] === 'K') {
               blackKing = counter;
             }
@@ -103,62 +102,64 @@ module.controller('PlayGameCtrl',
           }
         } else {
           for (let j = 0; j < Number(board[i]); j++) {
-            state.push(new BigNumber(0));
+            state.push((0));
             counter++;
           }
         }
       }
       // fill rest of shadow field
       for (let j = 0; j < 8; j++) {
-        state.push(new BigNumber(0));
+        state.push((0));
       }
 
       // fullmove
       let halfMoveCounter = 2 * fullMoveCounter + (activeColor === 'w' ? -2 : -1);
-      state[8] = new BigNumber(parseInt(halfMoveCounter / 128));
-      state[9] = new BigNumber(parseInt(halfMoveCounter % 128));
+      state[8] = (parseInt(halfMoveCounter / 128));
+      state[9] = (parseInt(halfMoveCounter % 128));
 
       // set king position
-      state[11] = new BigNumber(blackKing);
-      state[123] = new BigNumber(whiteKing);
+      state[11] = (blackKing);
+      state[123] = (whiteKing);
 
       // set color
       if (activeColor === 'w') {
-        state[56] = new BigNumber(1);
+        state[56] = (1);
       } else {
-        state[56] = new BigNumber(-1);
+        state[56] = (-1);
       }
 
       // init for castling
-      state[78] = new BigNumber(-1);
-      state[79] = new BigNumber(-1);
-      state[62] = new BigNumber(-1);
-      state[63] = new BigNumber(-1);
+      state[78] = (-1);
+      state[79] = (-1);
+      state[62] = (-1);
+      state[63] = (-1);
 
       // change state if castling is possible
       for (var k = 0; k < castling.length; k++) {
         // white right - kleine rochade für weiß
         if (castling[k] === 'K') {
-          state[79] = new BigNumber(0);
+          state[79] = 0;
         }
         // white left - große rochade für weiß
         else if (castling[k] === 'Q') {
-          state[78] = new BigNumber(0);
+          state[78] = 0;
         }
         // black right - kleine rochade für schwarz
         else if (castling[k] === 'k') {
-          state[63] = new BigNumber(0);
+          state[63] = 0;
         }
         // black left - große rochade für schwarz
         else if (castling[k] === 'q') {
-          state[62] = new BigNumber(0);
+          state[62] = 0;
         }
       }
 
       // set enpassant
       let mapping = generateMapping();
-      state[61] = new BigNumber(mapping.toBackend[enPassant]);
-      state[77] = new BigNumber(mapping.toBackend[enPassant]);
+      state[61] = mapping.toBackend[enPassant];
+      state[77] = mapping.toBackend[enPassant];
+
+      return state;
     }
 
     function generateFen(state) {
@@ -415,13 +416,16 @@ module.controller('PlayGameCtrl',
         promotion: 'q'
       });
 
-      // offchain chess
+      let fen = chess.fen();
+
       if (chessMove !== null) {
+        // Submit move off-chain
+        game.state = generateState(fen);
         games.sendMove(game, move.from, move.to);
         processChessMoveOffChain(chessMove);
         $scope.$apply();
       } else {
-        // ToDo Nothing happens?
+        // Invalid move
       }
 
       return chess.fen();
@@ -442,6 +446,7 @@ module.controller('PlayGameCtrl',
 
         if (opponentChessMove !== null) {
           board.move(fromIndex+ '-' + toIndex);
+          game.state = state;
           games.sendAck(game);
           processChessMoveOffChain(opponentChessMove);
           $scope.$apply();
