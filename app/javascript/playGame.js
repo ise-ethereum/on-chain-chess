@@ -1,13 +1,12 @@
-/* global angular, Chess, Chessboard, ChessUtils */
+/* global angular, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
-import {generateState, generateFen} from './utils/fen-conversion.js';
+import {generateState} from './utils/fen-conversion.js';
 
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
   function (games, gameStates, $route, navigation, $scope, $rootScope) {
     // init chess validation
-    var chess, board, lastFrom, lastTo, chessMove;
-    // var highlight, currentFen, gamestate
+    var board, lastFrom, lastTo, chessMove;
 
     $scope.gamePgn = '';
     $scope.gameStatus = '';
@@ -43,68 +42,9 @@ module.controller('PlayGameCtrl',
     // Update game information to user
     function updateGameInfo(status) {
       $scope.gameStatus = status;
-      $scope.gamePgn = chess.pgn();
-    }
-
-    function eventGameTimeoutStarted(err, data) {
-      console.log('eventTimeoutStarted ', err, data);
-      if (err) {
-        console.log('EVENTGAMETIMEOUTERROR: ', err);
-      } else {
-        let game = $scope.getGame();
-
-        /*
-         Situation:
-         - Black/White makes a move and sends offerDraw/claimWin. White/Black is in turn now.
-         - White/Black must verify the situation.
-         - Possible situation for white/black: checkmate, stalemate and draw
-         - Possible answer from blockchain:
-         - data.args.timeoutState === 1  -> checkmate
-         - data.args.timeoutState === 0  -> nothing
-         - data.args.timeoutState === -1 -> draw
-         */
-        if ((chess.turn() === 'w' && game.self.color === 'white' && data.args.timeoutState !== 0) ||
-          (chess.turn() === 'b' && game.self.color === 'black' && data.args.timeoutState !== 0)) {
-          if (
-              ([1, 2].indexOf(data.args.timeoutState) !== -1 && chess.in_checkmate()) || // jshint ignore:line
-              (data.args.timeoutState === -1 && (chess.in_stalemate() || chess.in_draw())) // jshint ignore:line
-            ) {
-            try {
-              SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
-            } catch (e) {
-              $rootScope.$broadcast('message',
-                'Could not confirm your game against ' + game.opponent.username + ' ended',
-                'error', 'playgame-' + game.gameId);
-              console.log('error while trying to confirm the game ended after draw', e);
-            }
-          } else { // no valid endgame
-            try {
-              games.sendLastStateOrMoveToBlockchain(game);
-            } catch (e) {
-              $rootScope.$broadcast('message',
-                'Could not send move to blockchain to decline endgame',
-                'error', 'playgame-' + game.gameId);
-              console.log('Could not send move to blockchain to decline endgame', e);
-            }
-          }
-
-          $rootScope.$apply();
-        } else if (data.args.timeoutState === -2 &&
-          (chess.in_stalemate() || chess.in_draw()) && ( // jshint ignore:line
-            (chess.turn() === 'w' && game.self.color === 'black') ||
-            (chess.turn() === 'b' && game.self.color === 'white')
-          )
-        ) { // opponent (currently turning player) offers draw
-          try {
-            SoliChess.confirmGameEnded(game.gameId, {from: game.self.accountId});
-          } catch (e) {
-            $rootScope.$broadcast('message',
-              'Could not confirm your game against ' + game.opponent.username + ' ended',
-              'error', 'playgame-' + game.gameId);
-            console.log('error while trying to confirm the game ended after draw', e);
-          }
-        }
-      }
+      $scope.gamePgn = $scope.game.chess.pgn();
+      // Clean up Setup line
+      $scope.gamePgn = $scope.gamePgn.replace(/\[SetUp "1"\]\n\[FEN "(.*?)"\]/, '$1');
     }
 
     // player clicked on chess piece
@@ -113,99 +53,101 @@ module.controller('PlayGameCtrl',
         movesNotation,
         movesPosition = [];
 
-      movesNotation = chess.moves({square: notationSquare, verbose: true});
+      movesNotation = $scope.game.chess.moves({square: notationSquare, verbose: true});
       for (i = 0; i < movesNotation.length; i++) {
         movesPosition.push(ChessUtils.convertNotationSquareToIndex(movesNotation[i].to));
       }
       return movesPosition;
     }
 
-    function processChessMoveOffChain(chessMove) {
 
-      board.enableUserInput(!board.isUserInputEnabled());
+    function updateBoardState(game, chessMove = null) {
+      let chess = game.chess;
 
-      let game = $scope.getGame();
-      let highlights = lightItUp();
+      if (chessMove) {
+        board.move(chessMove.from+ '-' + chessMove.to);
 
-      var fromW = highlights.playerWhite[chessMove.from];
-      var toW = highlights.playerWhite[chessMove.to];
-      var fromB = highlights.playerBlack[chessMove.from];
-      var toB = highlights.playerBlack[chessMove.to];
+        // Of we know which move it was, show it on board
+        let highlights = lightItUp();
+        var fromW = highlights.playerWhite[chessMove.from];
+        var toW = highlights.playerWhite[chessMove.to];
+        var fromB = highlights.playerBlack[chessMove.from];
+        var toB = highlights.playerBlack[chessMove.to];
 
-      if (lastFrom !== null){
-        $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
-        $('#my-board_chess_square_' + lastTo).removeClass('chess_square_moved');
+        if (lastFrom !== null){
+          $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
+          $('#my-board_chess_square_' + lastTo).removeClass('chess_square_moved');
+        }
+
+        if (game.self.color === 'white') {
+          $('#my-board_chess_square_' + fromW).addClass('chess_square_moved');
+          $('#my-board_chess_square_' + toW).addClass('chess_square_moved');
+          lastFrom = fromW;
+          lastTo = toW;
+
+        } else {
+          $('#my-board_chess_square_' + fromB).addClass('chess_square_moved');
+          $('#my-board_chess_square_' + toB).addClass('chess_square_moved');
+          lastFrom = fromB;
+          lastTo = toB;
+        }
       }
-
-      if (game.self.color === 'white') {
-        $('#my-board_chess_square_' + fromW).addClass('chess_square_moved');
-        $('#my-board_chess_square_' + toW).addClass('chess_square_moved');
-        lastFrom = fromW;
-        lastTo = toW;
-
-      } else {
-        $('#my-board_chess_square_' + fromB).addClass('chess_square_moved');
-        $('#my-board_chess_square_' + toB).addClass('chess_square_moved');
-        lastFrom = fromB;
-        lastTo = toB;
-      }
-
 
       let nextPlayer, status,
         userColor = (game.self.color === 'white') ? 'w' :  'b';
-      if (chessMove !== null) {
-        // define next player
-        if (userColor === chess.turn()) {
-          nextPlayer = game.self.username;
-          status = 'It\'s your turn.';
-        } else {
-          nextPlayer = game.opponent.username;
-          status = 'It\'s ' + nextPlayer + '\'s turn.';
+      // define next player
+      if (userColor === chess.turn()) {
+        nextPlayer = 'You';
+        status = 'It\'s your turn.';
+        board.enableUserInput(true);
+      } else {
+        nextPlayer = game.opponent.username;
+        status = 'It\'s ' + nextPlayer + '\'s turn.';
+        board.enableUserInput(false);
+      }
+
+      /*
+       Situation: - Black/White makes a move. White/Black is in turn now.
+       - Black/White checks checkmate, draw and stalemate conditions
+       - If one of these conditions is true Black/White informs blockchain
+       about the situation.
+       - Note: only the player before will inform blockchain
+       */
+      if (chess.in_checkmate() === true) { // jshint ignore:line
+        status = 'CHECKMATE! ' + nextPlayer + ' lost.';
+        if (chess.turn() === 'b' && game.self.color === 'white') {
+          games.claimWin(game);
+        }
+        if (chess.turn() === 'w' && game.self.color === 'black') {
+          games.claimWin(game);
         }
 
-        /*
-         Situation: - Black/White makes a move. White/Black is in turn now.
-         - Black/White checks checkmate, draw and stalemate conditions
-         - If one of these conditions is true Black/White informs blockchain
-         about the situation.
-         - Note: only the player before will inform blockchain
-         */
-        if (chess.in_checkmate() === true) { // jshint ignore:line
-          status = 'CHECKMATE! ' + nextPlayer + ' lost.';
-          if (chess.turn() === 'b' && game.self.color === 'white') {
-            games.claimWin(game);
-          }
-          if (chess.turn() === 'w' && game.self.color === 'black') {
-            games.claimWin(game);
-          }
+      }
+      // draw?
+      else if (chess.in_draw() === true) { // jshint ignore:line
+        status = 'DRAW!';
+        if (chess.turn() === 'b' && game.self.color === 'white') {
+          games.offerDraw(game);
+        }
+        if (chess.turn() === 'w' && game.self.color === 'black') {
+          games.offerDraw(game);
+        }
+      }
 
+      // stalemate?
+      else if (chess.in_stalemate() === true) { // jshint ignore:line
+        status = 'STALEMATE!';
+        if (chess.turn() === 'b' && game.self.color === 'white') {
+          games.offerDraw(game);
         }
-        // draw?
-        else if (chess.in_draw() === true) { // jshint ignore:line
-          status = 'DRAW!';
-          if (chess.turn() === 'b' && game.self.color === 'white') {
-            games.offerDraw(game);
-          }
-          if (chess.turn() === 'w' && game.self.color === 'black') {
-            games.offerDraw(game);
-          }
+        if (chess.turn() === 'w' && game.self.color === 'black') {
+          games.offerDraw(game);
         }
+      }
 
-        // stalemate?
-        else if (chess.in_stalemate() === true) { // jshint ignore:line
-          status = 'STALEMATE!';
-          if (chess.turn() === 'b' && game.self.color === 'white') {
-            games.offerDraw(game);
-          }
-          if (chess.turn() === 'w' && game.self.color === 'black') {
-            games.offerDraw(game);
-          }
-        }
-
-        // plaver in check?
-        else if (chess.in_check() === true) { // jshint ignore:line
-          status =  'CHECK! ' + status;
-        }
+      // plaver in check?
+      else if (chess.in_check() === true) { // jshint ignore:line
+        status = 'CHECK! ' + status;
       }
       updateGameInfo(status);
     }
@@ -214,62 +156,53 @@ module.controller('PlayGameCtrl',
       let game = $scope.getGame();
 
       // move piece from ... to
-      chessMove = chess.move({
+      chessMove = game.chess.move({
         from: move.from,
         to: move.to,
         promotion: 'q'
       });
 
-      let fen = chess.fen();
+      let fen = game.chess.fen();
 
       if (chessMove !== null) {
         // Submit move off-chain
         game.state = generateState(fen);
 
         games.sendMove(game, move.from, move.to);
-        processChessMoveOffChain(chessMove);
-        console.log("new state", game.state);
+        updateBoardState(game, chessMove);
         gameStates.addSelfMove(game.gameId, move.from, move.to, game.state);
         $scope.$apply();
       } else {
         // Invalid move
       }
 
-      return chess.fen();
+      return game.chess.fen();
     }
 
-    let listenForMoves = function() {
-
-      let game = $scope.getGame();
-      games.listenForMoves(game, function(m) {
-
-        // let [msgType, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
-        let [, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
-
-        let opponentChessMove = chess.move({
-          from: fromIndex,
-          to: toIndex,
-          promotion: 'q'
-        });
-
-        if (opponentChessMove !== null) {
-          board.move(fromIndex+ '-' + toIndex);
-          game.state = state;
-          games.sendAck(game);
-          processChessMoveOffChain(opponentChessMove);
-          gameStates.addOpponentMove(
-            game.gameId, fromIndex, toIndex, moveSignature,
-            state, stateSignature
-          );
-          $scope.$apply();
-        } else {
-          // ToDo: Move is not valid, send last state and move to blockchain
-          console.log('Move is not valid, send last state and move to blockchain');
+    function initChessboard(game) {
+      board = new Chessboard('my-board', {
+          position: game.chess.fen(),
+          eventHandlers: {
+            onPieceSelected: pieceSelected,
+            onMove: pieceMoveOffChain
+          }
         }
+      );
 
-      });
+      // set board orientation and disable black player to click
+      if (game.self.color === 'black') {
+        board.setOrientation(ChessUtils.ORIENTATION.black);
+      }
 
-    };
+      // Update game information
+      if (game.chess.turn() === game.self.color[0]) {
+        updateGameInfo('It\'s your turn.');
+        board.enableUserInput(true);
+      } else {
+        updateGameInfo('It\'s your opponent\'s turn.');
+        board.enableUserInput(false);
+      }
+    }
 
     $scope.getGameId = function() {
       return $route.current.params.id;
@@ -294,7 +227,6 @@ module.controller('PlayGameCtrl',
 
       return false;
     };
-    $scope.game = $scope.getGame();
 
     $scope.surrender = function() {
       $rootScope.$broadcast('message', 'Submitting your surrender, please wait...',
@@ -352,7 +284,7 @@ module.controller('PlayGameCtrl',
         return game.timeoutState === 0 &&
           game.nextPlayer !== game.self.accountId &&
           typeof game.nextPlayer !== 'undefined' &&
-          chess.in_check() && // jshint ignore:line
+          game.chess.in_check() && // jshint ignore:line
           !game.ended;
       }
     };
@@ -451,79 +383,20 @@ module.controller('PlayGameCtrl',
         'loading', 'playgame');
     };
 
-
-
-    let initGameOffChain = function(game) {
-      // init chess.js and chessboard.js
-
-      let currentFen;
-      try {
-        // Try to init the game from local storage first
-        let lastLocalState = gameStates.getLastLocalState(game);
-        if (lastLocalState) {
-          currentFen = generateFen(lastLocalState);
-        } else {
-          let gameState = gameStates.getLastBlockchainState(game);
-          currentFen = generateFen(gameState);
-        }
-      } catch (e) {
-        console.log('error while trying to load game state', e);
-      }
-
-      let lastMoveTime;
-      try {
-        // Try to find out time of last move
-        lastMoveTime = gameStates.getLastMoveTime(game);
-        if (!lastMoveTime) {
-          // TODO
-        }
-      } catch (e) {
-      }
-      console.log(lastMoveTime);
-      if (lastMoveTime) {
-        game.currentTimeout = new Date(lastMoveTime + game.turnTime * 60 * 1000);
-      }
-
-      console.log('Loading chessboard with fen:', currentFen);
-      chess = new Chess(currentFen);
-      console.log(chess.fen());
-      board = new Chessboard('my-board', {
-          position: chess.fen(),
-          eventHandlers: {
-            onPieceSelected: pieceSelected,
-            onMove: pieceMoveOffChain
-          }
-        }
-      );
-
-      // set board orientation and disable black player to click
-      if (game.self.color === 'black') {
-        board.setOrientation(ChessUtils.ORIENTATION.black);
-      }
-
-      // Update game information
-      if (chess.turn() === game.self.color[0]) {
-        updateGameInfo('It\'s your turn.');
-        board.enableUserInput(true);
-      } else {
-        updateGameInfo('It\'s your opponent\'s turn.');
-        board.enableUserInput(false);
-      }
-
-      SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
-    };
+    $scope.game = $scope.getGame();
+    games.viewingGame = $scope.game.gameId;
 
     //--- init Chessboard ---
     if (!$scope.isOpenGame()) {
-      let game = $scope.getGame();
-
-      if(game) {
+      if ($scope.game) {
         $(document).ready(function () {
-          listenForMoves();
-          initGameOffChain(game);
+          initChessboard($scope.game);
+          updateBoardState($scope.game);
         });
-      }
-      else {
+        $scope.$watch('game.lastMove', function(checkMove) {
+          updateBoardState($scope.game, checkMove);
+        });
+      } else {
         navigation.goto(navigation.welcomePage);
         $rootScope.$broadcast('message', 'No game with the specified id exists',
           'error', 'playgame');
