@@ -8,10 +8,6 @@ angular.module('dappChess').factory('gameStates', function () {
   };
 
   gameStates.getMoveNumberFromState = function(state) {
-    // Deal with states sometimes containing BigNumbers
-    if(typeof(state[8]) === 'object') {
-      return state[8].toNumber() * 128 + state[9].toNumber();
-    }
     return state[8] * 128 + state[9];
   };
 
@@ -111,7 +107,7 @@ angular.module('dappChess').factory('gameStates', function () {
     }
 
     for(let currentMove of gameStates.selfMoves[gameId]) {
-      let currentMoveNumber = gameStates.getMoveNumberFromState(currentMove);
+      let currentMoveNumber = gameStates.getMoveNumberFromState(currentMove.newState);
 
       if(currentMoveNumber === moveNumber) {
         return currentMove;
@@ -178,7 +174,7 @@ angular.module('dappChess').factory('gameStates', function () {
     }
 
     let lastSelfMove = gameStates.selfMoves[gameId][gameStates.selfMoves[gameId].length - 1];
-    let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove);
+    let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
 
     if(lastSelfMoveNumber !== gameStates.lastMoveNumber[gameId]) {
       throw 'The self move was not the last move';
@@ -206,28 +202,45 @@ angular.module('dappChess').factory('gameStates', function () {
    * @param gameId
    * @returns state | false if not in local storage
      */
-  gameStates.getLastLocalState = function(gameId) {
-    if(typeof(gameStates.lastMoveNumber[gameId]) === 'undefined') {
+  gameStates.getLastLocalState = function(game) {
+    if(typeof(gameStates.lastMoveNumber[game.gameId]) === 'undefined') {
       return false;
     }
 
-    let lastSelfMove = gameStates.selfMoves[gameId][gameStates.selfMoves[gameId].length - 1];
-    let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove);
+    let lastSelfMove = gameStates.selfMoves[game.gameId][
+      gameStates.selfMoves[game.gameId].length - 1];
+    let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
 
-    if(lastSelfMoveNumber === gameStates.lastMoveNumber[gameId]) {
+    if(lastSelfMoveNumber === gameStates.lastMoveNumber[game.gameId]) {
       return lastSelfMove.newState;
     }
 
-    let lastOpponentMove = gameStates.opponentMoves[gameId][
-      gameStates.opponentMoves[gameId].length - 1
+    let lastOpponentMove = gameStates.opponentMoves[game.gameId][
+      gameStates.opponentMoves[game.gameId].length - 1
     ];
-    let lastOpponentMoveNumber = gameStates.getMoveNumberFromState(lastOpponentMove);
+    let lastOpponentMoveNumber = gameStates.getMoveNumberFromState(lastOpponentMove.newState);
 
-    if(lastOpponentMoveNumber === gameStates.lastMoveNumber[gameId]) {
+    if(lastOpponentMoveNumber === gameStates.lastMoveNumber[game.gameId]) {
       return lastOpponentMove.newState;
     }
 
     throw 'Could not find last move in self or opponent moves';
+  };
+
+  gameStates.getLastBlockchainState = function(game) {
+    let blockchainGameState = Chess.getCurrentGameState(game.gameId,
+      {from: game.self.accountId});
+
+    blockchainGameState = blockchainGameState.map(function(element) {
+      if(typeof(element) === 'object' && typeof(element.toNumber) === 'function') {
+        if(element.toNumber() === null) console.log('null: ', element);
+        return element.toNumber();
+      }
+
+      return element;
+    });
+
+    return blockchainGameState;
   };
 
   gameStates.updateLocalStorage = function() {
@@ -239,9 +252,9 @@ angular.module('dappChess').factory('gameStates', function () {
       angular.toJson(gameStates.lastMoveNumber));
   };
   gameStates.fetchFromLocalStorage = function() {
-    if(typeof(window.localStorage.selfMoves) !== 'undefined') {
+    if(typeof(window.localStorage['gameStates.selfMoves']) !== 'undefined') {
       try {
-        let movesInLocalStorage = JSON.parse(window.localStorage.selfMoves);
+        let movesInLocalStorage = JSON.parse(window.localStorage['gameStates.selfMoves']);
         if(typeof(movesInLocalStorage) === 'object') {
           gameStates.selfMoves = movesInLocalStorage;
         }
@@ -253,9 +266,9 @@ angular.module('dappChess').factory('gameStates', function () {
         console.log('Could not parse selfMoves from local storage', e);
       }
     }
-    if(typeof(window.localStorage.opponentMoves) !== 'undefined') {
+    if(typeof(window.localStorage['gameStates.opponentMoves']) !== 'undefined') {
       try {
-        let movesInLocalStorage = JSON.parse(window.localStorage.opponentMoves);
+        let movesInLocalStorage = JSON.parse(window.localStorage['gameStates.opponentMoves']);
         if(typeof(movesInLocalStorage) === 'object') {
           gameStates.opponentMoves = movesInLocalStorage;
         }
@@ -267,10 +280,10 @@ angular.module('dappChess').factory('gameStates', function () {
         console.log('Could not parse opponentMoves from local storage', e);
       }
     }
-    if(typeof(window.localStorage.lastMoveNumber) !== 'undefined') {
+    if(typeof(window.localStorage['gameStates.lastMoveNumber']) !== 'undefined') {
       try {
-        let lastMoveNumber = JSON.parse(window.localStorage.lastMoveNumber);
-        if(typeof(movesInLocalStorage) === 'object') {
+        let lastMoveNumber = JSON.parse(window.localStorage['gameStates.lastMoveNumber']);
+        if(typeof(lastMoveNumber) === 'object') {
           gameStates.lastMoveNumber = lastMoveNumber;
         }
         else {
