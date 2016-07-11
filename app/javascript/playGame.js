@@ -719,7 +719,7 @@ module.directive('countdown', ['$interval', function($interval){
           }
           return;
         }
-        console.log("Initialized countdown to", scope.to);
+        console.log('Initialized countdown to', scope.to);
         interval = $interval(update, 1000);
       }
 

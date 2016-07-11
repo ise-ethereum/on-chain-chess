@@ -424,7 +424,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
       // TODO
       // If opponent did not move, send my last move to blockchain
     }, game.turnTime * 60 * 1000);
-    game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000); // TODO use game settings
+    game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
     $rootScope.$apply();
   };
 
