@@ -416,7 +416,7 @@ module.controller('PlayGameCtrl',
         promotion: 'q'
       });
 
-      var fen = chess.fen();
+      let fen = chess.fen();
 
       if (chessMove !== null) {
         // Submit move off-chain
@@ -446,6 +446,7 @@ module.controller('PlayGameCtrl',
 
         if (opponentChessMove !== null) {
           board.move(fromIndex+ '-' + toIndex);
+          game.state = state;
           games.sendAck(game);
           processChessMoveOffChain(opponentChessMove);
           $scope.$apply();
