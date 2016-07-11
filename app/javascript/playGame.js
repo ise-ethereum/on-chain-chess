@@ -4,7 +4,7 @@ import {generateState} from './utils/fen-conversion.js';
 
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
-  function (games, gameStates, $route, navigation, $scope, $rootScope) {
+  function (games, gameStates, $route, navigation, $scope, $rootScope, $timeout) {
     // init chess validation
     var board, lastFrom, lastTo, chessMove;
 
@@ -180,7 +180,7 @@ module.controller('PlayGameCtrl',
     }
 
     function initChessboard(game) {
-      board = new Chessboard('my-board', {
+      board = new Chessboard('board-' + game.gameId, {
           position: game.chess.fen(),
           eventHandlers: {
             onPieceSelected: pieceSelected,
@@ -211,7 +211,7 @@ module.controller('PlayGameCtrl',
     $scope.isOpenGame = function() {
       let gameId = $scope.getGameId();
 
-      if(gameId) {
+      if (gameId) {
         return checkOpenGame(gameId);
       }
 
@@ -384,17 +384,22 @@ module.controller('PlayGameCtrl',
     };
 
     $scope.game = $scope.getGame();
-    games.viewingGame = $scope.game.gameId;
+    games.viewingGame.id = $scope.game.gameId;
+
+    $scope.$on('$destroy', function(){
+        games.viewingGame.id = 0;
+    });
 
     //--- init Chessboard ---
     if (!$scope.isOpenGame()) {
       if ($scope.game) {
-        $(document).ready(function () {
+        $timeout(() => {
+          console.log("init chessboard");
           initChessboard($scope.game);
           updateBoardState($scope.game);
-        });
-        $scope.$watch('game.lastMove', function(checkMove) {
-          updateBoardState($scope.game, checkMove);
+          $scope.$watch('game.lastMove', function(checkMove) {
+            updateBoardState($scope.game, checkMove);
+          });
         });
       } else {
         navigation.goto(navigation.welcomePage);
@@ -414,9 +419,13 @@ module.directive('countdown', ['$interval', function($interval){
 
       function update() {
         var diff = scope.to.getTime() - new Date().getTime();
-        var minutes = ('00' + Math.floor(diff/60000)).substr(-2);
-        var seconds = ('00' + Math.floor((diff%60000)/1000)).substr(-2);
-        scope.timeLeft = minutes + ':' + seconds + ' left';
+        if (diff > 0) {
+          var minutes = ('00' + Math.floor(diff/60000)).substr(-2);
+          var seconds = ('00' + Math.floor((diff%60000)/1000)).substr(-2);
+          scope.timeLeft = minutes + ':' + seconds + ' left';
+        } else {
+          scope.timeLeft = 'Time\'s up!';
+        }
       }
 
       var interval;

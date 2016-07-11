@@ -60,6 +60,7 @@ angular.module('dappChess').config(function ($routeProvider, $provide) {
     .otherwise({redirectTo: '/' + pages.welcomePage});
 }).controller('NavigationCtrl', function (accounts, navigation, games, $scope) {
   $scope.games = games.list;
+  $scope.viewingGame = games.viewingGame;
 
   $scope.navigation = navigation;
 

@@ -15,7 +15,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
 
   let shh = shhFactory(proxyUri);
 
-  games.viewingGame = 0;
+  games.viewingGame = {id: 0};
 
   games.getGame = function (id) {
     return games.list.find(function (game) {
@@ -238,6 +238,12 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           game.gameId, fromIndex, toIndex, moveSignature,
           state, stateSignature
         );
+
+        if (game.gameId !== games.viewingGame.id) {
+          // Player is currently in another game
+          $rootScope.$broadcast('message', game.opponent.username + ' made a move!',
+                                'message', 'playgame');
+        }
       } else {
         // ToDo: Move is not valid, send last state and move to blockchain
         console.log('Move is not valid, send last state and move to blockchain');
