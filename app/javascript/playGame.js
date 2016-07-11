@@ -1,5 +1,6 @@
 /* global angular, Chess, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
+import {generateState, generateFen} from './utils/fen-conversion.js';
 
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
@@ -11,254 +12,12 @@ module.controller('PlayGameCtrl',
     $scope.gamePgn = '';
     $scope.gameStatus = '';
 
-    function generateMapping () {
-      let x = 0, y = 8;
-      let toBackend = {};
-      let toFrontend = {};
-      let alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-
-      for (let i = 0; i < 128; i++) {
-        toBackend[alphabet[x] + y] = i;
-        toFrontend[i] = alphabet[x] + y;
-
-        x++;
-        if (x === 8) {
-          x = 0;
-          y--;
-          i += 8;
-        }
-
-      }
-
-      return {'toBackend':toBackend, 'toFrontend': toFrontend};
-    }
-
-    function generatePieceMapping(){
-      return {
-
-        // for 0x88 to fen
-        '-6': 'k',
-        '-5': 'q',
-        '-4': 'r',
-        '-3': 'b',
-        '-2': 'n',
-        '-1': 'p',
-        '1': 'P',
-        '2': 'N',
-        '3': 'B',
-        '4': 'R',
-        '5': 'Q',
-        '6': 'K',
-
-        // for fen to 0x88
-        'k': -6,
-        'q': -5,
-        'r': -4,
-        'b': -3,
-        'n': -2,
-        'p': -1,
-        'P': 1,
-        'N': 2,
-        'B': 3,
-        'R': 4,
-        'Q': 5,
-        'K': 6
-
-      };
-    }
-
-    function generateState(fen) {
-      let fenComponents = fen.split(' ');
-      let board = fenComponents[0],
-          activeColor = fenComponents[1],
-          castling =  fenComponents[2],
-          enPassant =  fenComponents[3],
-          halfMoveClock = fenComponents[4], // jshint ignore:line
-          fullMoveCounter = fenComponents[5];
-
-      // set board to 0x88
-      let state = [];
-      let counter = 0;
-      let toState = generatePieceMapping();
-      let whiteKing, blackKing;
-      for (let i = 0; i < board.length; i++) {
-        if (isNaN(Number(board[i]))) {
-          if (board[i] === '/') {
-            for (let k = 0; k < 8; k++) {
-              state.push((0));
-              counter++;
-            }
-          } else {
-            state.push((toState[board[i]]));
-            if (board[i] === 'K') {
-              blackKing = counter;
-            }
-            if (board[i] === 'k') {
-              whiteKing = counter;
-            }
-            counter++;
-          }
-        } else {
-          for (let j = 0; j < Number(board[i]); j++) {
-            state.push((0));
-            counter++;
-          }
-        }
-      }
-      // fill rest of shadow field
-      for (let j = 0; j < 8; j++) {
-        state.push((0));
-      }
-
-      // fullmove
-      let halfMoveCounter = 2 * fullMoveCounter + (activeColor === 'w' ? -2 : -1);
-      state[8] = (parseInt(halfMoveCounter / 128));
-      state[9] = (parseInt(halfMoveCounter % 128));
-
-      // set king position
-      state[11] = (blackKing);
-      state[123] = (whiteKing);
-
-      // set color
-      if (activeColor === 'w') {
-        state[56] = (1);
-      } else {
-        state[56] = (-1);
-      }
-
-      // init for castling
-      state[78] = (-1);
-      state[79] = (-1);
-      state[62] = (-1);
-      state[63] = (-1);
-
-      // change state if castling is possible
-      for (var k = 0; k < castling.length; k++) {
-        // white right - kleine rochade für weiß
-        if (castling[k] === 'K') {
-          state[79] = 0;
-        }
-        // white left - große rochade für weiß
-        else if (castling[k] === 'Q') {
-          state[78] = 0;
-        }
-        // black right - kleine rochade für schwarz
-        else if (castling[k] === 'k') {
-          state[63] = 0;
-        }
-        // black left - große rochade für schwarz
-        else if (castling[k] === 'q') {
-          state[62] = 0;
-        }
-      }
-
-      // set enpassant
-      let mapping = generateMapping();
-      state[61] = mapping.toBackend[enPassant];
-      state[77] = mapping.toBackend[enPassant];
-
-      return state;
-    }
-
-    function generateFen(state) {
-      let skip = 0, fen = '', zero = 0, toPiece = generatePieceMapping();
-
-      for (var i = 0; i < state.length; i++) {
-        // field is empty
-        if (state[i] === 0) {
-          zero += 1;
-        }
-        // field contains a piece
-        else {
-
-          // before concatinate piece to fen, check if zeros exist
-          if (zero > 0) {
-            fen += zero;
-            zero = 0;
-          }
-          fen += toPiece[state[i]];
-        }
-
-        skip++;
-
-        // shadow board
-        if (skip === 8) {
-
-          // concatinate rest to fen if exists
-          if (zero > 0) {
-            fen += zero;
-            zero = 0;
-          }
-
-          // concatinate '/'
-          if (i < 118) {
-            fen += '/';
-          }
-
-          // skip shadow board and reset skip
-          i += 8;
-          skip = 0;
-        }
-      }
-
-      // set current player
-      if (state[56] === 1) {
-        // white
-        fen += ' w ';
-      } else {
-        // black
-        fen += ' b ';
-      }
-
-      // set Rochade
-      if (state[79] === 0 || state[78] === 0 ||
-        state[62] === 0 || state[63] === 0) {
-        if (state[79] === 0) {
-          fen += 'K';
-        }
-        if (state[78] === 0) {
-          fen += 'Q';
-        }
-        if (state[62] === 0) {
-          fen += 'k';
-        }
-        if (state[63] === 0) {
-          fen += 'q';
-        }
-      } else {
-        fen += '-';
-      }
-
-      // set En passant
-      if (state[61] > 0 || state[77] > 0) {
-        let position = generateMapping();
-        if (state[61] > 0) {
-          fen += ' ' + position.toFrontend[state[61]];
-        }
-        if (state[77] > 0) {
-          fen += ' ' + position.toFrontend[state[77]];
-        }
-      } else {
-        fen += ' -';
-      }
-
-      // set halfmove clock
-      fen += ' 0 ';
-
-      // set fullmove number
-      let halfMoveCounter = 128 * state[8] + state[9];
-      fen += Math.ceil((halfMoveCounter + 1) / 2);
-
-      return fen;
-    }
-
     function lightItUp () {
       var xWhite = 0, yWhite = 8;
       var xBlack=7, yBlack=1;
       var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
       var playerWhite = {};
       var playerBlack = {};
-
 
       for ( var i=0 ; i < 64; i++){
         playerWhite[alphabet[xWhite] + yWhite] = i;
@@ -274,7 +33,7 @@ module.controller('PlayGameCtrl',
         }
       }
 
-      return {'playerWhite':playerWhite, 'playerBlack':playerBlack};
+      return {'playerWhite': playerWhite, 'playerBlack': playerBlack};
     }
 
     function checkOpenGame(gameId) {
@@ -285,8 +44,6 @@ module.controller('PlayGameCtrl',
     function updateGameInfo(status) {
       $scope.gameStatus = status;
       $scope.gamePgn = chess.pgn();
-      //$scope.gamePgn = chess.pgn().replace(/\[.*?\]\s+/g, '');
-
     }
 
     function eventGameTimeoutStarted(err, data) {
@@ -468,9 +225,11 @@ module.controller('PlayGameCtrl',
       if (chessMove !== null) {
         // Submit move off-chain
         game.state = generateState(fen);
+
         games.sendMove(game, move.from, move.to);
         processChessMoveOffChain(chessMove);
-        gameStates.addSelfMove(game.gameId, move.from, move.to, generateState(chess.fen()));
+        console.log("new state", game.state);
+        gameStates.addSelfMove(game.gameId, move.from, move.to, game.state);
         $scope.$apply();
       } else {
         // Invalid move
@@ -697,23 +456,37 @@ module.controller('PlayGameCtrl',
     let initGameOffChain = function(game) {
       // init chess.js and chessboard.js
 
-      // set current fen
       let currentFen;
       try {
         // Try to init the game from local storage first
         let lastLocalState = gameStates.getLastLocalState(game);
-        if(lastLocalState) {
+        if (lastLocalState) {
           currentFen = generateFen(lastLocalState);
-        }
-        else {
+        } else {
           let gameState = gameStates.getLastBlockchainState(game);
           currentFen = generateFen(gameState);
         }
       } catch (e) {
-        console.log('error while trying to init game', e);
+        console.log('error while trying to load game state', e);
       }
 
+      let lastMoveTime;
+      try {
+        // Try to find out time of last move
+        lastMoveTime = gameStates.getLastMoveTime(game);
+        if (!lastMoveTime) {
+          // TODO
+        }
+      } catch (e) {
+      }
+      console.log(lastMoveTime);
+      if (lastMoveTime) {
+        game.currentTimeout = new Date(lastMoveTime + game.turnTime * 60 * 1000);
+      }
+
+      console.log('Loading chessboard with fen:', currentFen);
       chess = new Chess(currentFen);
+      console.log(chess.fen());
       board = new Chessboard('my-board', {
           position: chess.fen(),
           eventHandlers: {
@@ -726,18 +499,16 @@ module.controller('PlayGameCtrl',
       // set board orientation and disable black player to click
       if (game.self.color === 'black') {
         board.setOrientation(ChessUtils.ORIENTATION.black);
-        board.enableUserInput(false);
       }
 
       // Update game information
-      let gamer;
-      if (chess.turn() === 'w') {
-        gamer = 'white';
+      if (chess.turn() === game.self.color[0]) {
+        updateGameInfo('It\'s your turn.');
+        board.enableUserInput(true);
       } else {
-        gamer = 'black';
+        updateGameInfo('It\'s your opponent\'s turn.');
+        board.enableUserInput(false);
       }
-
-      updateGameInfo('Next player is ' + gamer + '.', false);
 
       SoliChess.GameTimeoutStarted(eventGameTimeoutStarted);
     };
