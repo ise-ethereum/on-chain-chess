@@ -180,9 +180,10 @@ angular.module('dappChess').factory('gameStates', function () {
     let lastSelfMove = gameStates.getLastSelfMove(gameId);
     let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
 
-    // There was only one move, and it was the self move => this was our first move as white
+    // There was only one move, and it was the self move
+    // => we do not have a state for this
     if (gameStates.lastMoveNumber[gameId] === 1) {
-      return [null, null, lastSelfMove.moveFrom, lastSelfMove.moveTo];
+      throw 'No move package found for last self move.';
     }
 
     let opponentMove = gameStates.getLastOpponentMove(gameId);

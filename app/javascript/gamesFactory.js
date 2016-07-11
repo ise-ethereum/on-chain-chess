@@ -411,10 +411,30 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     game.ackTimeout = setTimeout(() => {
       if (game.lastAckHash !== game.lastSentHash) {
         console.log('Opponent did not ACK, sending last state and move to blockchain');
-        // TODO If not ACKed, send my last move to blockchain
-
+        // If not ACKed, send my last move to blockchain
+        try {
+          let [state, stateSignature, fromIndex, toIndex] = gameStates.getLastMovePackage(game.gameId);
+          try {
+            Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature);
+          } catch (e) {
+            console.log('Sending last state and move to blockchain failed', e);
+          }
+        } catch (e) {
+          // last state + move not present, move base on blockchain state
+          let lastSelfMove = gameStates.getLastSelfMove(game.gameId);
+          if (gameStates.getMoveNumberFromState(gameStates.getLastBlockchainState(game)) + 1 ===
+                gameStates.getMoveNumberFromState(lastSelfMove.newState)) {
+            try {
+              Chess.move(game.gameId, fromIndex, toIndex);
+            } catch (e) {
+              console.log('Sending move to blockchain failed');
+            }
+          } else {
+            // should not happen
+          }
+        }
       }
-    }, 10000);
+    }, 10000); // wait 10 seconds for ACK
 
     // Wait for next move
     if (typeof game.moveTimeout !== 'undefined') {
