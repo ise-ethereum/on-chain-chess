@@ -77,7 +77,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation,
    *  pot: <number>,
    *  turnTime: <number>,
    *  timeoutStarted: <date>,
-   *  timeoutState: <{-1,0,1}>
+   *  timeoutState: <{-2,-1,0,1,2}>
    * @param contractGameObject
    * @returns game
      */
