@@ -478,6 +478,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         // should not happen
         throw Error('Blockchain state and local move do not match.');
       }
+      return;
     }
     Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature);
   };
