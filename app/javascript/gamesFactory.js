@@ -411,8 +411,25 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     game.ackTimeout = setTimeout(() => {
       if (game.lastAckHash !== game.lastSentHash) {
         console.log('Opponent did not ACK, sending last state and move to blockchain');
-        // TODO If not ACKed, send my last move to blockchain
+        // If not ACKed, send my last move to blockchain
+        try {
+          games.sendLastStateOrMoveToBlockchain(game);
+          // then send claimTimeout
+          Chess.claimTimeout(game.gameId);
 
+          game.moveTimeout = setTimeout(() => {
+            // TODO: Get a valid move
+            let [fromIndex, toIndex] = [0, 0];
+            try {
+              Chess.claimTimeoutEndedWithMove(game.gameId, fromIndex, toIndex);
+            } catch (e) {
+              console.error('Could not claimTimeoutEndedWithMove', e);
+            }
+          }, game.turnTime * 60 * 1000);
+          game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
+        } catch (e) {
+          console.log('Could not send state and move to blockchain', e);
+        }
       }
     }, 10000);
 
@@ -423,11 +440,47 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     game.moveTimeout = setTimeout(() => {
       console.log('Opponent did not send move, sending' +
                   'last state and move to blockchain');
-      // TODO If opponent did not move, send my last state and move to blockchain
+      // If opponent did not move, send my last state and move to blockchain
+      try {
+        games.sendLastStateOrMoveToBlockchain(game);
+        // then send claimTimeout
+        Chess.claimTimeout(game.gameId);
 
+        game.moveTimeout = setTimeout(() => {
+          // TODO: Get a valid move
+          let [fromIndex, toIndex] = [0, 0];
+          try {
+            Chess.claimTimeoutEndedWithMove(game.gameId, fromIndex, toIndex);
+          } catch (e) {
+            console.error('Could not claimTimeoutEndedWithMove', e);
+          }
+        }, game.turnTime * 60 * 1000);
+        game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
+      } catch (e) {
+        console.log('Could not send state and move to blockchain', e);
+      }
     }, game.turnTime * 60 * 1000);
     game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
     $rootScope.$apply();
+  };
+
+  games.sendLastStateOrMoveToBlockchain = function (game) {
+    let state, stateSignature, fromIndex, toIndex;
+    try {
+      [state, stateSignature, fromIndex, toIndex] = gameStates.getLastMovePackage(game.gameId);
+    } catch (e) {
+      // last state + move not present, move base on blockchain state
+      let lastSelfMove = gameStates.getLastSelfMove(game.gameId);
+      if (gameStates.getMoveNumberFromState(gameStates.getLastBlockchainState(game)) + 1 ===
+            gameStates.getMoveNumberFromState(lastSelfMove.newState)) {
+        Chess.move(game.gameId, lastSelfMove.moveFrom, lastSelfMove.moveTo);
+      } else {
+        // should not happen
+        throw Error('Blockchain state and local move do not match.');
+      }
+      return;
+    }
+    Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature);
   };
 
   /* Send acknowledgment of last received move */
