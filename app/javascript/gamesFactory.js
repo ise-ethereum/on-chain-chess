@@ -162,9 +162,6 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
       }
     }
 
-    game.ended = contractGameObject.ended;
-    game.pot = web3.fromWei(contractGameObject.pot, 'ether').toDigits().toString();
-
     return game;
   };
 
@@ -186,17 +183,12 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     // Initialize chess object
     game.chess = new ChessJS();
 
-    game.state = gameStates.getLastBlockchainState(game);
-
-    try {
-      let lastLocalState = gameStates.getLastLocalState(game);
-      if (gameStates.getMoveNumberFromState(lastLocalState) >
-          gameStates.getMoveNumberFromState(game.state)) {
-        game.state = lastLocalState;
-        console.log('Loading game from localstorage state');
-      }
-    } catch (e) {
+    if (gameStates.isBlockchainStateNewer(game.gameId)) {
+      game.state = gameStates.getLastBlockchainState(game);
+    } else {
+      game.state = gameStates.getLastLocalState(game);
     }
+
     game.chess.load(generateFen(game.state));
     if (game.self.color[0] === game.chess.turn()) {
       game.nextPlayer = game.self.accountId;
@@ -243,8 +235,14 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
                                 'message', 'playgame');
         }
       } else {
-        // ToDo: Move is not valid, send last state and move to blockchain
         console.log('Move is not valid, send last state and move to blockchain');
+        try {
+          games.sendLastStateOrMoveToBlockchain(game);
+          // TODO call Chess.claimTimeout ?
+        } catch (e) {
+          // TODO inform user?
+          console.log('Sending state + move to blockchain failed:', e);
+        }
       }
     });
 
@@ -258,16 +256,27 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
    */
   games.update = function (game) {
     console.log('update game called', game);
-    for(let i in games.list) {
-      if(games.list[i].gameId === game.gameId) {
-        games.list[i] = game;
+    for (let i in games.list) {
+      if (games.list[i].gameId === game.gameId) {
+        // update existing game
+        let g = games.list[i];
+        for (let key in game) {
+          g[key] = game[key];
+        }
+        // update game view to new state
+        game.chess.load(generateFen(game.state));
+        if (game.self.color[0] === game.chess.turn()) {
+          game.nextPlayer = game.self.accountId;
+        } else {
+          game.nextPlayer = game.opponent.accountId;
+        }
+        // TODO update move timer, listeners, ...?
         console.log('updated game with id ' + game.gameId);
         return;
       }
     }
 
-    games.list.push(game);
-    console.log('not existing game added', game);
+    games.add(game);
   };
 
   games.showWinner = function(game) {
@@ -309,6 +318,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           'Claiming win for your game with the id ' + game.gameId,
           'message', 'claimwin');
         try {
+          games.sendLastStateOrMoveToBlockchain(game);
           Chess.claimWin(game.gameId, {from: game.self.accountId});
         } catch (e) {
           console.log('claimWin error', e);
@@ -332,6 +342,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           'Offering draw for your game with the id ' + game.gameId,
           'message', 'offerdraw');
         try {
+          games.sendLastStateOrMoveToBlockchain(game);
           Chess.offerDraw(game.gameId, {from: game.self.accountId});
         } catch (e) {
           console.log('offerDraw error', e);
@@ -356,6 +367,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           'Claim timeout for your game with the id ' + game.gameId,
           'message', 'claimtimeout');
         try {
+          games.sendLastStateOrMoveToBlockchain(game);
           Chess.claimTimeout(game.gameId, {from: game.self.accountId});
         } catch (e) {
           console.log('claimTimeout error', e);
@@ -489,8 +501,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           Chess.claimTimeout(game.gameId);
 
           game.moveTimeout = setTimeout(() => {
-            // TODO: Get a valid move
-            let [fromIndex, toIndex] = [0, 0];
+            let [fromIndex, toIndex] = games.getValidMove(game);
             try {
               Chess.claimTimeoutEndedWithMove(game.gameId, fromIndex, toIndex);
             } catch (e) {
@@ -518,21 +529,26 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         Chess.claimTimeout(game.gameId);
 
         game.moveTimeout = setTimeout(() => {
-          // TODO: Get a valid move
-          let [fromIndex, toIndex] = [0, 0];
+          let [fromIndex, toIndex] = games.getValidMove(game);
           try {
             Chess.claimTimeoutEndedWithMove(game.gameId, fromIndex, toIndex);
           } catch (e) {
             console.error('Could not claimTimeoutEndedWithMove', e);
           }
-        }, game.turnTime/2 * 60 * 1000 + 10000); // half game time plus 10 seconds extra
+        }, game.turnTime / 2 * 60 * 1000 + 10000); // half game time plus 10 seconds extra
         game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
       } catch (e) {
         console.log('Could not send state and move to blockchain', e);
       }
-    }, game.turnTime/2 * 60 * 1000); // half game time
+    }, game.turnTime / 2 * 60 * 1000); // half game time
     game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
     $rootScope.$apply();
+  };
+
+  games.getValidMove = function (game) {
+    // TODO implement
+    console.log('get valid move for', game);
+    return [0, 0];
   };
 
   games.sendLastStateOrMoveToBlockchain = function (game) {
