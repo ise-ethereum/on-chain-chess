@@ -170,7 +170,10 @@ module.controller('PlayGameCtrl',
 
         games.sendMove(game, move.from, move.to);
         updateBoardState(game, chessMove);
-        gameStates.addSelfMove(game.gameId, algebraicToIndex(move.from), algebraicToIndex(move.to), game.state);
+        gameStates.addSelfMove(game.gameId,
+                               algebraicToIndex(move.from),
+                               algebraicToIndex(move.to),
+                               game.state);
         $scope.$apply();
       } else {
         // Invalid move

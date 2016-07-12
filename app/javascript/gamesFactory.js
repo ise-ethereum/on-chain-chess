@@ -1,6 +1,6 @@
 /* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
-import {generateState, generateFen} from './utils/fen-conversion.js';
+import {generateFen} from './utils/fen-conversion.js';
 var ChessJS = require('chess.js');
 var shhFactory = require('web3-shh-dropin-for-proxy');
 var proxyUri = 'http://localhost:8090';
@@ -472,7 +472,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
       'topic': [shhTopic, game.gameId],
       'payload': payload
     });
-    console.log("Sent move no", game.state[8] * 128 + game.state[9], 'from', fromIndex, 'to', toIndex);
+    console.log('Sent move no', game.state[8] * 128 + game.state[9],
+                'from', fromIndex, 'to', toIndex);
 
     // Wait for ACK
     if (typeof game.ackTimeout !== 'undefined') {
@@ -842,8 +843,9 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     $rootScope.$apply();
 
     // Check own state to confirm or decline
-    if ((game.chess.turn() === 'w' && game.self.color === 'white' && data.args.timeoutState !== 0) ||
-        (game.chess.turn() === 'b' && game.self.color === 'black' && data.args.timeoutState !== 0)) {
+    if (data.args.timeoutState !== 0 && (
+        (game.chess.turn() === 'w' && game.self.color === 'white') ||
+        (game.chess.turn() === 'b' && game.self.color === 'black'))) {
       if (
           ([1, 2].indexOf(data.args.timeoutState) !== -1 && game.chess.in_checkmate()) || // jshint ignore:line
           (data.args.timeoutState === -1 && (game.chess.in_stalemate() || game.chess.in_draw())) // jshint ignore:line
