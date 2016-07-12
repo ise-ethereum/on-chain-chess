@@ -395,12 +395,6 @@ module.controller('PlayGameCtrl',
 
     $scope.game = $scope.getGame();
 
-    // Show current move number
-    $scope.halfMoveNumber = gameStates.getLastMoveNumber($scope.game) + 1;
-    $scope.$watch('gameStates.lastMoveNumber', function() {
-      $scope.halfMoveNumber = gameStates.getLastMoveNumber($scope.game) + 1;
-    });
-
     // Keep track of currently viewing game
     games.viewingGame.id = $scope.game.gameId;
     $scope.$on('$destroy', function(){

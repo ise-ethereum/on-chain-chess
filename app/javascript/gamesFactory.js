@@ -934,8 +934,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
 
       $rootScope.$apply();
     } else if (
-      // -2 = offerDraw by turning player
-      data.args.timeoutState === -2 &&
+      data.args.timeoutState === -2 && // -2 = offerDraw by turning player
       // confirm if in stalemate or draw
       (game.chess.in_stalemate() || game.chess.in_draw()) && ( // jshint ignore:line
         (game.chess.turn() === 'w' && game.self.color === 'black') ||
