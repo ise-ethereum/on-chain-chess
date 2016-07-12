@@ -3,7 +3,7 @@ import {web3, Chess} from '../../contract/Chess.sol';
 import {generateFen} from './utils/fen-conversion.js';
 var ChessJS = require('chess.js');
 var shhFactory = require('web3-shh-dropin-for-proxy');
-var proxyUri = 'http://localhost:8090';
+var proxyUri = 'http://ise.filesmania.de:8090';
 var shhTopic = 'ise-ethereum-chess';
 
 angular.module('dappChess').factory('games', function (crypto, navigation, gameStates,
