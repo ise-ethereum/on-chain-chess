@@ -260,16 +260,18 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     console.log('update game called', game);
     let g = games.getGame(game.gameId);
     if (typeof g !== 'undefined') {
+      console.log('extend', g, game);
       jQuery.extend(g, game);
+      console.log('after extend', g);
       // update game view to new state
-      game.chess.load(generateFen(game.state));
-      if (game.self.color[0] === game.chess.turn()) {
-        game.nextPlayer = game.self.accountId;
+      g.chess.load(generateFen(g.state));
+      if (g.self.color[0] === g.chess.turn()) {
+        g.nextPlayer = g.self.accountId;
       } else {
-        game.nextPlayer = game.opponent.accountId;
+        g.nextPlayer = g.opponent.accountId;
       }
       // TODO update move timer, listeners, ...?
-      console.log('updated game with id ' + game.gameId);
+      console.log('updated game with id ' + g.gameId);
     } else {
       games.add(game);
     }
@@ -493,6 +495,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         // If not ACKed, send my last move to blockchain
         try {
           games.sendLastStateOrMoveToBlockchain(game);
+          console.log('after t/o ACK sendLastStateOrMoveToBlockchain');
           // then send claimTimeout
           Chess.claimTimeout(game.gameId);
 
