@@ -1,6 +1,6 @@
 /* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
-import {generateFen} from './utils/fen-conversion.js';
+import {generateFen, generateMapping} from './utils/fen-conversion.js';
 var ChessJS = require('chess.js');
 var shhFactory = require('web3-shh-dropin-for-proxy');
 var proxyUri = 'http://ise.filesmania.de:8090';
@@ -545,10 +545,19 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     $rootScope.$apply();
   };
 
+  /**
+   * Check if a random move is valid, throws if no valid moves are possible 
+   * 
+   * @param game
+   * @returns {*[from index in 0x88, to index in 0x88]}
+   */
   games.getValidMove = function (game) {
-    // TODO implement
     console.log('get valid move for', game);
-    return [0, 0];
+    let move = game.chess.moves()[0];
+    move = game.chess.move(move);
+    game.chess.undo();
+    let toBackend = generateMapping.toBackend;
+    return [toBackend[move.from], toBackend[move.to]];
   };
 
   games.sendLastStateOrMoveToBlockchain = function (game) {

@@ -1,5 +1,6 @@
 /* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
+import {Elo} from '../../contract/ELO.sol';
 angular.module('dappChess').controller('JoinGameCtrl',
   function ($rootScope, $scope, games, accounts) {
     $scope.username = null;
@@ -9,6 +10,9 @@ angular.module('dappChess').controller('JoinGameCtrl',
     $scope.etherbet = 0;
 
     $scope.accounts = accounts;
+    
+    Elo.getScore();
+    
 
     $scope.setSelectedGame = function($event, game) {
       $scope.gameId = game.gameId;
