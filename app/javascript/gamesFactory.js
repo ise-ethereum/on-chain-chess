@@ -6,6 +6,8 @@ var shhFactory = require('web3-shh-dropin-for-proxy');
 var proxyUri = 'http://ise.filesmania.de:8090';
 var shhTopic = 'ise-ethereum-chess';
 
+const TIMEOUT_ACK = 10000;
+
 angular.module('dappChess').factory('games', function (crypto, navigation, gameStates,
                                                        accounts, $rootScope, $route) {
   const games = {
@@ -256,27 +258,21 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
    */
   games.update = function (game) {
     console.log('update game called', game);
-    for (let i in games.list) {
-      if (games.list[i].gameId === game.gameId) {
-        // update existing game
-        let g = games.list[i];
-        for (let key in game) {
-          g[key] = game[key];
-        }
-        // update game view to new state
-        game.chess.load(generateFen(game.state));
-        if (game.self.color[0] === game.chess.turn()) {
-          game.nextPlayer = game.self.accountId;
-        } else {
-          game.nextPlayer = game.opponent.accountId;
-        }
-        // TODO update move timer, listeners, ...?
-        console.log('updated game with id ' + game.gameId);
-        return;
+    let g = games.getGame(game.gameId);
+    if (typeof g !== 'undefined') {
+      jQuery.extend(g, game);
+      // update game view to new state
+      game.chess.load(generateFen(game.state));
+      if (game.self.color[0] === game.chess.turn()) {
+        game.nextPlayer = game.self.accountId;
+      } else {
+        game.nextPlayer = game.opponent.accountId;
       }
+      // TODO update move timer, listeners, ...?
+      console.log('updated game with id ' + game.gameId);
+    } else {
+      games.add(game);
     }
-
-    games.add(game);
   };
 
   games.showWinner = function(game) {
@@ -513,7 +509,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           console.log('Could not send state and move to blockchain', e);
         }
       }
-    }, 3000);
+    }, TIMEOUT_ACK);
 
     // Wait for next move
     if (typeof game.moveTimeout !== 'undefined') {
@@ -535,19 +531,19 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           } catch (e) {
             console.error('Could not claimTimeoutEndedWithMove', e);
           }
-        }, game.turnTime / 2 * 60 * 1000 + 10000); // half game time plus 10 seconds extra
+        }, game.turnTime * 60 * 1000 + 10000); // half game time plus 10 seconds extra
         game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
       } catch (e) {
         console.log('Could not send state and move to blockchain', e);
       }
-    }, game.turnTime / 2 * 60 * 1000); // half game time
+    }, game.turnTime * 60 * 1000); // half game time
     game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
     $rootScope.$apply();
   };
 
   /**
-   * Check if a random move is valid, throws if no valid moves are possible 
-   * 
+   * Check if a random move is valid, throws if no valid moves are possible
+   *
    * @param game
    * @returns {*[from index in 0x88, to index in 0x88]}
    */
@@ -871,8 +867,9 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     if (data.args.timeoutState !== 0 && (
         (game.chess.turn() === 'w' && game.self.color === 'white') ||
         (game.chess.turn() === 'b' && game.self.color === 'black'))) {
-      if (
+      if ( // confirm if [1, 2] (claimWin, claimTimeout) and we are checkmate
           ([1, 2].indexOf(data.args.timeoutState) !== -1 && game.chess.in_checkmate()) || // jshint ignore:line
+          // or confirm if -1 (offerDraw) and stalemate of draw
           (data.args.timeoutState === -1 && (game.chess.in_stalemate() || game.chess.in_draw())) // jshint ignore:line
         ) {
         try {
@@ -888,14 +885,15 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           games.sendLastStateOrMoveToBlockchain(game);
         } catch (e) {
           $rootScope.$broadcast('message',
-            'Could not send move to blockchain to decline endgame',
+            'Could not send move to blockchain to decline end game',
             'error', 'playgame-' + game.gameId);
           console.log('Could not send move to blockchain to decline endgame', e);
         }
       }
 
       $rootScope.$apply();
-    } else if (data.args.timeoutState === -2 &&
+    } else if (data.args.timeoutState === -2 && // -2 (offerDraw by turning player)
+      // confirm if in stalemate or draw
       (game.chess.in_stalemate() || game.chess.in_draw()) && ( // jshint ignore:line
         (game.chess.turn() === 'w' && game.self.color === 'black') ||
         (game.chess.turn() === 'b' && game.self.color === 'white')
