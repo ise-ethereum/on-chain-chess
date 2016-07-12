@@ -82,7 +82,7 @@ library ELO {
     /**
      * Get current score for player
      */
-    function getScore(Scores storage self, address player) returns (uint) {
+    function getScore(Scores storage self, address player) constant returns (uint) {
         if (self.scores[player].score <= 100) {
             return 100;
         }

@@ -1,5 +1,5 @@
 /* global angular, mist, blockies */
-import {web3} from '../../contract/Chess.sol';
+import {web3, Chess} from '../../contract/Chess.sol';
 angular.module('dappChess').factory('accounts', function () {
   let accounts = {
     // Use the first 5 accounts for mist or firefox and the last 5 for other browsers
@@ -19,6 +19,16 @@ angular.module('dappChess').factory('accounts', function () {
       }
 
       return false;
+    },
+    getEloScore: function (account) {
+      if (typeof account !== 'undefined' && account !== null) {
+        try {
+          return Chess.getEloScore(account).toNumber();
+        } catch (e) {
+          return 100;
+        }
+      }
+      return 0;
     },
     getBlockie: function(account) {
       if(account) {
