@@ -99,10 +99,8 @@ angular.module('dappChess').factory('gameStates', function () {
     return gameStates.selfMoves[gameId];
   };
   gameStates.getLastSelfMove = function(gameId) {
-    if(typeof(gameStates.selfMoves[gameId]) === 'undefined') {
-      return [];
-    }
-    if(gameStates.selfMoves[gameId].length === 0) {
+    if(typeof(gameStates.selfMoves[gameId]) === 'undefined' ||
+       gameStates.selfMoves[gameId].length === 0) {
       throw 'This game has no self moves yet';
     }
 

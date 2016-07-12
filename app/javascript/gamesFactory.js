@@ -353,7 +353,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
   };
 
   games.claimTimeout = function (game) {
-    console.log('offerDraw', game);
+    console.log('claimTimeout', game);
     if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
       if (game.timeoutState !== 0) {
         $rootScope.$broadcast('message',
@@ -470,11 +470,17 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
   };
 
   /* Send move and resulting new state to second player */
-  games.sendMove = function(game, fromIndex, toIndex) {
+  games.sendMove = function (game, fromIndex, toIndex) {
+    // if there is a timeout running against us, send the move to blockchain
+    if (game.timeoutState !== 0 && game.timeoutState !== -2) {
+      games.sendLastStateOrMoveToBlockchain(game);
+      return;
+    }
     let identity = game.self.accountId;
-    let payload = [ 'MOVE', game.state, crypto.sign(identity, game.gameId, game.state),
-                   fromIndex, toIndex, crypto.sign(identity, game.gameId, [fromIndex, toIndex])
-                  ];
+    let payload = [
+      'MOVE', game.state, crypto.sign(identity, game.gameId, game.state),
+      fromIndex, toIndex, crypto.sign(identity, game.gameId, [fromIndex, toIndex])
+    ];
     game.lastSentHash = crypto.solSha3(payload);
     shh.post({
       'from': identity,
@@ -497,12 +503,13 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           games.sendLastStateOrMoveToBlockchain(game);
           console.log('after t/o ACK sendLastStateOrMoveToBlockchain');
           // then send claimTimeout
-          Chess.claimTimeout(game.gameId);
+          Chess.claimTimeout(game.gameId, { from: game.self.accountId });
 
           game.moveTimeout = setTimeout(() => {
             let [fromIndex, toIndex] = games.getValidMove(game);
             try {
-              Chess.claimTimeoutEndedWithMove(game.gameId, fromIndex, toIndex);
+              Chess.claimTimeoutEndedWithMove(game.gameId, fromIndex, toIndex,
+                                              { from: game.self.accountId });
             } catch (e) {
               console.error('Could not claimTimeoutEndedWithMove', e);
             }
@@ -525,12 +532,13 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
       try {
         games.sendLastStateOrMoveToBlockchain(game);
         // then send claimTimeout
-        Chess.claimTimeout(game.gameId);
+        Chess.claimTimeout(game.gameId, { from: game.self.accountId });
 
         game.moveTimeout = setTimeout(() => {
           let [fromIndex, toIndex] = games.getValidMove(game);
           try {
-            Chess.claimTimeoutEndedWithMove(game.gameId, fromIndex, toIndex);
+            Chess.claimTimeoutEndedWithMove(game.gameId, fromIndex, toIndex,
+                                            { from: game.self.accountId });
           } catch (e) {
             console.error('Could not claimTimeoutEndedWithMove', e);
           }
@@ -563,19 +571,42 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     let state, stateSignature, fromIndex, toIndex;
     try {
       [state, stateSignature, fromIndex, toIndex] = gameStates.getLastMovePackage(game.gameId);
+      console.log('getLastMovePackage', state, stateSignature, fromIndex, toIndex,
+        gameStates.getMoveNumberFromState(state));
     } catch (e) {
+      console.log('getLastMovePackage failed');
       // last state + move not present, move base on blockchain state
-      let lastSelfMove = gameStates.getLastSelfMove(game.gameId);
-      if (gameStates.getMoveNumberFromState(gameStates.getLastBlockchainState(game)) + 1 ===
-            gameStates.getMoveNumberFromState(lastSelfMove.newState)) {
-        Chess.move(game.gameId, lastSelfMove.moveFrom, lastSelfMove.moveTo);
+      let blockchainMoveNumber = gameStates.getMoveNumberFromState(
+        gameStates.getLastBlockchainState(game)
+      );
+      console.log('lastBlockchainState Number',
+        gameStates.getMoveNumberFromState(gameStates.getLastBlockchainState(game)));
+      let lastSelfMove;
+      try {
+        lastSelfMove = gameStates.getLastSelfMove(game.gameId);
+      } catch (e) {
+        if (blockchainMoveNumber === 0) {
+          // blockchain has no move, we have no move... fine
+          console.log('state = 0 --> no move ... fine');
+          return;
+        }
+      }
+      let lastSelfMoveNumber = gameStates.getMoveNumberFromState(lastSelfMove.newState);
+      console.log('lastSelfMove Number', lastSelfMoveNumber);
+      if (blockchainMoveNumber === lastSelfMoveNumber) {
+        return;
+      } else if (blockchainMoveNumber + 1 === lastSelfMoveNumber) {
+        Chess.move(game.gameId, lastSelfMove.moveFrom, lastSelfMove.moveTo,
+                   { from: game.self.accountId });
       } else {
         // should not happen
         throw Error('Blockchain state and local move do not match.');
       }
       return;
     }
-    Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature);
+    console.log('getLastMovePackage success... sending move');
+    Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature,
+                        { from: game.self.accountId });
   };
 
   /* Send acknowledgment of last received move */
@@ -722,6 +753,11 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
 
   games.eventGameStateChanged = function (err, data) {
     console.log('eventGameStateChanged', err, data);
+    let game = games.getGame(data.args.gameId);
+    if (typeof game !== 'undefined') {
+      game.state = data.args.state;
+      games.update(game);
+    }
   };
 
   games.eventMove = function (err, data) {
@@ -835,6 +871,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     }
     let game = games.getGame(data.args.gameId);
     if (typeof game === 'undefined') {
+      console.log('game not found!! eRRR');
       return;
     }
     game.timeoutStarted = data.args.timeoutStarted.toNumber();
@@ -847,18 +884,16 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
      * 1 checkmate
      * 2 timeout
      */
-    if((game.timeoutState === -1 && game.nextPlayer === game.self.accountId) ||
-      (game.timeoutState === -2 && game.nextPlayer === game.opponent.accountId)) {
+    if ((game.timeoutState === -1 && game.nextPlayer === game.self.accountId) ||
+        (game.timeoutState === -2 && game.nextPlayer === game.opponent.accountId)) {
       $rootScope.$broadcast('message',
         'Player ' + game.opponent.username + ' wants to offer a draw',
         'message', 'playgame-' + game.gameId);
-    }
-    if(game.timeoutState === 1 && game.nextPlayer === game.self.accountId) {
+    } else if (game.timeoutState === 1 && game.nextPlayer === game.self.accountId) {
       $rootScope.$broadcast('message',
         'Player ' + game.opponent.username + ' claims that he won the game',
         'message', 'playgame-' + game.gameId);
-    }
-    if(game.timeoutState === 2 && game.nextPlayer === game.self.accountId) {
+    } else if (game.timeoutState === 2 && game.nextPlayer === game.self.accountId) {
       $rootScope.$broadcast('message',
         'Player ' + game.opponent.username + ' claims that he won the game due to a timeout',
         'message', 'playgame-' + game.gameId);
@@ -887,15 +922,20 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         try {
           games.sendLastStateOrMoveToBlockchain(game);
         } catch (e) {
+          // no move found that user made before. user has to move itself
           $rootScope.$broadcast('message',
-            'Could not send move to blockchain to decline end game',
+            game.opponent.username + ' has started a timeout. ' +
+            'You have to move withing the next ' + game.timeoutTime + ' minutes ' + 'to decline.',
             'error', 'playgame-' + game.gameId);
-          console.log('Could not send move to blockchain to decline endgame', e);
+          console.log(game.opponent.username + ' has started a timeout. You have to move withing ' +
+                      'the next ' + game.timeoutTime + ' minutes ' + 'to decline.', e);
         }
       }
 
       $rootScope.$apply();
-    } else if (data.args.timeoutState === -2 && // -2 (offerDraw by turning player)
+    } else if (
+      // -2 = offerDraw by turning player
+      data.args.timeoutState === -2 &&
       // confirm if in stalemate or draw
       (game.chess.in_stalemate() || game.chess.in_draw()) && ( // jshint ignore:line
         (game.chess.turn() === 'w' && game.self.color === 'black') ||

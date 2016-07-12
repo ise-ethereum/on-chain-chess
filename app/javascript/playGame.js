@@ -168,12 +168,13 @@ module.controller('PlayGameCtrl',
         // Submit move off-chain
         game.state = generateState(fen);
 
-        games.sendMove(game, move.from, move.to);
         updateBoardState(game, chessMove);
         gameStates.addSelfMove(game.gameId,
                                algebraicToIndex(move.from),
                                algebraicToIndex(move.to),
                                game.state);
+        // be sure to call sendMove after game updated!
+        games.sendMove(game, move.from, move.to);
         $scope.$apply();
       } else {
         // Invalid move
@@ -198,12 +199,17 @@ module.controller('PlayGameCtrl',
       }
 
       // Update game information
-      if (game.chess.turn() === game.self.color[0]) {
-        updateGameInfo('It\'s your turn.');
-        board.enableUserInput(true);
-      } else {
-        updateGameInfo('It\'s your opponent\'s turn.');
+      if (game.ended) {
+        updateGameInfo('Game ended.');
         board.enableUserInput(false);
+      } else {
+        if (game.chess.turn() === game.self.color[0]) {
+          updateGameInfo('It\'s your turn.');
+          board.enableUserInput(true);
+        } else {
+          updateGameInfo('It\'s your opponent\'s turn.');
+          board.enableUserInput(false);
+        }
       }
     }
 
