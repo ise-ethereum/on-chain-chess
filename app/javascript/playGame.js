@@ -62,7 +62,7 @@ module.controller('PlayGameCtrl',
 
 
     function updateBoardState(game, chessMove = null) {
-      console.log('updateBoardState', chessMove);
+      console.log('updateBoardState', game, chessMove);
       let chess = game.chess;
 
       if (chessMove) {
@@ -76,8 +76,10 @@ module.controller('PlayGameCtrl',
         var toB = highlights.playerBlack[chessMove.to];
 
         if (lastFrom !== null){
-          $('#board-'+  game.gameId + '_chess_square_' + lastFrom).removeClass('chess_square_moved');
-          $('#board-'+  game.gameId + '_chess_square_' + lastTo).removeClass('chess_square_moved');
+          $('#board-' + game.gameId + '_chess_square_' + lastFrom)
+            .removeClass('chess_square_moved');
+          $('#board-' + game.gameId + '_chess_square_' + lastTo)
+            .removeClass('chess_square_moved');
         }
 
         console.log(fromW, toW, fromB, toB);
@@ -93,6 +95,9 @@ module.controller('PlayGameCtrl',
           lastFrom = fromB;
           lastTo = toB;
         }
+      } else {
+        // no known move to show, just update board
+        board.setPosition(game.chess.fen().split(' ')[0]); // generateFen(game.state)
       }
 
       let nextPlayer, status,
@@ -407,7 +412,7 @@ module.controller('PlayGameCtrl',
     // Initialize chessboard
     if (!$scope.isOpenGame()) {
       if ($scope.game) {
-        $timeout(() => {  
+        $timeout(() => {
           initChessboard($scope.game);
           updateBoardState($scope.game);
           // $scope.$watch('game.lastMove', function(checkMove) {
@@ -421,23 +426,27 @@ module.controller('PlayGameCtrl',
 
               if (g.chess.turn() === g.self.color[0]) {
                 let lastOpponentMove = gameStates.getLastOpponentMove(g.gameId);
-                // if (generateFen(lastOpponentMove.newState) === generateFen(g.state)) {
+                if (generateFen(lastOpponentMove.newState) === generateFen(g.state)) {
+                  console.log('$watch send', {
+                    from: toFrontend[lastOpponentMove.moveFrom],
+                    to: toFrontend[lastOpponentMove.moveTo]
+                  }, lastOpponentMove);
                   updateBoardState(g, {
                     from: toFrontend[lastOpponentMove.moveFrom],
                     to: toFrontend[lastOpponentMove.moveTo]
                   });
                   return;
-                // }
-              } else {
+                }
+              }/* else {
                 let lastSelfMove = gameStates.getLastSelfMove(g.gameId);
-                // if (generateFen(lastSelfMove.newState) === generateFen(g.state)) {
+                if (generateFen(lastSelfMove.newState) === generateFen(g.state)) {
                   updateBoardState(g, {
                     from: toFrontend[lastSelfMove.moveFrom],
                     to: toFrontend[lastSelfMove.moveTo]
                   });
                   return;
-                // }
-              }
+                }
+              }*/
             } catch (e) {
               console.log('$watch throw', e);
             }

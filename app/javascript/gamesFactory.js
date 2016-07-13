@@ -1,6 +1,8 @@
 /* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
-import {generateFen, generateMapping, algebraicToIndex} from './utils/fen-conversion.js';
+import {generateFen, generateState, generateMapping, algebraicToIndex}
+  from './utils/fen-conversion.js';
+
 var ChessJS = require('chess.js');
 var shhFactory = require('web3-shh-dropin-for-proxy');
 var proxyUri = 'http://ise.filesmania.de:8090';
@@ -212,7 +214,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     }
 
     // Add events for this game
-    games.listenForMoves(game, function(m) {
+    games.listenForMoves(game, function (m) {
       let [, state, stateSignature, fromIndex, toIndex, moveSignature] = m.payload;
 
       // Apply move
@@ -227,8 +229,9 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         game.nextPlayer = game.self.accountId;
         game.lastMove = opponentChessMove;
         games.sendAck(game);
+        let toBackend = generateMapping().toBackend;
         gameStates.addOpponentMove(
-          game.gameId, fromIndex, toIndex, moveSignature,
+          game.gameId, toBackend[fromIndex], toBackend[toIndex], moveSignature,
           state, stateSignature
         );
 
@@ -613,7 +616,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     console.log('getLastMovePackage success... sending move',
       state, fromIndex, toIndex, stateSignature);
     Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature,
-                        { from: game.self.accountId, gas: 3000000 });
+                        { from: game.self.accountId });
   };
 
   /* Send acknowledgment of last received move */
@@ -771,14 +774,18 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     console.log('eventMove', err, data);
     let game = games.getGame(data.args.gameId);
     if (typeof game !== 'undefined') {
-      if (game.timeoutState !== 0) {
-        game.timeoutState = 0;
-      }
-      if (game.self.accountId === data.args.player) {
-        game.nextPlayer = game.opponent.accountId;
-      } else {
-        game.nextPlayer = game.self.accountId;
-      }
+      // Apply move
+      let opponentChessMove = game.chess.move({
+        from: algebraicToIndex(data.args.fromIndex),
+        to: algebraicToIndex(data.args.toIndex),
+        promotion: 'q'
+      });
+
+      game.state = generateState(game.chess.fen());
+      game.nextPlayer = (data.args.player === game.self.accountId ?
+                          game.opponent.accountId : game.self.accountId);
+      game.lastMove = opponentChessMove;
+      game.timeoutState = 0;
 
       $rootScope.$apply();
     }
