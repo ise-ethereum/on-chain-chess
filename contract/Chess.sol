@@ -19,6 +19,10 @@ contract Chess is TurnBasedGame, Auth {
     using ELO for ELO.Scores;
     ELO.Scores eloScores;
 
+    function getEloScore(address player) constant returns(uint) {
+        return eloScores.getScore(player);
+    }
+
     event GameInitialized(bytes32 indexed gameId, address indexed player1, string player1Alias, address playerWhite, uint turnTime, uint pot);
     event GameJoined(bytes32 indexed gameId, address indexed player1, string player1Alias, address indexed player2, string player2Alias, address playerWhite, uint pot);
     event GameStateChanged(bytes32 indexed gameId, int8[128] state);
@@ -158,6 +162,16 @@ contract Chess is TurnBasedGame, Auth {
        return gameStates[gameId].playerWhite;
     }
 
+    function surrender(bytes32 gameId) notEnded(gameId) public {
+        super.surrender(gameId);
+
+        // Update ELO scores
+        var game = games[gameId];
+        eloScores.recordResult(game.player1, game.player2, game.winner);
+        EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+        EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
+    }
+
     /* The sender claims he has won the game. Starts a timeout. */
     function claimWin(bytes32 gameId) notEnded(gameId) public {
         super.claimWin(gameId);
@@ -204,6 +218,11 @@ contract Chess is TurnBasedGame, Auth {
             games[gameId].player2Winnings = games[gameId].pot;
             games[gameId].pot = 0;
         }
+
+        // Update ELO scores
+        eloScores.recordResult(game.player1, game.player2, game.winner);
+        EloScoreUpdate(game.player1, eloScores.getScore(game.player1));
+        EloScoreUpdate(game.player2, eloScores.getScore(game.player2));
         GameEnded(gameId);
     }
 

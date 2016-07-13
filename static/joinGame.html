@@ -17,7 +17,8 @@
         <div class="error" data-ng-show="form.selectedAccount.$error.required">Please select an account.</div>
       </div>
 
-      <span data-ng-show="accounts.selectedAccount">Balance: {{accounts.getBalance(accounts.selectedAccount)}}</span>
+      <span data-ng-show="accounts.selectedAccount">Balance: {{accounts.getBalance(accounts.selectedAccount)}}</span><br>
+      <span data-ng-show="accounts.selectedAccount">Elo Score: {{accounts.getEloScore(accounts.selectedAccount)}}</span>
 
       <label for="username">Username</label>
       <input id="username" type="text" name="username" data-ng-model="username" required>
@@ -41,6 +42,7 @@
           <th>Color</th>
           <th>Turntime (minutes)</th>
           <th>Bet (ether)</th>
+          <th>Elo Score</th>
           <th></th>
         </tr>
       </thead>
@@ -51,6 +53,7 @@
           <td>{{game.self.color}}</td>
           <td>{{game.turnTime}}</td>
           <td>{{game.pot}}</td>
+          <td>{{accounts.getEloScore(game.self.accountId)}}</td>
           <td><a href="#" data-ng-click="setSelectedGame($event, game)">Select</a></td>
         </tr><!-- | orderBy:predicate:reverse-->
       </tbody>

@@ -225,7 +225,6 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
       if (opponentChessMove !== null) {
         game.state = state;
         game.nextPlayer = game.self.accountId;
-        // TODO do we use lastMove ?
         game.lastMove = opponentChessMove;
         games.sendAck(game);
         gameStates.addOpponentMove(
@@ -260,12 +259,9 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
    * @param game A game in the format required for the game list
    */
   games.update = function (game) {
-    console.log('update game called', game);
     let g = games.getGame(game.gameId);
     if (typeof g !== 'undefined') {
-      console.log('extend', g, game);
       jQuery.extend(g, game);
-      console.log('after extend', g);
       // update game view to new state
       g.chess.load(generateFen(g.state));
       if (g.self.color[0] === g.chess.turn()) {
@@ -274,7 +270,6 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         g.nextPlayer = g.opponent.accountId;
       }
       // TODO update move timer, listeners, ...?
-      console.log('updated game with id ' + g.gameId);
     } else {
       games.add(game);
     }
@@ -615,9 +610,10 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
       }
       return;
     }
-    console.log('getLastMovePackage success... sending move');
+    console.log('getLastMovePackage success... sending move',
+      state, fromIndex, toIndex, stateSignature);
     Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature,
-                        { from: game.self.accountId });
+                        { from: game.self.accountId, gas: 3000000 });
   };
 
   /* Send acknowledgment of last received move */
@@ -888,8 +884,10 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     game.timeoutState = data.args.timeoutState.toNumber();
 
     if (gameStates.isBlockchainStateNewer(game.gameId)) {
+      console.log('blockchain state newer, update');
       game.state = gameStates.getLastBlockchainState(game);
       games.update(game);
+      // TODO update chessboard !
     }
 
     /*
