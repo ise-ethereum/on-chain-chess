@@ -87,7 +87,6 @@ contract Chess is TurnBasedGame, Auth {
         if (games[gameId].player1 != msg.sender && games[gameId].player2 != msg.sender) {
             throw;
         }
-
         // find opponent to msg.sender
         address opponent;
         if (msg.sender == games[gameId].player1) {
@@ -121,6 +120,9 @@ contract Chess is TurnBasedGame, Auth {
          now >= games[gameId].timeoutStarted + games[gameId].turnTime * 1 minutes &&
          msg.sender != games[gameId].nextPlayer){
             // Just a fake move to determine if there is a possible move left for timeout
+
+            // Chess move validation
+            gameStates[gameId].move(fromIndex, toIndex, msg.sender != gameStates[gameId].playerWhite);
         } else {
             if (games[gameId].nextPlayer != msg.sender) {
                 throw;
@@ -129,6 +131,9 @@ contract Chess is TurnBasedGame, Auth {
                 games[gameId].timeoutState = 0;
             }
 
+            // Chess move validation
+            gameStates[gameId].move(fromIndex, toIndex, msg.sender == gameStates[gameId].playerWhite);
+
             // Set nextPlayer
             if (msg.sender == games[gameId].player1) {
                 games[gameId].nextPlayer = games[gameId].player2;
@@ -136,10 +141,6 @@ contract Chess is TurnBasedGame, Auth {
                 games[gameId].nextPlayer = games[gameId].player1;
             }
         }
-
-        // Chess move validation
-        gameStates[gameId].move(fromIndex, toIndex);
-
 
         // Send events
         Move(gameId, msg.sender, fromIndex, toIndex);

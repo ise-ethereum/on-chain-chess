@@ -110,9 +110,9 @@ library ChessLogic {
     }
 
     /* validates a move and executes it */
-    function move(State storage self, uint256 fromIndex, uint256 toIndex) public {
+    function move(State storage self, uint256 fromIndex, uint256 toIndex, bool isWhite) public {
         int8 currentPlayerColor;
-        if (msg.sender == self.playerWhite) {
+        if (isWhite) {
             currentPlayerColor = Players(Player.WHITE);
         } else {
             currentPlayerColor = Players(Player.BLACK);

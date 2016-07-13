@@ -12,7 +12,7 @@ contract TurnBasedGame {
     // GameDrawOfferRejected: notification that a draw of the currently turning player
     //                        is rejected by the waiting player
     event GameDrawOfferRejected(bytes32 indexed gameId);
-    event DebugInts(string message, int value1, int value2, int value3);
+    event DebugInts(string message, uint value1, uint value2, uint value3);
 
     struct Game {
         address player1;

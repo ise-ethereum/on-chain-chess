@@ -65,6 +65,7 @@ angular.module('dappChess').factory('crypto', function () {
     let r = signature.slice(0, 66);
     let s = '0x' + signature.slice(66, 130);
     let v = '0x' + signature.slice(130, 132);
+    console.log('crypto calling web3.toDecimal', v);
     v = web3.toDecimal(v);
 
     return Auth.verify(account, msgHash, v, r, s);

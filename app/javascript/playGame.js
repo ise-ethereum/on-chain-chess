@@ -97,7 +97,7 @@ module.controller('PlayGameCtrl',
         }
       } else {
         // no known move to show, just update board
-        board.setPosition(game.chess.fen().split(' ')[0]); // generateFen(game.state)
+        board.setPosition(generateFen(game.state).split(' ')[0]); // game.chess.fen()
       }
 
       let nextPlayer, status,
