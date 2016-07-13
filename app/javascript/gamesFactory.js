@@ -237,8 +237,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           // Player is currently in another game
           $rootScope.$broadcast('message', game.opponent.username + ' made a move!',
                                 'message', 'playgame');
-          $rootScope.apply();
         }
+        $rootScope.$apply();
       } else {
         console.log('Move is not valid, send last state and move to blockchain');
         try {
@@ -941,10 +941,10 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           // no move found that user made before. user has to move itself
           $rootScope.$broadcast('message',
             game.opponent.username + ' has started a timeout. ' +
-            'You have to move withing the next ' + game.timeoutTime + ' minutes ' + 'to decline.',
+            'You have to move withing the next ' + game.turnTime + ' minutes ' + 'to decline.',
             'error', 'playgame-' + game.gameId);
           console.log(game.opponent.username + ' has started a timeout. You have to move withing ' +
-                      'the next ' + game.timeoutTime + ' minutes ' + 'to decline.');
+                      'the next ' + game.turnTime + ' minutes ' + 'to decline.');
         }
       }
     } else if (
