@@ -18,6 +18,7 @@
       </div>
 
       <span data-ng-show="accounts.selectedAccount">Balance: {{accounts.getBalance(accounts.selectedAccount)}}</span>
+      <span data-ng-show="accounts.selectedAccount">Elo Score: {{accounts.getEloScore(accounts.selectedAccount)}}</span>
 
       <label for="etherbet">Bet (in ether)</label>
       <input id="etherbet" type="number" name="etherbet" data-ng-model="etherbet" required>
