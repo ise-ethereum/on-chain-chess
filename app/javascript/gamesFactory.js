@@ -777,8 +777,13 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
       // Apply move
       let toFrontend = generateMapping().toFrontend;
       let opponentChessMove = game.chess.move({
+<<<<<<< HEAD
         from: toFrontend[data.args.fromIndex],
         to: toFrontend[data.args.toIndex],
+=======
+        from: algebraicToIndex(data.args.fromIndex.toNumber()),
+        to: algebraicToIndex(data.args.toIndex.toNumber()),
+>>>>>>> origin/feature/offchain-frontend-refactor
         promotion: 'q'
       });
 
