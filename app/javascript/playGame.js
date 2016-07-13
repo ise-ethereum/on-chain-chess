@@ -62,7 +62,7 @@ module.controller('PlayGameCtrl',
 
 
     function updateBoardState(game, chessMove = null) {
-      console.log('updateBoardState', game, chessMove);
+      console.log('updateBoardState', chessMove);
       let chess = game.chess;
 
       if (chessMove) {
@@ -76,19 +76,20 @@ module.controller('PlayGameCtrl',
         var toB = highlights.playerBlack[chessMove.to];
 
         if (lastFrom !== null){
-          $('#my-board_chess_square_' + lastFrom).removeClass('chess_square_moved');
-          $('#my-board_chess_square_' + lastTo).removeClass('chess_square_moved');
+          $('#board-'+  game.gameId + '_chess_square_' + lastFrom).removeClass('chess_square_moved');
+          $('#board-'+  game.gameId + '_chess_square_' + lastTo).removeClass('chess_square_moved');
         }
 
+        console.log(fromW, toW, fromB, toB);
         if (game.self.color === 'white') {
-          $('#my-board_chess_square_' + fromW).addClass('chess_square_moved');
-          $('#my-board_chess_square_' + toW).addClass('chess_square_moved');
+          $('#board-'+  game.gameId + '_chess_square_' + fromW).addClass('chess_square_moved');
+          $('#board-'+  game.gameId + '_chess_square_' + toW).addClass('chess_square_moved');
           lastFrom = fromW;
           lastTo = toW;
 
         } else {
-          $('#my-board_chess_square_' + fromB).addClass('chess_square_moved');
-          $('#my-board_chess_square_' + toB).addClass('chess_square_moved');
+          $('#board-'+  game.gameId + '_chess_square_' + fromB).addClass('chess_square_moved');
+          $('#board-'+  game.gameId + '_chess_square_' + toB).addClass('chess_square_moved');
           lastFrom = fromB;
           lastTo = toB;
         }
@@ -174,7 +175,7 @@ module.controller('PlayGameCtrl',
         console.log('pieceMoveOffChain move number after',
           gameStates.getMoveNumberFromState(game.state));
 
-        updateBoardState(game, chessMove);
+        updateBoardState(game, move);
         // be sure to call sendMove after game updated!
         games.sendMove(game, move.from, move.to);
         $scope.$apply();
@@ -406,7 +407,7 @@ module.controller('PlayGameCtrl',
     // Initialize chessboard
     if (!$scope.isOpenGame()) {
       if ($scope.game) {
-        $timeout(() => {
+        $timeout(() => {  
           initChessboard($scope.game);
           updateBoardState($scope.game);
           // $scope.$watch('game.lastMove', function(checkMove) {
@@ -417,6 +418,7 @@ module.controller('PlayGameCtrl',
             let g = $scope.game;
             try {
               let toFrontend = generateMapping().toFrontend;
+
               if (g.chess.turn() === g.self.color[0]) {
                 let lastOpponentMove = gameStates.getLastOpponentMove(g.gameId);
                 // if (generateFen(lastOpponentMove.newState) === generateFen(g.state)) {
