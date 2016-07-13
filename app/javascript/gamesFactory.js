@@ -775,9 +775,10 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     let game = games.getGame(data.args.gameId);
     if (typeof game !== 'undefined') {
       // Apply move
+      let toFrontend = generateMapping().toFrontend;
       let opponentChessMove = game.chess.move({
-        from: algebraicToIndex(data.args.fromIndex.toNumber()),
-        to: algebraicToIndex(data.args.toIndex.toNumber()),
+        from: toFrontend[data.args.fromIndex],
+        to: toFrontend[data.args.toIndex],
         promotion: 'q'
       });
 

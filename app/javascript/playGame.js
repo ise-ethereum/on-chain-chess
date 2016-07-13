@@ -82,7 +82,6 @@ module.controller('PlayGameCtrl',
             .removeClass('chess_square_moved');
         }
 
-        console.log(fromW, toW, fromB, toB);
         if (game.self.color === 'white') {
           $('#board-'+  game.gameId + '_chess_square_' + fromW).addClass('chess_square_moved');
           $('#board-'+  game.gameId + '_chess_square_' + toW).addClass('chess_square_moved');
@@ -98,6 +97,12 @@ module.controller('PlayGameCtrl',
       } else {
         // no known move to show, just update board
         board.setPosition(generateFen(game.state).split(' ')[0]); // game.chess.fen()
+        if (lastFrom !== null) {
+          $('#board-' + game.gameId + '_chess_square_' + lastFrom)
+            .removeClass('chess_square_moved');
+          $('#board-' + game.gameId + '_chess_square_' + lastTo)
+            .removeClass('chess_square_moved');
+        }
       }
 
       let nextPlayer, status,
