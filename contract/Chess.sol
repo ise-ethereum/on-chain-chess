@@ -113,21 +113,29 @@ contract Chess is TurnBasedGame, Auth {
     }
 
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {
-        if (games[gameId].nextPlayer != msg.sender) {
-            throw;
+        if(games[gameId].timeoutState == 2 &&
+         now >= games[gameId].timeoutStarted + games[gameId].turnTime * 1 minutes &&
+         msg.sender != games[gameId].nextPlayer){
+            // Just a fake move to determine if there is a possible move left for timeout
+        } else {
+            if (games[gameId].nextPlayer != msg.sender) {
+                throw;
+            }
+            if(games[gameId].timeoutState != 0) {
+                games[gameId].timeoutState = 0;
+            }
+
+            // Set nextPlayer
+            if (msg.sender == games[gameId].player1) {
+                games[gameId].nextPlayer = games[gameId].player2;
+            } else {
+                games[gameId].nextPlayer = games[gameId].player1;
+            }
         }
-        if(games[gameId].timeoutState != 0) {
-            games[gameId].timeoutState = 0;
-        }
+
         // Chess move validation
         gameStates[gameId].move(fromIndex, toIndex);
 
-        // Set nextPlayer
-        if (msg.sender == games[gameId].player1) {
-            games[gameId].nextPlayer = games[gameId].player2;
-        } else {
-            games[gameId].nextPlayer = games[gameId].player1;
-        }
 
         // Send events
         Move(gameId, msg.sender, fromIndex, toIndex);
@@ -176,7 +184,7 @@ contract Chess is TurnBasedGame, Auth {
         // just the two players currently playing
         if (msg.sender != game.player1 && msg.sender != game.player2)
             throw;
-        if (now < game.timeoutStarted + 10 minutes)
+        if (now < game.timeoutStarted + game.turnTime * 1 minutes)
             throw;
         if (msg.sender == game.nextPlayer)
             throw;
