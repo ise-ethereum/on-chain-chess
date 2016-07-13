@@ -1,6 +1,6 @@
 /* global angular */
 import {web3, Chess} from '../../contract/Chess.sol';
-import {generateFen, generateMapping} from './utils/fen-conversion.js';
+import {generateFen, generateMapping, algebraicToIndex} from './utils/fen-conversion.js';
 var ChessJS = require('chess.js');
 var shhFactory = require('web3-shh-dropin-for-proxy');
 var proxyUri = 'http://ise.filesmania.de:8090';
@@ -224,6 +224,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
 
       if (opponentChessMove !== null) {
         game.state = state;
+        game.nextPlayer = game.self.accountId;
+        // TODO do we use lastMove ?
         game.lastMove = opponentChessMove;
         games.sendAck(game);
         gameStates.addOpponentMove(
@@ -235,6 +237,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           // Player is currently in another game
           $rootScope.$broadcast('message', game.opponent.username + ' made a move!',
                                 'message', 'playgame');
+          $rootScope.apply();
         }
       } else {
         console.log('Move is not valid, send last state and move to blockchain');
@@ -471,6 +474,14 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
 
   /* Send move and resulting new state to second player */
   games.sendMove = function (game, fromIndex, toIndex) {
+    // update game information
+    gameStates.addSelfMove(game.gameId,
+                           algebraicToIndex(fromIndex),
+                           algebraicToIndex(toIndex),
+                           game.state);
+    game.nextPlayer = game.opponent.accountId;
+    console.log('sendMove move number', gameStates.getMoveNumberFromState(game.state));
+
     // if there is a timeout running against us, send the move to blockchain
     if (game.timeoutState !== 0 && game.timeoutState !== -2) {
       games.sendLastStateOrMoveToBlockchain(game);
@@ -553,7 +564,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
   };
 
   /**
-   * Check if a random move is valid, throws if no valid moves are possible
+   * Returns a random valid move, throws if no valid moves are possible
    *
    * @param game
    * @returns {*[from index in 0x88, to index in 0x88]}
@@ -871,11 +882,15 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     }
     let game = games.getGame(data.args.gameId);
     if (typeof game === 'undefined') {
-      console.log('game not found!! eRRR');
       return;
     }
     game.timeoutStarted = data.args.timeoutStarted.toNumber();
     game.timeoutState = data.args.timeoutState.toNumber();
+
+    if (gameStates.isBlockchainStateNewer(game.gameId)) {
+      game.state = gameStates.getLastBlockchainState(game);
+      games.update(game);
+    }
 
     /*
      * -2 draw offered by nextPlayer
@@ -884,6 +899,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
      * 1 checkmate
      * 2 timeout
      */
+    console.log('eventGameTimeoutStarted for', game);
     if ((game.timeoutState === -1 && game.nextPlayer === game.self.accountId) ||
         (game.timeoutState === -2 && game.nextPlayer === game.opponent.accountId)) {
       $rootScope.$broadcast('message',
@@ -928,11 +944,9 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
             'You have to move withing the next ' + game.timeoutTime + ' minutes ' + 'to decline.',
             'error', 'playgame-' + game.gameId);
           console.log(game.opponent.username + ' has started a timeout. You have to move withing ' +
-                      'the next ' + game.timeoutTime + ' minutes ' + 'to decline.', e);
+                      'the next ' + game.timeoutTime + ' minutes ' + 'to decline.');
         }
       }
-
-      $rootScope.$apply();
     } else if (
       data.args.timeoutState === -2 && // -2 = offerDraw by turning player
       // confirm if in stalemate or draw
@@ -950,6 +964,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         console.error('error while trying to confirm the game ended after draw', e);
       }
     }
+    $rootScope.$apply();
   };
 
   // Fetch games of player

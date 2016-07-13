@@ -1,6 +1,6 @@
 /* global angular, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
-import {generateState, algebraicToIndex} from './utils/fen-conversion.js';
+import {generateState} from './utils/fen-conversion.js';
 
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
@@ -154,7 +154,9 @@ module.controller('PlayGameCtrl',
 
     function pieceMoveOffChain(move) {
       let game = $scope.getGame();
-
+      console.log('pieceMoveOffChain move number before',
+        gameStates.getMoveNumberFromState(game.state));
+      console.log('old fen', game.chess.fen());
       // move piece from ... to
       chessMove = game.chess.move({
         from: move.from,
@@ -163,16 +165,15 @@ module.controller('PlayGameCtrl',
       });
 
       let fen = game.chess.fen();
+      console.log('new fen', fen);
 
       if (chessMove !== null) {
         // Submit move off-chain
         game.state = generateState(fen);
+        console.log('pieceMoveOffChain move number after',
+          gameStates.getMoveNumberFromState(game.state));
 
         updateBoardState(game, chessMove);
-        gameStates.addSelfMove(game.gameId,
-                               algebraicToIndex(move.from),
-                               algebraicToIndex(move.to),
-                               game.state);
         // be sure to call sendMove after game updated!
         games.sendMove(game, move.from, move.to);
         $scope.$apply();

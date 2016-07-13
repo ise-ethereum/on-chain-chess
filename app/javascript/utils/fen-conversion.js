@@ -70,7 +70,7 @@ export function generateState(fen) {
       activeColor = fenComponents[1],
       castling =  fenComponents[2],
       enPassant =  fenComponents[3],
-      halfMoveClock = fenComponents[4], // jshint ignore:line
+      // halfMoveClock = fenComponents[4],
       fullMoveCounter = fenComponents[5];
 
   // set board to 0x88
@@ -244,7 +244,7 @@ export function generateFen(state) {
   fen += ' 0 ';
 
   // set fullmove number
-  let halfMoveCounter = state[8] << 7 + state[9];
+  let halfMoveCounter = 128 * state[8] + state[9];
   fen += Math.ceil((halfMoveCounter + 1) / 2);
 
   return fen;
