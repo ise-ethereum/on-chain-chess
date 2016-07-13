@@ -1,6 +1,6 @@
 /* global angular, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
-import {generateState, generateFen} from './utils/fen-conversion.js';
+import {generateState, generateFen, generateMapping} from './utils/fen-conversion.js';
 
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
@@ -62,6 +62,7 @@ module.controller('PlayGameCtrl',
 
 
     function updateBoardState(game, chessMove = null) {
+      console.log('updateBoardState', game, chessMove);
       let chess = game.chess;
 
       if (chessMove) {
@@ -412,28 +413,33 @@ module.controller('PlayGameCtrl',
           //   updateBoardState($scope.game, checkMove);
           // });
           $scope.$watch('game.state', function () {
+            console.log('$watch game.state');
             let g = $scope.game;
             try {
+              let toFrontend = generateMapping().toFrontend;
               if (g.chess.turn() === g.self.color[0]) {
                 let lastOpponentMove = gameStates.getLastOpponentMove(g.gameId);
-                if (generateFen(lastOpponentMove.newState) === generateFen(g.state)) {
+                // if (generateFen(lastOpponentMove.newState) === generateFen(g.state)) {
                   updateBoardState(g, {
-                    from: lastOpponentMove.moveFrom,
-                    to: lastOpponentMove.moveTo
+                    from: toFrontend[lastOpponentMove.moveFrom],
+                    to: toFrontend[lastOpponentMove.moveTo]
                   });
                   return;
-                }
+                // }
               } else {
                 let lastSelfMove = gameStates.getLastSelfMove(g.gameId);
-                if (generateFen(lastSelfMove.newState) === generateFen(g.state)) {
+                // if (generateFen(lastSelfMove.newState) === generateFen(g.state)) {
                   updateBoardState(g, {
-                    from: lastSelfMove.moveFrom,
-                    to: lastSelfMove.moveTo
+                    from: toFrontend[lastSelfMove.moveFrom],
+                    to: toFrontend[lastSelfMove.moveTo]
                   });
                   return;
-                }
+                // }
               }
-            } catch (e) {}
+            } catch (e) {
+              console.log('$watch throw', e);
+            }
+            console.log('$watch update without move');
             updateBoardState($scope.game);
           });
         });

@@ -32,7 +32,7 @@ function generatePieceMapping(){
   };
 }
 
-function generateMapping () {
+export function generateMapping () {
   let x = 0, y = 8;
   let toBackend = {};
   let toFrontend = {};

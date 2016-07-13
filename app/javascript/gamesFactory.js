@@ -613,7 +613,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     console.log('getLastMovePackage success... sending move',
       state, fromIndex, toIndex, stateSignature);
     Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature,
-                        { from: game.self.accountId });
+                        { from: game.self.accountId, gas: 3000000 });
   };
 
   /* Send acknowledgment of last received move */
@@ -884,6 +884,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     game.timeoutState = data.args.timeoutState.toNumber();
 
     if (gameStates.isBlockchainStateNewer(game.gameId)) {
+      console.log('blockchain state newer, update');
       game.state = gameStates.getLastBlockchainState(game);
       games.update(game);
       // TODO update chessboard !
