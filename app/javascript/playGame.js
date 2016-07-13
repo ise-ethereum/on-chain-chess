@@ -1,6 +1,6 @@
 /* global angular, Chessboard, ChessUtils */
 import {Chess as SoliChess} from '../../contract/Chess.sol';
-import {generateState} from './utils/fen-conversion.js';
+import {generateState, generateFen} from './utils/fen-conversion.js';
 
 var module = angular.module('dappChess');
 module.controller('PlayGameCtrl',
@@ -408,8 +408,33 @@ module.controller('PlayGameCtrl',
         $timeout(() => {
           initChessboard($scope.game);
           updateBoardState($scope.game);
-          $scope.$watch('game.lastMove', function(checkMove) {
-            updateBoardState($scope.game, checkMove);
+          // $scope.$watch('game.lastMove', function(checkMove) {
+          //   updateBoardState($scope.game, checkMove);
+          // });
+          $scope.$watch('game.state', function () {
+            let g = $scope.game;
+            try {
+              if (g.chess.turn() === g.self.color[0]) {
+                let lastOpponentMove = gameStates.getLastOpponentMove(g.gameId);
+                if (generateFen(lastOpponentMove.newState) === generateFen(g.state)) {
+                  updateBoardState(g, {
+                    from: lastOpponentMove.moveFrom,
+                    to: lastOpponentMove.moveTo
+                  });
+                  return;
+                }
+              } else {
+                let lastSelfMove = gameStates.getLastSelfMove(g.gameId);
+                if (generateFen(lastSelfMove.newState) === generateFen(g.state)) {
+                  updateBoardState(g, {
+                    from: lastSelfMove.moveFrom,
+                    to: lastSelfMove.moveTo
+                  });
+                  return;
+                }
+              }
+            } catch (e) {}
+            updateBoardState($scope.game);
           });
         });
       } else {

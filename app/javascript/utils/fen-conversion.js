@@ -68,8 +68,8 @@ export function generateState(fen) {
   let fenComponents = fen.split(' ');
   let board = fenComponents[0],
       activeColor = fenComponents[1],
-      castling =  fenComponents[2],
-      enPassant =  fenComponents[3],
+      castling = fenComponents[2],
+      enPassant = fenComponents[3],
       // halfMoveClock = fenComponents[4],
       fullMoveCounter = fenComponents[5];
 
@@ -152,7 +152,13 @@ export function generateState(fen) {
   // set enpassant
   let mapping = generateMapping();
   state[61] = mapping.toBackend[enPassant];
+  if (typeof state[61] === 'undefined') {
+    state[61] = 0;
+  }
   state[77] = mapping.toBackend[enPassant];
+  if (typeof state[77] === 'undefined') {
+    state[77] = 0;
+  }
 
   return state;
 }
