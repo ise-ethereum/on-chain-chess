@@ -2,11 +2,12 @@
   <h1>Play Game</h1>
 </div>
 <div class="container" data-ng-show="isOpenGame()">
-  <div class="eight columns">
+   <div class="eight columns">
     <p>Your game has started, but no opponent has joined the game yet.</p>
-    <p>Account ID used for this game: {{getGame().self.accountId}}<br>
+    <p>Ether bet: {{getGame().pot}}<br>
       Start color: {{getGame().self.color}}<br>
-      Ether bet: {{getGame().pot}}</p>
+      Your username: {{getGame().self.username}}<br>
+      Account ID used for this game: {{getGame().self.accountId}}</p>
   </div>
   <div class="four columns">
     <button data-ng-click="closeGame()">Close game</button>
