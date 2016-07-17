@@ -66,9 +66,10 @@ module.controller('PlayGameCtrl',
       let chess = game.chess;
 
       if (chessMove) {
-        board.move(chessMove.from+ '-' + chessMove.to);
+        // If we know which move it was, show it on board
+        console.log('Updating chess board with move');
+        board.move(chessMove.from + '-' + chessMove.to);
 
-        // Of we know which move it was, show it on board
         let highlights = lightItUp();
         var fromW = highlights.playerWhite[chessMove.from];
         var toW = highlights.playerWhite[chessMove.to];
@@ -96,7 +97,8 @@ module.controller('PlayGameCtrl',
         }
       } else {
         // no known move to show, just update board
-        board.setPosition(generateFen(game.state).split(' ')[0]); // game.chess.fen()
+        console.log('Updating chess board with state');
+        board.position(game.chess.fen().split(' ')[0]);
         if (lastFrom !== null) {
           $('#board-' + game.gameId + '_chess_square_' + lastFrom)
             .removeClass('chess_square_moved');
