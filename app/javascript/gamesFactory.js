@@ -2,24 +2,29 @@
 import {web3, Chess} from '../../contract/Chess.sol';
 import {generateFen, generateState, generateMapping, algebraicToIndex}
   from './utils/fen-conversion.js';
-
+import config from '../config.js';
 var ChessJS = require('chess.js');
 var shhFactory = require('web3-shh-dropin-for-proxy');
-var proxyUri = 'http://ise.filesmania.de:8090';
-var shhTopic = 'ise-ethereum-chess';
 
-const TIMEOUT_ACK = 10000;
+const proxyUri = config.proxyUri;
+const shhTopic = config.appId;
+const TIMEOUT_ACK = config.timeouts.ack;
 
 angular.module('dappChess').factory('games', function (crypto, navigation, gameStates,
                                                        accounts, $rootScope, $route) {
+  // Only needed for fake Whisper proxy
+  let shh = shhFactory(proxyUri, function(shh) {
+    // Register all my accounts with proxy
+    for (let account of accounts.availableAccounts) {
+      shh.register(account);
+    }
+  });
+
   const games = {
     list: [],
-    openGames: []
+    openGames: [],
+    viewingGame: {id: 0}
   };
-
-  let shh = shhFactory(proxyUri);
-
-  games.viewingGame = {id: 0};
 
   games.getGame = function (id) {
     return games.list.find(function (game) {
@@ -358,7 +363,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
     if (accounts.availableAccounts.indexOf(game.self.accountId) !== -1) {
       if (game.timeoutState !== 0) {
         $rootScope.$broadcast('message',
-          'Not able to claim timeout, while other claim is active in game with the id ' +
+          'Not able to claim timeout while other claim is active in game with the id ' +
           game.gameId,
           'error', 'claimtimeout');
       } else {
@@ -370,9 +375,8 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           Chess.claimTimeout(game.gameId, {from: game.self.accountId});
         } catch (e) {
           console.log('claimTimeout error', e);
-          $rootScope.$broadcast('message',
-            'Could not claim timeout',
-            'error', 'claimtimeout');
+          $rootScope.$broadcast('message', 'Could not claim timeout',
+                                'error', 'claimtimeout');
         }
       }
     }
@@ -633,9 +637,6 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
   /* Receive move and resulting new state from opponent */
   /* callback({[state, stateSignature, fromIndex, toIndex, moveSignature], from}) */
   games.listenForMoves = function(game, callback) {
-    // Register is only needed for Fake-SHH. Remove this line for real Whisper
-    shh.register(game.self.accountId);
-
     let moveEvents = shh.watch({
       'topic': [shhTopic, game.gameId],
       'to': game.self.accountId
@@ -944,11 +945,13 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
         try {
           games.sendLastStateOrMoveToBlockchain(game);
         } catch (e) {
-          // no move found that user made before. user has to move itself
+          // no move found that user made before. user has to make a move
           $rootScope.$broadcast('message',
             game.opponent.username + ' has started a timeout. ' +
             'You have to move withing the next ' + game.turnTime + ' minutes ' + 'to decline.',
             'error', 'playgame-' + game.gameId);
+          // Set countdown. We cannot know when the opponent moves, so just start it from now
+          game.currentTimeout = new Date(new Date().getTime() + game.turnTime * 60 * 1000);
           console.log(game.opponent.username + ' has started a timeout. You have to move withing ' +
                       'the next ' + game.turnTime + ' minutes ' + 'to decline.');
         }
