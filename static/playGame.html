@@ -15,22 +15,22 @@
 <div class="container" data-ng-show="!isOpenGame()">
   <div class="eight columns">
     <p data-ng-show="gameIsActive()">
-      You are in an ongoing chess game, the pot is at {{game.pot}}.
+      You are in an ongoing chess game, the pot is at {{game.pot}} Ether.
     </p>
     <p data-ng-show="gameIsWon()">
       You have won this game.
-      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} is being transferred to you.</span>
-      <span data-ng-hide="getGame().pot > 0">The pot was transferred to you.</span>
+      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} Ether is being transferred to you.</span>
+      <span data-ng-hide="getGame().pot > 0">The pot of {{getGame().pot}} Ether was transferred to you.</span>
     </p>
     <p data-ng-show="gameIsLost()">
       You have lost this game.
-      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} is transferred to your opponent.</span>
-      <span data-ng-hide="getGame().pot > 0">The pot was transferred to your opponent.</span>
+      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} Ether is transferred to your opponent.</span>
+      <span data-ng-hide="getGame().pot > 0">The pot of {{getGame().pot}} Ether was transferred to your opponent.</span>
     </p>
     <p data-ng-show="gameIsDraw()">
       The game has been declared a draw.
-      <span data-ng-show="getGame().self.wonEther > 0">Your bet {{getGame().self.wonEther}} is transferred back to you.</span>
-      <span data-ng-hide="getGame().self.wonEther > 0">Your bet was transferred back to you.</span>
+      <span data-ng-show="getGame().self.wonEther > 0">Your bet of {{getGame().self.wonEther}} Ether is transferred back to you.</span>
+      <span data-ng-hide="getGame().self.wonEther > 0">Your bet of {{getGame().self.wonEther}} Ether was transferred back to you.</span>
     </p>
     <!--<p>Game data:</p>
     <ul>
