@@ -252,9 +252,6 @@ describe('Chess contract', function() {
   describe('moveFromState()', function () {
     let gameId1;
     beforeEach((done) => {
-      // runs before each test in this block
-      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
-
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
       filter.watch((error, result) => {
@@ -264,6 +261,9 @@ describe('Chess contract', function() {
         Chess.joinGame(gameId1, 'Bob', {from: player2, gas: 500000});
         done();
       });
+
+      // runs before each test in this block
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
     });
 
     it('should accept a valid move with valid signatures', function (done) {
@@ -315,21 +315,39 @@ describe('Chess contract', function() {
     });
 
     it('should work with some other states', () => {
-      let newState = [-4, -2, -3, -5, -6, -3, -2, -4, 0, 1, 0, 116, 0, 0, 0, 0,
+      // Test a simple move on a state
+      let newState = [-4, -2, -3, -5, -6, -3, -2, -4, 0, 1, 0, 4, 0, 0, 0, 0,
                       -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0,         0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0,        -1, 0, 0, 0, 0, 80, 0, 0,
                       1, 0, 0, 0, 0, 0, 0, 0,         0, 0, 0, 0, 0, 80, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0,         0, 0, 0, 0, 0, 0, 0, 0,
                       0, 1, 1, 1, 1, 1, 1, 1,         0, 0, 0, 0, 0, 0, 0, 0,
-                      4, 2, 3, 5, 6, 3, 2, 4,         0, 0, 0, 4, 0, 0, 0, 0];
+                      4, 2, 3, 5, 6, 3, 2, 4,         0, 0, 0, 116, 0, 0, 0, 0];
       let sigStatenew = web3.eth.sign(player1, solSha3(...newState, gameId1));
       let fromIndex = 23;
       let toIndex = 55;
 
       assert.doesNotThrow(function () {
         Chess.moveFromState(gameId1, newState, fromIndex, toIndex,
-          sigStatenew, {from: player2, gas: 2000000});
+                            sigStatenew, {from: player2, gas: 2000000});
+      }, Error);
+
+      // Test putting the black king in check
+      newState = [-4,-2,-3,-5, 0,-3,-2,-4,    0,12,0,20,0,0,0,0,
+                  -1,-1,-1, 0,-6, 0, 0, 0,    0,0,0,0,0,0,0,0,
+                   0, 0, 0,-1, 3,-1, 5,-1,    0,0,0,0,0,0,0,0,
+                   0, 0, 0, 0, 0, 0, 0, 0,    1,0,0,0,0,0,-1,-1,
+                   0, 0, 0, 0, 0, 0, 0, 0,    0,0,0,0,0,0,0,0,
+                   1, 0, 0, 0, 1, 0, 0, 0,    0,0,0,0,0,0,0,0,
+                   0, 1, 1, 1, 0, 1, 1, 1,    0,0,0,0,0,0,0,0,
+                   4, 2, 3, 0, 6, 0, 2, 4,    0,0,0,116,0,0,0,0];
+      fromIndex = 38;
+      toIndex = 21;
+      sigStatenew = web3.eth.sign(player2, solSha3(...newState, gameId1));
+      assert.doesNotThrow(function () {
+        Chess.moveFromState(gameId1, newState, fromIndex, toIndex,
+                            sigStatenew, {from: player1, gas: 2000000});
       }, Error);
     });
 
