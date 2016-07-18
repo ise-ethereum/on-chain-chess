@@ -116,9 +116,9 @@ contract Chess is TurnBasedGame, Auth {
     }
 
     function move(bytes32 gameId, uint256 fromIndex, uint256 toIndex) notEnded(gameId) public {
-        if(games[gameId].timeoutState == 2 &&
-         now >= games[gameId].timeoutStarted + games[gameId].turnTime * 1 minutes &&
-         msg.sender != games[gameId].nextPlayer){
+        if (games[gameId].timeoutState == 2 &&
+           now >= games[gameId].timeoutStarted + games[gameId].turnTime * 1 minutes &&
+           msg.sender != games[gameId].nextPlayer) {
             // Just a fake move to determine if there is a possible move left for timeout
 
             // Chess move validation
