@@ -618,7 +618,7 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
       return;
     }
     console.log('getLastMovePackage success... sending move',
-      state, fromIndex, toIndex, stateSignature);
+                state, fromIndex, toIndex, stateSignature);
     Chess.moveFromState(game.gameId, state, fromIndex, toIndex, stateSignature,
                         { from: game.self.accountId });
   };
