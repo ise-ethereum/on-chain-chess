@@ -168,8 +168,6 @@ library ChessLogic {
             throw;
         }
 
-
-
         // check that from and to are distinct
         if (fromIndex == toIndex) {
             throw;
@@ -252,7 +250,7 @@ library ChessLogic {
                     return true;
                 }
                 temp = temp + direction;
-                if (temp & 0x88 == 0) return false;
+                if (temp & 0x88 != 0) return false;
             }
 
             return false;
