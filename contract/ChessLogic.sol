@@ -162,10 +162,13 @@ library ChessLogic {
     }
 
     function sanityCheck(uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 currentPlayerColor) internal {
+
         // check that move is within the field
         if (toIndex & 0x88 != 0 || fromIndex & 0x88 != 0) {
             throw;
         }
+
+
 
         // check that from and to are distinct
         if (fromIndex == toIndex) {
@@ -243,7 +246,7 @@ library ChessLogic {
             int temp = int(fromIndex);
 
             // walk in direction while inside board to find toIndex
-            //while (temp & 0x88 == 0) {
+            // while (temp & 0x88 == 0) {
             for (uint j = 0; j < 8; j++) {
                 if (temp == int(toIndex)) {
                     return true;
@@ -349,40 +352,32 @@ library ChessLogic {
     function checkForCheck(State storage self, uint256 kingIndex, int8 currentPlayerColor) internal returns (bool) {
         // look in every direction whether there is an enemy figure that checks the king
         for (uint dir = 0; dir < 8; dir ++) {
-          // get the first Figure in this direction. Threat of Knight does not change through move of fromFigure.
-          // All other figures can not jump over figures. So only the first figure matters.
-          int8 firstFigureIndex = getFirstFigure(self, Directions(Direction(dir)),int8(kingIndex));
+            // get the first Figure in this direction. Threat of Knight does not change through move of fromFigure.
+            // All other figures can not jump over figures. So only the first figure matters.
+            int8 firstFigureIndex = getFirstFigure(self, Directions(Direction(dir)), int8(kingIndex));
 
-          // if we found a figure in the danger direction
+            // if we found a figure in the danger direction
+            if (firstFigureIndex != -1) {
+                int8 firstFigure = self.fields[uint(firstFigureIndex)];
 
-          if (firstFigureIndex != -1) {
+                // if its an enemy
+                if (firstFigure * currentPlayerColor < 0) {
+                    // check if the enemy figure can move to the field of the king
+                    int8 kingFigure = Pieces(Piece.WHITE_KING) * currentPlayerColor;
 
-              int8 firstFigure = self.fields[uint(firstFigureIndex)];
-              // if its an enemy
-
-
-
-              if (firstFigure * currentPlayerColor < 0) {
-
-                  // check if the enemy figure can move to the field of the king
-                  int8 kingFigure = Pieces(Piece.WHITE_KING) * currentPlayerColor;
-
-                  if (validateMove(self, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, currentPlayerColor)) {
-                      // it can
-                      return true; // king is checked
-                  }
-
-              }
-
-          }
-
+                    if (validateMove(self, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, currentPlayerColor)) {
+                        // it can
+                        return true; // king is checked
+                    }
+                }
+            }
         }
 
         //Knights
         // Knights can jump over figures. So they need to be tested seperately with every possible move.
         for (uint move = 0; move < 8; move ++){
             // currentMoveIndex: where knight could start with move that checks king
-            int8 currentMoveIndex = int8(kingIndex) + int8(knightMoves[move]);
+            int8 currentMoveIndex = int8(kingIndex) + int8(knightMoves[move]) - 64;
 
             // if inside the board
             if (uint(currentMoveIndex) & 0x88 == 0){
