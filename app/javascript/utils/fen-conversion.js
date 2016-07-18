@@ -87,10 +87,10 @@ export function generateState(fen) {
         }
       } else {
         state.push((toState[board[i]]));
-        if (board[i] === 'K') {
+        if (board[i] === 'k') {
           blackKing = counter;
         }
-        if (board[i] === 'k') {
+        if (board[i] === 'K') {
           whiteKing = counter;
         }
         counter++;
