@@ -141,13 +141,11 @@ library ChessLogic {
                 throw;
             }
         }
-
         // Make the move
         makeMove(self, fromIndex, toIndex, fromFigure, toFigure);
 
         // Check legality (player's own king may not be in check after move)
         checkLegality(self, fromIndex, toIndex, fromFigure, toFigure, currentPlayerColor);
-
         // Update move count
         // High and Low are int8, so from -127 to 127
         // By using two flags we extend the positive range to 14 bit, 0 to 16384
@@ -192,7 +190,7 @@ library ChessLogic {
      * i.e. if piece is capable to move this way
      */
     function validateMove(State storage self, uint256 fromIndex, uint256 toIndex, int8 fromFigure, int8 toFigure, int8 movingPlayerColor) returns (bool) {
-        int8 direction = getDirection(fromIndex, toIndex);
+        int direction = int(getDirection(fromIndex, toIndex));
         bool isDiagonal = !(abs(direction) == 16 || abs(direction) == 1);
 
         // Kings
@@ -243,12 +241,15 @@ library ChessLogic {
 
             // Traverse all fields in direction
             int temp = int(fromIndex);
+
             // walk in direction while inside board to find toIndex
-            while (temp & 0x88 == 0) {
-                if (uint(temp) == toIndex) {
+            //while (temp & 0x88 == 0) {
+            for (uint j = 0; j < 8; j++) {
+                if (temp == int(toIndex)) {
                     return true;
                 }
-                temp += direction;
+                temp = temp + direction;
+                if (temp & 0x88 == 0) return false;
             }
 
             return false;
@@ -353,19 +354,28 @@ library ChessLogic {
           int8 firstFigureIndex = getFirstFigure(self, Directions(Direction(dir)),int8(kingIndex));
 
           // if we found a figure in the danger direction
+
           if (firstFigureIndex != -1) {
+
               int8 firstFigure = self.fields[uint(firstFigureIndex)];
               // if its an enemy
+
+
+
               if (firstFigure * currentPlayerColor < 0) {
 
                   // check if the enemy figure can move to the field of the king
                   int8 kingFigure = Pieces(Piece.WHITE_KING) * currentPlayerColor;
+
                   if (validateMove(self, uint256(firstFigureIndex), uint256(kingIndex), firstFigure, kingFigure, currentPlayerColor)) {
                       // it can
                       return true; // king is checked
                   }
+
               }
+
           }
+
         }
 
         //Knights
@@ -562,6 +572,7 @@ library ChessLogic {
         if (checkForCheck(self, uint(kingIndex), movingPlayerColor)) {
             throw;
         }
+
 
         // through move of fromFigure away from fromIndex,
         // king may now be in danger from that direction

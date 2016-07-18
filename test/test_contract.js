@@ -299,6 +299,7 @@ describe('Chess contract', function() {
 
       // Watch for GameStateChanged event to check that all pieces and flags
       // were updated
+
       let expectedState = [...defaultBoard];
       expectedState[100] = 0; // moved piece away
       expectedState[84] = defaultBoard[100];
@@ -311,7 +312,27 @@ describe('Chess contract', function() {
         filter2.stopWatching(); // Need to remove filter again
         allDone();
       });
+      // should work but signed state does not work?!?
+      /*
+      let newState = [-4, -2, -3, -5, -6, -3, -2, -4, 0, 1, 0, 116, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 80, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2, 3, 5, 6, 3, 2, 4, 0, 0, 0, 4, 0, 0, 0, 0];
+      console.log(gameStateDisplay(newState))
+      let sigStatenew = "0x5656053ddb31b84af3832678115adebc48d9c78d47487c298f19ce3875943a592e08fc9600f3bafca0e31df39d31119f1c250ec69895cf315227069dc77589861c";
+      // try to move with the new state
+      fromIndex = 23;
+      toIndex = 55;
+
+      // As player1 is the next player, this move should be valid
+      assert.doesNotThrow(function () {
+        // white pawn e7e6
+        Chess.moveFromState(gameId1, newState, fromIndex, toIndex,
+          sigStatenew, {from: player2, gas: 2000000});
+      }, Error);
+      */
     });
+
+    /*
+
+    */
 
     it('should throw an exception for message from non-participant', function () {
       let fromIndex = 100;
