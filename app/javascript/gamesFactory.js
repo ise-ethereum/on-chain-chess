@@ -323,12 +323,19 @@ angular.module('dappChess').factory('games', function (crypto, navigation, gameS
           'message', 'claimwin');
         try {
           games.sendLastStateOrMoveToBlockchain(game);
+        } catch (e) {
+          console.log('sendLastStateOrMoveToBlockchain error', e);
+          $rootScope.$broadcast('message',
+                                'An error occurred while sending the game state to the blockchain',
+                                'error', 'claimwin');
+        }
+        try {
           Chess.claimWin(game.gameId, {from: game.self.accountId});
         } catch (e) {
           console.log('claimWin error', e);
           $rootScope.$broadcast('message',
-            'Could not claim for a win',
-            'error', 'claimwin');
+                                'An error occurred while trying to claim win',
+                                'error', 'claimwin');
         }
       }
     }

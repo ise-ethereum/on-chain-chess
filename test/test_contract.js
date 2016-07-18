@@ -351,6 +351,29 @@ describe('Chess contract', function() {
       }, Error);
     });
 
+    it('should set end state to be able to claim win ', () => {
+      // Checking black king
+      let newState = [-4,-2,-3,-5,-6,-3,-2,-4,  0,10, 0, 4,0,0,0,0,
+                       0,-1,-1,-1, 0,-1,-1, 0,  0, 0, 0, 0,0,0,0,0,
+                       0, 0, 0, 0, 0, 5, 0,-1,  0, 0, 0, 0,0,0,0,0,
+                      -1, 0, 0, 0,-1, 0, 0, 0,  1, 0, 0, 0,0,0,0,0,
+                       0, 0, 3, 0, 0, 0, 0, 0,  0, 0, 0, 0,0, 0,0,0,
+                       0, 0, 0, 0, 1, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0,0,
+                       1, 1, 1, 1, 0, 1, 1, 1,  0, 0, 0, 0, 0, 0, 0,0,
+                       4, 2, 3, 0, 6, 0, 2, 4,  0, 0, 0,116,0,0,0,0];
+      let fromIndex = 66;
+      let toIndex = 21;
+      let sigStatenew = web3.eth.sign(player2, solSha3(...newState, gameId1));
+      assert.doesNotThrow(function () {
+        Chess.moveFromState(gameId1, newState, fromIndex, toIndex,
+                            sigStatenew, {from: player1, gas: 2000000});
+      }, Error);
+
+      assert.doesNotThrow(function () {
+        Chess.claimWin(gameId1, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
     it('should throw an exception for message from non-participant', function () {
       let fromIndex = 100;
       let toIndex = 84;
