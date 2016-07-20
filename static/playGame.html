@@ -2,7 +2,7 @@
   <h1>Play Game</h1>
 </div>
 <div class="container" data-ng-show="isOpenGame()">
-   <div class="eight columns">
+  <div class="eight columns">
     <p>Your game has started, but no opponent has joined the game yet.</p>
     <p>Ether bet: {{getGame().pot}}<br>
       Start color: {{getGame().self.color}}<br>
@@ -21,17 +21,17 @@
     <p data-ng-show="gameIsWon()">
       You have won this game.
       <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} Ether is being transferred to you.</span>
-      <span data-ng-hide="getGame().pot > 0">The pot of {{getGame().pot}} Ether was transferred to you.</span>
+      <span data-ng-hide="getGame().pot > 0">The pot was transferred to you.</span>
     </p>
     <p data-ng-show="gameIsLost()">
       You have lost this game.
       <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} Ether is transferred to your opponent.</span>
-      <span data-ng-hide="getGame().pot > 0">The pot of {{getGame().pot}} Ether was transferred to your opponent.</span>
+      <span data-ng-hide="getGame().pot > 0">The pot was transferred to your opponent.</span>
     </p>
     <p data-ng-show="gameIsDraw()">
       The game has been declared a draw.
-      <span data-ng-show="getGame().self.wonEther > 0">Your bet of {{getGame().self.wonEther}} Ether is transferred back to you.</span>
-      <span data-ng-hide="getGame().self.wonEther > 0">Your bet of {{getGame().self.wonEther}} Ether was transferred back to you.</span>
+      <span data-ng-show="getGame().pot > 0">Your bet of {{getGame().pot}} Ether is transferred back to you.</span>
+      <span data-ng-hide="getGame().pot > 0">Your bet was transferred back to you.</span>
     </p>
     <!--<p>Game data:</p>
     <ul>
