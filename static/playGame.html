@@ -30,8 +30,8 @@
     </p>
     <p data-ng-show="gameIsDraw()">
       The game has been declared a draw.
-      <span data-ng-show="getGame().pot > 0">Your bet of {{getGame().pot}} Ether is transferred back to you.</span>
-      <span data-ng-hide="getGame().pot > 0">Your bet was transferred back to you.</span>
+      <span data-ng-show="getGame().self.wonEther > 0">Your bet of {{getGame().self.wonEther}} Ether is transferred back to you.</span>
+      <span data-ng-hide="getGame().self.wonEther > 0">Your bet was transferred back to you.</span>
     </p>
     <!--<p>Game data:</p>
     <ul>
