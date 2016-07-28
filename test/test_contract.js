@@ -52,6 +52,10 @@ function solSha3 (...args) {
     return '0x' + web3.sha3(args, { encoding: 'hex' });
 }
 
+function adjustPot(value) {
+  return value * 2; // for testing in testrpc
+}
+
 describe('Chess contract', function() {
   this.timeout(60000);
   this.slow(500);
@@ -74,8 +78,6 @@ describe('Chess contract', function() {
   // We create a few test games here that will later be accessed in testGames[]
   describe('initGame()', function () {
     it('should initialize a game with player1 playing white with 1M Wei', function (done) {
-      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000, value: 1000000});
-
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
       filter.watch(function(error, result){
@@ -88,11 +90,11 @@ describe('Chess contract', function() {
         filter.stopWatching(); // Need to remove filter again
         done();
       });
+
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000, value: 1000000});
     });
 
     it('should broadcast the initial game state', function(done) {
-      Chess.initGame('Bob', true, 10, {from: player1, gas: 2000000});
-
       var eventGamestate = Chess.GameStateChanged({});
       eventGamestate.watch(function(error, result){
         let state = result.args.state.map(n => n.toNumber());
@@ -100,11 +102,11 @@ describe('Chess contract', function() {
         eventGamestate.stopWatching(); // Need to remove filter again
         done();
       });
+
+      Chess.initGame('Bob', true, 10, {from: player1, gas: 2000000});
     });
 
     it('should initialize a game with player1 playing black', function (done) {
-      Chess.initGame('Susan', false, 10, {from: player1, gas: 2000000});
-
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
       filter.watch(function(error, result){
@@ -115,6 +117,8 @@ describe('Chess contract', function() {
         filter.stopWatching(); // Need to remove filter again
         done();
       });
+
+      Chess.initGame('Susan', false, 10, {from: player1, gas: 2000000});
     });
 
     it('should have set game state to not ended', function() {
@@ -127,19 +131,21 @@ describe('Chess contract', function() {
     });
 
     it('should have the pot of 1M Wei for the first game', () => {
-      assert.equal(1000000, Chess.games(testGames[0])[7]);
+      assert.equal(adjustPot(1000000), Chess.games(testGames[0])[7].toNumber());
     });
   });
 
   describe('joinGame()', function () {
     it('should reject join with player with insufficient Ether', () => {
       assert.throws(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000, value: 500000});
+        Chess.joinGame(testGames[0], 'Bob',
+                       {from: player2, gas: 500000, value: adjustPot(500000)});
       }, Error);
     });
     it('should join player2 as black if player1 is white', function(done) {
       assert.doesNotThrow(function(){
-        Chess.joinGame(testGames[0], 'Bob', {from: player2, gas: 500000, value: 1000000});
+        Chess.joinGame(testGames[0], 'Bob',
+                       {from: player2, gas: 500000, value: adjustPot(1000000)});
       }, Error);
 
       // Watch for event from contract to check if it worked
@@ -188,7 +194,7 @@ describe('Chess contract', function() {
     });
 
     it('should have the pot of 2M Wei for the first game', () => {
-      assert.equal(2000000, Chess.games(testGames[0])[7]);
+      assert.equal(adjustPot(2000000), Chess.games(testGames[0])[7].toNumber());
     });
   });
 
@@ -202,7 +208,7 @@ describe('Chess contract', function() {
         gameId = result.args.gameId;
         filter.stopWatching();
 
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000, value: 1000000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000, value: adjustPot(1000000)});
         var filter2 = Chess.GameJoined({gameId: gameId});
         filter2.watch(function(){
           filter2.stopWatching();
@@ -239,16 +245,13 @@ describe('Chess contract', function() {
 
     it('should have assigned ether pot to winning player', () => {
       assert.equal(0, Chess.games(gameId)[7]);
-      assert.equal(2000000, Chess.games(gameId)[9]);
+      assert.equal(adjustPot(2000000), Chess.games(gameId)[9].toNumber());
     });
   });
 
   describe('moveFromState()', function () {
     let gameId1;
     beforeEach((done) => {
-      // runs before each test in this block
-      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
-
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
       filter.watch((error, result) => {
@@ -258,6 +261,9 @@ describe('Chess contract', function() {
         Chess.joinGame(gameId1, 'Bob', {from: player2, gas: 500000});
         done();
       });
+
+      // runs before each test in this block
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000});
     });
 
     it('should accept a valid move with valid signatures', function (done) {
@@ -293,6 +299,7 @@ describe('Chess contract', function() {
 
       // Watch for GameStateChanged event to check that all pieces and flags
       // were updated
+
       let expectedState = [...defaultBoard];
       expectedState[100] = 0; // moved piece away
       expectedState[84] = defaultBoard[100];
@@ -305,6 +312,66 @@ describe('Chess contract', function() {
         filter2.stopWatching(); // Need to remove filter again
         allDone();
       });
+    });
+
+    it('should work with some other states', () => {
+      // Test a simple move on a state
+      let newState = [-4, -2, -3, -5, -6, -3, -2, -4, 0, 1, 0, 4, 0, 0, 0, 0,
+                      -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0,         0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0,        -1, 0, 0, 0, 0, 80, 0, 0,
+                      1, 0, 0, 0, 0, 0, 0, 0,         0, 0, 0, 0, 0, 80, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0,         0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 1, 1, 1, 1, 1, 1, 1,         0, 0, 0, 0, 0, 0, 0, 0,
+                      4, 2, 3, 5, 6, 3, 2, 4,         0, 0, 0, 116, 0, 0, 0, 0];
+      let sigStatenew = web3.eth.sign(player1, solSha3(...newState, gameId1));
+      let fromIndex = 23;
+      let toIndex = 55;
+
+      assert.doesNotThrow(function () {
+        Chess.moveFromState(gameId1, newState, fromIndex, toIndex,
+                            sigStatenew, {from: player2, gas: 2000000});
+      }, Error);
+
+      // Test putting the black king in check
+      newState = [-4,-2,-3,-5, 0,-3,-2,-4,    0,12,0,20,0,0,0,0,
+                  -1,-1,-1, 0,-6, 0, 0, 0,    0,0,0,0,0,0,0,0,
+                   0, 0, 0,-1, 3,-1, 5,-1,    0,0,0,0,0,0,0,0,
+                   0, 0, 0, 0, 0, 0, 0, 0,    1,0,0,0,0,0,-1,-1,
+                   0, 0, 0, 0, 0, 0, 0, 0,    0,0,0,0,0,0,0,0,
+                   1, 0, 0, 0, 1, 0, 0, 0,    0,0,0,0,0,0,0,0,
+                   0, 1, 1, 1, 0, 1, 1, 1,    0,0,0,0,0,0,0,0,
+                   4, 2, 3, 0, 6, 0, 2, 4,    0,0,0,116,0,0,0,0];
+      fromIndex = 38;
+      toIndex = 21;
+      sigStatenew = web3.eth.sign(player2, solSha3(...newState, gameId1));
+      assert.doesNotThrow(function () {
+        Chess.moveFromState(gameId1, newState, fromIndex, toIndex,
+                            sigStatenew, {from: player1, gas: 2000000});
+      }, Error);
+    });
+
+    it('should set end state to be able to claim win ', () => {
+      // Checking black king
+      let newState = [-4,-2,-3,-5,-6,-3,-2,-4,  0,10, 0, 4,0,0,0,0,
+                       0,-1,-1,-1, 0,-1,-1, 0,  0, 0, 0, 0,0,0,0,0,
+                       0, 0, 0, 0, 0, 5, 0,-1,  0, 0, 0, 0,0,0,0,0,
+                      -1, 0, 0, 0,-1, 0, 0, 0,  1, 0, 0, 0,0,0,0,0,
+                       0, 0, 3, 0, 0, 0, 0, 0,  0, 0, 0, 0,0, 0,0,0,
+                       0, 0, 0, 0, 1, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0,0,
+                       1, 1, 1, 1, 0, 1, 1, 1,  0, 0, 0, 0, 0, 0, 0,0,
+                       4, 2, 3, 0, 6, 0, 2, 4,  0, 0, 0,116,0,0,0,0];
+      let fromIndex = 66;
+      let toIndex = 21;
+      let sigStatenew = web3.eth.sign(player2, solSha3(...newState, gameId1));
+      assert.doesNotThrow(function () {
+        Chess.moveFromState(gameId1, newState, fromIndex, toIndex,
+                            sigStatenew, {from: player1, gas: 2000000});
+      }, Error);
+
+      assert.doesNotThrow(function () {
+        Chess.claimWin(gameId1, {from: player1, gas: 2000000});
+      }, Error);
     });
 
     it('should throw an exception for message from non-participant', function () {
@@ -484,7 +551,7 @@ describe('Chess contract', function() {
 
     it('should have assigned ether pot back to player 1', () => {
       assert.equal(0, Chess.games(gameId)[7]);
-      assert.equal(1000000, Chess.games(gameId)[8]);
+      assert.equal(adjustPot(1000000), Chess.games(gameId)[8].toNumber());
     });
 
     // next test
@@ -615,18 +682,18 @@ describe('Chess contract', function() {
   describe('Endgame', () => {
     let gameId;
     beforeEach((done) => {
-      // runs before each test in this block
-      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000, value: 1000000});
-
       // Watch for event from contract to check if it worked
       var filter = Chess.GameInitialized({});
       filter.watch((error, result) => {
         gameId = result.args.gameId;
         assert.isOk(result.args.gameId);
         filter.stopWatching();
-        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000, value: 1000000});
+        Chess.joinGame(gameId, 'Bob', {from: player2, gas: 500000, value: adjustPot(1000000)});
         done();
       });
+
+      // runs before each test in this block
+      Chess.initGame('Alice', true, 10, {from: player1, gas: 2000000, value: 1000000});
     });
 
     describe('claimWin()', () => {
@@ -827,7 +894,7 @@ describe('Chess contract', function() {
         let filter2 = Chess.EloScoreUpdate({player: player2});
         filter2.watch((error, result) => {
           assert.equal(player2, result.args.player);
-          assert.equal(110, result.args.score.toNumber());
+          assert.equal(121, result.args.score.toNumber());
           filter2.stopWatching();
           plan.ok();
         });
@@ -836,7 +903,7 @@ describe('Chess contract', function() {
         let filter3 = Chess.EloScoreUpdate({player: player1});
         filter3.watch((error, result) => {
           assert.equal(player1, result.args.player);
-          assert.equal(100, result.args.score.toNumber());
+          assert.equal(101, result.args.score.toNumber());
           filter3.stopWatching();
           plan.ok();
         });
@@ -857,14 +924,14 @@ describe('Chess contract', function() {
         });
 
         // GameEnded event
-        let filter = Chess.GameEnded({});
+        let filter = Chess.GameEnded({gameId: gameId});
         filter.watch((error, result) => {
           assert.equal(gameId, result.args.gameId);
           assert.equal(player2, Chess.games(result.args.gameId)[5]);
           // Pot is 0
           assert.equal(0, Chess.games(result.args.gameId)[7]);
           // Player 2 got pot
-          assert.equal(2000000, Chess.games(result.args.gameId)[9]);
+          assert.equal(adjustPot(2000000), Chess.games(result.args.gameId)[9].toNumber());
           filter.stopWatching();
           done();
         });
@@ -898,8 +965,8 @@ describe('Chess contract', function() {
           // Pot is 0
           assert.equal(0, Chess.games(result.args.gameId)[7]);
           // Player 1 and player 2 got 1M Wei each
-          assert.equal(1000000, Chess.games(result.args.gameId)[8]);
-          assert.equal(1000000, Chess.games(result.args.gameId)[9]);
+          assert.equal(adjustPot(1000000), Chess.games(result.args.gameId)[8].toNumber());
+          assert.equal(adjustPot(1000000), Chess.games(result.args.gameId)[9].toNumber());
 
           filter.stopWatching();
           done();

@@ -56,8 +56,9 @@
     "webpack-node-externals": "*"
   },
   "dependencies": {
+    "async": "^1.5.2",
     "bignumber.js": "^2.3.0",
-    "web3-shh-dropin-for-proxy": "github:ise-ethereum/web3-shh-dropin-for-proxy",
-    "async": "^1.5.2"
+    "chess.js": "^0.10.2",
+    "web3-shh-dropin-for-proxy": "github:ise-ethereum/web3-shh-dropin-for-proxy"
   }
 }

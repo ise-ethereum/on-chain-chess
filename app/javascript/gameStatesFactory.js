@@ -4,7 +4,8 @@ angular.module('dappChess').factory('gameStates', function () {
   let gameStates = {
     selfMoves: {},
     opponentMoves: {},
-    lastMoveNumber: {}
+    lastMoveNumber: {},
+    lastMoveTime: {}
   };
 
   gameStates.getMoveNumberFromState = function(state) {
@@ -21,15 +22,19 @@ angular.module('dappChess').factory('gameStates', function () {
     if(typeof(gameStates.lastMoveNumber[gameId]) === 'undefined') {
       gameStates.lastMoveNumber[gameId] = 0;
     }
+    if(typeof(gameStates.lastMoveTime[gameId]) === 'undefined') {
+      gameStates.lastMoveTime[gameId] = 0;
+    }
   };
 
   gameStates.addSelfMove = function(gameId, moveFrom, moveTo, newState) {
+
     gameStates.initializeGame(gameId);
 
     let moveNumber = gameStates.getMoveNumberFromState(newState);
 
     // If we already stored this move, don't do anything
-    if(gameStates.lastMoveNumber[gameId] === moveNumber) {
+    if (gameStates.lastMoveNumber[gameId] === moveNumber) {
       return;
     }
     if(gameStates.lastMoveNumber[gameId] > moveNumber) {
@@ -42,6 +47,7 @@ angular.module('dappChess').factory('gameStates', function () {
       newState: newState
     });
     gameStates.lastMoveNumber[gameId] = moveNumber;
+    gameStates.lastMoveTime[gameId] = (new Date()).getTime();
 
     gameStates.updateLocalStorage();
   };
@@ -67,6 +73,7 @@ angular.module('dappChess').factory('gameStates', function () {
       newStateSignature: newStateSignature
     });
     gameStates.lastMoveNumber[gameId] = moveNumber;
+    gameStates.lastMoveTime[gameId] = (new Date()).getTime();
 
     gameStates.updateLocalStorage();
   };
@@ -79,6 +86,7 @@ angular.module('dappChess').factory('gameStates', function () {
     delete gameStates.selfMoves[gameId];
     delete gameStates.opponentMoves[gameId];
     delete gameStates.lastMoveNumber[gameId];
+    delete gameStates.lastMoveTime[gameId];
 
     gameStates.updateLocalStorage();
   };
@@ -91,10 +99,8 @@ angular.module('dappChess').factory('gameStates', function () {
     return gameStates.selfMoves[gameId];
   };
   gameStates.getLastSelfMove = function(gameId) {
-    if(typeof(gameStates.selfMoves[gameId]) === 'undefined') {
-      return [];
-    }
-    if(gameStates.selfMoves[gameId].length === 0) {
+    if(typeof(gameStates.selfMoves[gameId]) === 'undefined' ||
+       gameStates.selfMoves[gameId].length === 0) {
       throw 'This game has no self moves yet';
     }
 
@@ -258,6 +264,14 @@ angular.module('dappChess').factory('gameStates', function () {
     return blockchainGameState;
   };
 
+  gameStates.getLastMoveTime = function(game) {
+    return gameStates.lastMoveTime[game.gameId];
+  };
+
+  gameStates.getLastMoveNumber = function(game) {
+    return gameStates.lastMoveNumber[game.gameId];
+  };
+
   gameStates.updateLocalStorage = function() {
     window.localStorage.setItem('gameStates.selfMoves',
       angular.toJson(gameStates.selfMoves));
@@ -265,6 +279,8 @@ angular.module('dappChess').factory('gameStates', function () {
       angular.toJson(gameStates.opponentMoves));
     window.localStorage.setItem('gameStates.lastMoveNumber',
       angular.toJson(gameStates.lastMoveNumber));
+    window.localStorage.setItem('gameStates.lastMoveTime',
+      angular.toJson(gameStates.lastMoveTime));
   };
   gameStates.fetchFromLocalStorage = function() {
     if(typeof(window.localStorage['gameStates.selfMoves']) !== 'undefined') {
@@ -307,6 +323,20 @@ angular.module('dappChess').factory('gameStates', function () {
       }
       catch(e) {
         console.log('Could not parse lastMoveNumber from local storage', e);
+      }
+    }
+    if(typeof(window.localStorage['gameStates.lastMoveTime']) !== 'undefined') {
+      try {
+        let lastMoveTime = JSON.parse(window.localStorage['gameStates.lastMoveTime']);
+        if(typeof(lastMoveTime) === 'object') {
+          gameStates.lastMoveTime = lastMoveTime;
+        }
+        else {
+          throw 'Invalid data format of lastMoveTime';
+        }
+      }
+      catch(e) {
+        console.log('Could not parse lastMoveTime from local storage', e);
       }
     }
   };

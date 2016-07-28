@@ -50,10 +50,10 @@ Chess move index highlight
 */
 
 div.chess_board div.chess_square_dark.chess_square_moved {
-  background-color: #A7C600;
+  background-color: #81d4fa;
 }
 div.chess_board div.chess_square_light.chess_square_moved {
-  background-color: #CDE855;
+  background-color: #81d4fa;
 }
 
 

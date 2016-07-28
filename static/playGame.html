@@ -4,9 +4,10 @@
 <div class="container" data-ng-show="isOpenGame()">
   <div class="eight columns">
     <p>Your game has started, but no opponent has joined the game yet.</p>
-    <p>Account ID used for this game: {{getGame().self.accountId}}<br>
+    <p>Ether bet: {{getGame().pot}}<br>
       Start color: {{getGame().self.color}}<br>
-      Ether bet: {{getGame().pot}}</p>
+      Your username: {{getGame().self.username}}<br>
+      Account ID used for this game: {{getGame().self.accountId}}</p>
   </div>
   <div class="four columns">
     <button data-ng-click="closeGame()">Close game</button>
@@ -15,21 +16,21 @@
 <div class="container" data-ng-show="!isOpenGame()">
   <div class="eight columns">
     <p data-ng-show="gameIsActive()">
-      You are in an ongoing chess game, the pot is at {{game.pot}}.
+      You are in an ongoing chess game, the pot is at {{game.pot}} Ether.
     </p>
     <p data-ng-show="gameIsWon()">
       You have won this game.
-      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} is being transferred to you.</span>
+      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} Ether is being transferred to you.</span>
       <span data-ng-hide="getGame().pot > 0">The pot was transferred to you.</span>
     </p>
     <p data-ng-show="gameIsLost()">
       You have lost this game.
-      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} is transferred to your opponent.</span>
+      <span data-ng-show="getGame().pot > 0">The pot of {{getGame().pot}} Ether is transferred to your opponent.</span>
       <span data-ng-hide="getGame().pot > 0">The pot was transferred to your opponent.</span>
     </p>
     <p data-ng-show="gameIsDraw()">
       The game has been declared a draw.
-      <span data-ng-show="getGame().self.wonEther > 0">Your bet {{getGame().self.wonEther}} is transferred back to you.</span>
+      <span data-ng-show="getGame().self.wonEther > 0">Your bet of {{getGame().self.wonEther}} Ether is transferred back to you.</span>
       <span data-ng-hide="getGame().self.wonEther > 0">Your bet was transferred back to you.</span>
     </p>
     <!--<p>Game data:</p>
@@ -42,7 +43,7 @@
       <li>Opponents username: {{getGame().opponent.username}}</li>
     </ul>-->
 
-    <div id="my-board" style="width:100%"></div>
+    <div id="board-{{game.gameId}}" style="width:100%"></div>
 
   </div>
   <div class="four columns">
@@ -62,7 +63,7 @@
     <button data-ng-click="closeGame()" data-ng-show="!gameIsActive()">Close</button>
     <button data-ng-click="claimEther()" data-ng-show="gameHasClaimableEther()">Claim ether</button>
     <div class="game-log">
-      <p>{{gameStatus}} <span countdown="game.currentTimeout"></span></p>
+      <p>{{gameStatus}} <span countdown="game.currentTimeout" data-ng-show="gameIsActive()"></span></p>
       <p>{{gamePgn}}</p>
     </div>
   </div>

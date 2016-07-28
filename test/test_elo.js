@@ -7,7 +7,7 @@ var async = require('async');
 
 
 describe('ELO library', function() {
-  this.timeout(25000);
+  this.timeout(50000);
   this.slow(500);
   const player1 = web3.eth.accounts[0];
   const player2 = web3.eth.accounts[1];
