@@ -4,7 +4,7 @@
  * State encoding:
  *    positive numbers for white, negative numbers for black
  *    for details, see
- *    https://github.com/ise-ethereum/on-chain-chess/wiki/Chess-board-representation
+ *    https://github.com/Fede5mentarios/on-chain-chess
  */
 
 import "TurnBasedGame.sol";

@@ -1,7 +1,7 @@
 {
   "name": "on-chain-chess",
-  "version": "0.0.1",
-  "description": "Chess as a Ethereum (Solidity) smart contract decentralized app",
+  "version": "0.0.2",
+  "description": "Chess as a Solidity smart contract decentralized app",
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --content-base static/",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ise-ethereum/on-chain-chess"
+    "url": "https://github.com/Fede5mentarios/on-chain-chess"
   },
   "keywords": [
     "webpack",
@@ -25,9 +25,9 @@
     "template"
   ],
   "bugs": {
-    "url": "https://github.com/ise-ethereum/on-chain-chess"
+    "url": "https://github.com/Fede5mentarios/on-chain-chess"
   },
-  "author": "TU Berlin, ISE Ethereum, PSA group",
+  "author": "Federico Bernst, TU Berlin, ISE Ethereum, PSA group",
   "license": "MIT",
   "devDependencies": {
     "babel-core": "^6.9.1",

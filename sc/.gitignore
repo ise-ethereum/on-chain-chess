@@ -1,0 +1,36 @@
+# Dependency directory
+node_modules/
+
+# truffle build directory
+build/
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+allFiredEvents
+scTopics
+
+# Coverage directory used by tools like istanbul
+coverage
+coverage.json
+coverageEnv
+
+# lol macs
+.DS_Store/
+
+# truffle
+.node-xmlhttprequest-*
+
+# mochaawesome-reports
+mochawesome-report
+
+reports/
+
+.zos.session
+
+zos.dev-*.json

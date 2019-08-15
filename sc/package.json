@@ -1,0 +1,77 @@
+{
+  "name": "on-chain-chess",
+  "version": "0.0.2",
+  "description": "Chess as a Solidity smart contract decentralized app",
+  "homepage": "https://github.com/Fede5mentarios/on-chain-chess",
+  "main": "truffle-config.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Fede5mentarios/on-chain-chess"
+  },
+  "directories": {
+    "test": "test",
+    "contract": "contract"
+  },
+  "bugs": {
+    "url": "https://github.com/Fede5mentarios/on-chain-chess"
+  },
+  "author": "Federico Bernst, TU Berlin, ISE Ethereum, PSA group",
+  "license": "MIT",
+  "scripts": {
+    "test": "rm -rf build && npm run truffle-compile && scripts/test.sh",
+    "debugtx": "./scripts/debugtx $1",
+    "eslint": "eslint test/ --ext .js",
+    "truffle-test": "./node_modules/truffle/build/cli.bundled.js test",
+    "coverage": "SOLIDITY_COVERAGE=true npm run test",
+    "solium": "solium -d contracts/",
+    "ganache-cli": "scripts/run_ganache.sh",
+    "block-utils": "scripts/mine_blocks.sh",
+    "truffle-compile": "truffle compile --all",
+    "truffle-migrate-testnet": "truffle migrate --network rskTestnet --reset",
+    "truffle-migrate-dev": "rm zos.dev-*.json; rm -r build/contracts; truffle migrate --network development --reset",
+    "full-test": "npm run eslint && npm run solium && npm run test"
+  },
+  "keywords": [
+    "decentralized app",
+    "decentralization",
+    "ethereum",
+    "solidity",
+    "dapp",
+    "template",
+    "rsk",
+    "chess"
+  ],
+  "dependencies": {
+    "openzeppelin-eth": "2.2.0",
+    "openzeppelin-solidity": "2.3.0",
+    "zos": "2.3.1",
+    "zos-lib": "2.3.1"
+  },
+  "devDependencies": {
+    "abi-decoder": "2.0.1",
+    "babel-eslint": "10.0.2",
+    "bignumber.js": "9.0.0",
+    "bn": "1.0.3",
+    "chai": "4.2.0",
+    "chai-as-promised": "7.1.1",
+    "chai-bn": "0.1.1",
+    "eslint": "6.1.0",
+    "eslint-config-airbnb-base": "13.2.0",
+    "eslint-config-prettier": "6.0.0",
+    "eslint-plugin-import": "2.18.2",
+    "eslint-plugin-mocha": "6.0.0",
+    "eslint-plugin-prettier": "3.1.0",
+    "eslint-plugin-promise": "4.2.1",
+    "ethlint": "1.2.4",
+    "flat": "4.1.0",
+    "ganache-cli": "6.5.0",
+    "jsonfile": "5.0.0",
+    "lodash": "4.17.15",
+    "mochawesome": "4.0.1",
+    "openzeppelin-test-helpers": "0.4.0",
+    "prettier": "1.18.2",
+    "solidity-coverage": "0.6.4",
+    "truffle": "5.0.28",
+    "truffle-hdwallet-provider": "1.0.14"
+  }
+}
