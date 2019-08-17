@@ -2,63 +2,84 @@
   "name": "on-chain-chess",
   "version": "0.0.2",
   "description": "Chess as a Solidity smart contract decentralized app",
-  "main": "index.js",
-  "scripts": {
-    "start": "webpack-dev-server --content-base static/",
-    "build": "webpack --bail",
-    "build-production": "webpack --bail --config webpack.config-production.js",
-    "test": "mocha-webpack --growl",
-    "test-testrpc": "concurrently --kill-others -s first \"testrpc -p ${TESTRPC_PORT:-8545}\" 'npm run test'",
-    "lint": "jshint app/javascript/*.js"
-  },
+  "homepage": "https://github.com/Fede5mentarios/on-chain-chess",
+  "main": "truffle-config.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/Fede5mentarios/on-chain-chess"
   },
-  "keywords": [
-    "webpack",
-    "decentralized app",
-    "decentralization",
-    "ethereum",
-    "solidity",
-    "dapp",
-    "template"
-  ],
+  "directories": {
+    "test": "test",
+    "contract": "contract"
+  },
   "bugs": {
     "url": "https://github.com/Fede5mentarios/on-chain-chess"
   },
   "author": "Federico Bernst, TU Berlin, ISE Ethereum, PSA group",
   "license": "MIT",
-  "devDependencies": {
-    "babel-core": "^6.9.1",
-    "babel-loader": "^6.2.4",
-    "babel-preset-es2015": "^6.9.0",
-    "chai": "*",
-    "concurrently": "*",
-    "css-loader": "^0.23.1",
-    "extract-text-webpack-plugin": "^1.0.1",
-    "file-loader": "^0.8.5",
-    "jshint": "^2.9.2",
-    "jshint-loader": "^0.8.3",
-    "json-loader": "^0.5.4",
-    "less": "^2.7.1",
-    "less-loader": "^2.2.3",
-    "mocha": "*",
-    "mocha-webpack": "*",
-    "solc": "^0.3.4",
-    "solc-loader": "git://github.com/Antanukas/solc-loader.git#97ef68cf30a69f43d16953c28a1b44fa14d5ed38",
-    "source-map-support": "*",
-    "style-loader": "^0.13.1",
-    "web3": "^0.15.3",
-    "web3-loader": "git://github.com/Antanukas/web3-loader.git#af4e4ad57fb409360aa5c72866e31be230a2b162",
-    "webpack": "^1.13.0",
-    "webpack-dev-server": "^1.14.1",
-    "webpack-node-externals": "*"
+  "scripts": {
+    "test": "rm -rf build && npm run truffle-compile && scripts/test.sh",
+    "debugtx": "./scripts/debugtx $1",
+    "eslint": "eslint test/ --ext .js",
+    "truffle-test": "./node_modules/truffle/build/cli.bundled.js test",
+    "coverage": "SOLIDITY_COVERAGE=true npm run test",
+    "solium": "solium -d contracts/",
+    "ganache-cli": "scripts/run_ganache.sh",
+    "block-utils": "scripts/mine_blocks.sh",
+    "truffle-compile": "truffle compile --all",
+    "truffle-migrate-testnet": "truffle migrate --network rskTestnet --reset",
+    "truffle-migrate-dev": "rm zos.dev-*.json; rm -r build/contracts; truffle migrate --network development --reset",
+    "full-test": "npm run eslint && npm run solium && npm run test"
   },
+  "plugins": [
+    "mocha"
+  ],
+  "keywords": [
+    "decentralized app",
+    "decentralization",
+    "ethereum",
+    "solidity",
+    "dapp",
+    "template",
+    "chess"
+  ],
   "dependencies": {
-    "async": "^1.5.2",
-    "bignumber.js": "^2.3.0",
-    "chess.js": "^0.10.2",
-    "web3-shh-dropin-for-proxy": "github:ise-ethereum/web3-shh-dropin-for-proxy"
+    "eslint-plugin-jsx-a11y": "6.2.3",
+    "eslint-plugin-react": "7.14.3",
+    "eslint-plugin-react-hooks": "1.7.0",
+    "mocha": "6.2.0",
+    "openzeppelin-eth": "2.2.0",
+    "openzeppelin-solidity": "2.3.0",
+    "solium": "1.2.4"
+  },
+  "devDependencies": {
+    "abi-decoder": "2.0.1",
+    "babel-eslint": "10.0.2",
+    "bignumber.js": "9.0.0",
+    "bn": "1.0.3",
+    "chai": "4.2.0",
+    "chai-as-promised": "7.1.1",
+    "chai-bn": "0.1.1",
+    "eslint": "6.1.0",
+    "eslint-config-airbnb": "18.0.1",
+    "eslint-config-airbnb-base": "13.2.0",
+    "eslint-config-prettier": "6.0.0",
+    "eslint-plugin-import": "2.18.2",
+    "eslint-plugin-mocha": "6.0.0",
+    "eslint-plugin-prettier": "3.1.0",
+    "eslint-plugin-promise": "4.2.1",
+    "ethlint": "1.2.4",
+    "flat": "4.1.0",
+    "ganache-cli": "6.5.0",
+    "jsonfile": "5.0.0",
+    "lodash": "4.17.15",
+    "mochawesome": "4.0.1",
+    "openzeppelin-test-helpers": "0.4.0",
+    "prettier": "1.18.2",
+    "solidity-coverage": "0.6.4",
+    "truffle": "5.0.32",
+    "truffle-hdwallet-provider": "1.0.14",
+    "zos": "2.3.1",
+    "zos-lib": "2.3.1"
   }
 }
