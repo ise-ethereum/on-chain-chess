@@ -1,0 +1,11 @@
+{
+  "rskTestnet": {
+    "addressesToHaveBalance": []
+  },
+  "development": {
+    "addressesToHaveBalance": []
+  },
+  "coverage": {
+    "addressesToHaveBalance": []
+  }
+}
