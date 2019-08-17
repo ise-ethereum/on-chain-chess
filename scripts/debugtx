@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+if [ -n "$1" ] ; then
+  address=$1
+else
+  # requires https://gitlab.com/atixlabs/awesome-atix/merge_requests/new?merge_request%5Bsource_branch%5D=ethcli-getblock
+  address=$(ethcli getblock |jq ".result.transactions[0].hash" -r)
+fi
+
+(echo -e "debug ${address}" && cat) |./node_modules/.bin/truffle console
