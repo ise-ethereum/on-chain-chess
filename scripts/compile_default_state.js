@@ -4,27 +4,30 @@
  * Solidity compatible array initialization.
  * Also prints Javascript version to add to tests.
  */
-var fs = require('fs');
-fs.readFile('default_state.txt', 'utf8', function (err, data) {
-  var lines = data.split('\n');
-  var arr = [];
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i].trim();
+let fs = require('fs');
+
+fs.readFile('default_state.txt', 'utf8', function(err, data) {
+  let lines = data.split('\n');
+  let arr = [];
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
     if (!line || line.indexOf('#') === 0) {
       // Skip comments and empty lines
       continue;
     }
-    var elements = line.split(/\s+/);
+    let elements = line.split(/\s+/);
     arr = arr.concat(elements);
-    arr = arr.concat([0,0,0,0,0,0,0,0]);
+    arr = arr.concat([0, 0, 0, 0, 0, 0, 0, 0]);
   }
   // Set Flags
   arr[123] = 116;
   arr[11] = 4;
 
-  var out = arr.map(function(item) {
-    return 'int8(' + item + ')';
-  }).join(',');
+  let out = arr
+    .map(function(item) {
+      return 'int8(' + item + ')';
+    })
+    .join(',');
   console.log('Solidity code:\n\n' + '[' + out + ']');
   console.log('\n\nJavascript code:\n\n' + '[' + arr + ']');
 });

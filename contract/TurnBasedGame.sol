@@ -1,6 +1,6 @@
 pragma solidity 0.5.10;
 
-contract EventfullTurnBasedGame {
+contract EventfulTurnBasedGame {
 
   event GameEnded(bytes32 indexed gameId);
   event GameClosed(bytes32 indexed gameId, address indexed player);
@@ -11,7 +11,7 @@ contract EventfullTurnBasedGame {
   event DebugInts(string message, uint value1, uint value2, uint value3);
 }
 
-contract TurnBasedGame is EventfullTurnBasedGame {
+contract TurnBasedGame is EventfulTurnBasedGame {
   bool debug; // If contract is deployed in debug mode, some debug features are enabled
   modifier debugOnly {
     if (!debug)
